@@ -22,12 +22,7 @@ pub struct RenderInfo {
     texture: String,
 }
 
-pub enum EntityFlags {
-    ChangePosition(Vector2<f32>),
-    Destroy,
-}
-
 pub trait Entity {
-    fn handle_event(&mut self, e: Event) -> Vec<EntityFlags>;
+    fn handle_event(&mut self, e: Event);
     fn render_info(&self) -> RenderInfo;
 }

@@ -80,6 +80,17 @@ impl PhysicsWorld {
     pub fn remove(&self, id: usize) {
         self.world.borrow_mut().deferred_remove(id);
     }
+
+    pub fn get_pos(&self, id: usize) -> Option<Isometry2<f32>> {
+        match self.world.borrow().collision_object(id) {
+            Some(obj) => Some(obj.position),
+            None => None,
+        }
+    }
+
+    pub fn set_pos(&self, id: usize, pos: Isometry2<f32>) {
+        self.world.borrow_mut().deferred_set_position(id, pos);
+    }
 }
 
 pub struct EntityAccessor<'a, E: 'a + Entity> {

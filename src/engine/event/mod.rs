@@ -8,6 +8,7 @@ use std::mem;
 pub enum Event {
     Update(u64),
     Collision(u64),
+    Destroy,
 }
 
 impl Hash for Event {
@@ -15,6 +16,7 @@ impl Hash for Event {
         match *self {
             Event::Update(_) => state.write_u8(0),
             Event::Collision(_) => state.write_u8(1),
+            Event::Destroy => state.write_u8(2),
         }
     }
 }
@@ -24,6 +26,7 @@ impl PartialEq for Event {
         match (self, other) {
             (&Event::Update(_), &Event::Update(_)) => true,
             (&Event::Collision(_), &Event::Collision(_)) => true,
+            (&Event::Destroy, &Event::Destroy) => true,
             _ => false,
         }
     }
@@ -40,7 +43,7 @@ impl Handler {
         Default::default()
     }
 
-    pub fn enqueue(&mut self, event: Event) {
+    pub fn enqueue_all(&mut self, event: Event) {
         match self.subscriptions.get(&event) {
             Some(subscribers) => {
                 for sub in subscribers {
@@ -49,6 +52,10 @@ impl Handler {
             },
             None => { },
         }
+    }
+
+    pub fn enqueue_specific(&mut self, id: usize, event: Event) {
+        self.queue.push((id, event));
     }
 
     pub fn flush(&mut self) -> Vec<(usize, Event)> {
