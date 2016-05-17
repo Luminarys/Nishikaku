@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 pub enum Event {
-    Redraw,
-    Collision,
+    Update(u64),
+    Render,
 }
 
 pub struct Handler {
