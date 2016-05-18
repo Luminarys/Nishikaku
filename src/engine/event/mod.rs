@@ -3,12 +3,24 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::cmp::PartialEq;
 use std::mem;
+use std::ops::Deref;
+use glium::glutin::{ElementState, VirtualKeyCode, MouseButton};
 
-#[derive(Clone, Eq)]
+use engine::Engine;
+use engine::entity::Entity;
+
+#[derive(Clone)]
 pub enum Event {
-    Update(u64),
+    Update(f32),
     Collision(u64),
-    Destroy,
+    KeyInput(ElementState, u8, Option<VirtualKeyCode>),
+    MouseMove((i32, i32)),
+    MouseInput(ElementState, MouseButton),
+}
+
+pub enum SysEvent<E: Entity> {
+    Destroy(usize),
+    Create(fn(&Engine<E>) -> E),
 }
 
 impl Hash for Event {
@@ -16,9 +28,14 @@ impl Hash for Event {
         match *self {
             Event::Update(_) => state.write_u8(0),
             Event::Collision(_) => state.write_u8(1),
-            Event::Destroy => state.write_u8(2),
+            Event::KeyInput(_, _, _) => state.write_u8(2),
+            Event::MouseMove(_) => state.write_u8(3),
+            Event::MouseInput(_, _) => state.write_u8(4),
         }
     }
+}
+
+impl Eq for Event {
 }
 
 impl PartialEq for Event {
@@ -26,21 +43,44 @@ impl PartialEq for Event {
         match (self, other) {
             (&Event::Update(_), &Event::Update(_)) => true,
             (&Event::Collision(_), &Event::Collision(_)) => true,
-            (&Event::Destroy, &Event::Destroy) => true,
+            (&Event::KeyInput(_, _, _), &Event::KeyInput(_, _, _)) => true,
+            (&Event::MouseMove(_), &Event::MouseMove(_)) => true,
+            (&Event::MouseInput(_, _), &Event::MouseInput(_, _)) => true,
             _ => false,
         }
     }
 }
 
 #[derive(Default)]
-pub struct Handler {
+pub struct Handler<E: Entity> {
     subscriptions: HashMap<Event, HashSet<usize>>,
-    queue: Vec<(usize, Event)>
+    queue: Vec<(usize, Event)>,
+    sysqueue: Vec<SysEvent<E>>
 }
 
-impl Handler {
-    pub fn new() -> Handler {
-        Default::default()
+impl <E: Entity>Handler<E> {
+    pub fn new() -> Handler<E> {
+        Handler {
+            sysqueue: vec![],
+            queue: vec![],
+            subscriptions: Default::default()
+        }
+    }
+
+    pub fn subscribe(&mut self, id: usize, event: Event) {
+        if !self.subscriptions.contains_key(&event) {
+            self.subscriptions.insert(event.clone(), Default::default());
+        }
+        self.subscriptions.get_mut(&event).unwrap().insert(id);
+    }
+
+    pub fn unsubscribe(&mut self, id: usize, event: Event) {
+        match self.subscriptions.get_mut(&event) {
+            Some(subscribers) => {
+                subscribers.remove(&id);
+            },
+            None => { },
+        }
     }
 
     pub fn enqueue_all(&mut self, event: Event) {
@@ -58,8 +98,16 @@ impl Handler {
         self.queue.push((id, event));
     }
 
+    pub fn enqueue_sys(&mut self, event: SysEvent<E>) {
+        self.sysqueue.push(event);
+    }
+
     pub fn flush(&mut self) -> Vec<(usize, Event)> {
         mem::replace(&mut self.queue, Default::default())
+    }
+
+    pub fn flush_sys(&mut self) -> Vec<SysEvent<E>> {
+        mem::replace(&mut self.sysqueue, Default::default())
     }
 }
 

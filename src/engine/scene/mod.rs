@@ -2,17 +2,31 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::ops::DerefMut;
 use ncollide::world::{CollisionWorld2, CollisionGroups, GeometricQueryType, CollisionObject2};
 use ncollide::shape::ShapeHandle2;
 use nalgebra::{Vector2, Isometry2};
 use nalgebra;
 
+use engine::event::Event;
 use engine::entity::Entity;
 use engine::entity::component::PhysicsData;
 
 pub struct World<E: Entity> {
     entities: RefCell<HashMap<usize, RefCell<E>>>,
     registry: RefCell<Registry>,
+}
+
+impl<E: Entity> World<E> {
+}
+
+impl<E: Entity> Default for World<E> {
+    fn default() -> World<E> {
+        World {
+            entities: RefCell::new(HashMap::new()),
+            registry: RefCell::new(Registry{ }),
+        }
+    }
 }
 
 pub struct PhysicsWorld {
@@ -138,7 +152,7 @@ impl<E: Entity> World<E> {
         }
     }
 
-    pub fn get_entity_mut(&mut self, id: &usize) -> MutEntityAccessor<E> {
+    pub fn get_entity_mut(&self, id: &usize) -> MutEntityAccessor<E> {
         let r = self.entities.borrow();
         MutEntityAccessor {
             id: id.clone(),
@@ -147,10 +161,33 @@ impl<E: Entity> World<E> {
     }
 }
 
+#[derive(Default)]
 struct Registry {
 }
 
 pub struct Scene<E: Entity> {
     pub world: Rc<World<E>>,
     pub physics: Rc<PhysicsWorld>,
+}
+
+impl<E: Entity> Scene<E> {
+    pub fn new() -> Scene<E> {
+        Scene {
+            world: Rc::new(Default::default()),
+            physics: Rc::new(PhysicsWorld::new())
+        }
+    }
+
+    pub fn dispatch(&self, id: usize, ev: Event) {
+        let acc = self.world.deref().get_entity_mut(&id);
+        match acc.access() {
+            Some(mut e) => e.deref_mut().handle_event(ev),
+            None => println!("Trying to access unkown entity with id: {:?}", id),
+        };
+    }
+
+    pub fn update(&self, dt: f32) {
+        //self.world.deref().update(dt);
+        //self.physics.deref().update();
+    }
 }

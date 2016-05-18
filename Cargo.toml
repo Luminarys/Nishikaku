@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Luminarys <postmaster@gensok.io>"]
 
 [dependencies]
-glium = { version = "0.14.0", default-features = false, features = [""] }
+glium = "0.14.0"
 glutin = "0.5.1"
 ncollide = "0.9.0"
 nalgebra = "0.8.2"

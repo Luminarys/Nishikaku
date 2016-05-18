@@ -6,10 +6,12 @@ use std::ops::Deref;
 use nalgebra::{Vector2, Isometry2};
 use ncollide::shape::ShapeHandle2;
 
+use engine::Engine;
 use engine::scene;
 use engine::scene::{EntityAccessor, Scene, PhysicsWorld, PhysicsInteraction};
 use engine::entity::Entity;
-use engine::event::{Event, Handler as EventHandler};
+use engine::event::{Event, Handler as EventHandler, SysEvent};
+use engine::graphics::SpriteAttrs;
 
 pub struct PhysicsComp {
     id: usize,
@@ -37,10 +39,6 @@ impl PhysicsComp {
     pub fn set_pos(&self, pos: Isometry2<f32>) {
         self.world.deref().set_pos(self.id, pos);
     }
-
-    // pub fn flush_flags(&self) -> Vec<PhysicsFlags> {
-    //    // mem::replace(&mut self.data.deref().borrow_mut().flags, Default::default())
-    // }
 }
 
 impl Drop for PhysicsComp {
@@ -51,22 +49,35 @@ impl Drop for PhysicsComp {
 
 #[derive(Default)]
 pub struct PhysicsData {
-    pub flags: Vec<PhysicsFlags>,
-}
-
-pub enum PhysicsFlags {
-    Collision {
-        id: usize,
-    },
 }
 
 pub struct GraphicsComp {
-    texture: String,
+    sprite: usize,
+    data: SpriteAttrs,
 }
 
 impl GraphicsComp {
-    pub fn new(texture: String) -> GraphicsComp {
-        GraphicsComp { texture: texture }
+    pub fn new (sprite: usize) -> GraphicsComp {
+        GraphicsComp {
+            sprite: sprite,
+            data: Default::default(),
+        }
+    }
+
+    pub fn translate(&mut self, dx: f32, dy: f32) {
+        self.data.translate(dx, dy);
+    }
+
+    pub fn set_rot(&mut self, t: f32) {
+        self.data.set_rot(t);
+    }
+
+    pub fn set_pos(&mut self, x: f32, y: f32) {
+        self.data.set_pos(x, y);
+    }
+
+    pub fn get_data(&self) -> &SpriteAttrs {
+        &self.data
     }
 }
 
@@ -84,20 +95,36 @@ impl<E: Entity> WorldComp<E> {
     }
 }
 
-pub struct EventComp {
+pub struct EventComp<E: Entity> {
     id: usize,
-    handler: Rc<RefCell<EventHandler>>,
+    handler: Rc<RefCell<EventHandler<E>>>,
 }
 
-impl EventComp {
-    pub fn new(id: usize, handler: Rc<RefCell<EventHandler>>) -> EventComp {
+impl<E: Entity> EventComp<E> {
+    pub fn new(id: usize, handler: Rc<RefCell<EventHandler<E>>>) -> EventComp<E> {
         EventComp {
             id: id,
-            handler: handler
+            handler: handler,
         }
     }
 
+    pub fn update(time: u64) {
+        // TODO: Update internal timers etc.
+    }
+
+    pub fn subscribe(&self, event: Event) {
+        self.handler.deref().borrow_mut().subscribe(self.id.clone(), event);
+    }
+
+    pub fn unsubscribe(&self, event: Event) {
+        self.handler.deref().borrow_mut().unsubscribe(self.id.clone(), event);
+    }
+
     pub fn destroy_self(&self) {
-        self.handler.deref().borrow_mut().enqueue_specific(self.id, Event::Destroy);
+        self.handler.deref().borrow_mut().enqueue_sys(SysEvent::Destroy(self.id));
+    }
+
+    pub fn create_entity(&self, f: fn(&Engine<E>) -> E) {
+        self.handler.deref().borrow_mut().enqueue_sys(SysEvent::Create(f));
     }
 }

@@ -3,6 +3,7 @@ pub mod component;
 use nalgebra::Vector2;
 
 use engine::event::Event;
+use engine::graphics::SpriteAttrs;
 
 struct EntityData<D> {
     id: usize,
@@ -18,11 +19,11 @@ struct StateInfo {
 }
 
 pub struct RenderInfo {
-    pos: Vector2<f32>,
-    texture: String,
+    sprite: usize,
+    attrs: SpriteAttrs,
 }
 
 pub trait Entity {
     fn handle_event(&mut self, e: Event);
-    fn render_info(&self) -> RenderInfo;
+    fn render(&self) -> RenderInfo;
 }
