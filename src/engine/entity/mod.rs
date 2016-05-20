@@ -3,6 +3,7 @@ pub mod component;
 use nalgebra::Vector2;
 
 use engine::event::Event;
+use engine::Engine;
 use engine::graphics::SpriteAttrs;
 
 struct EntityData<D> {
@@ -19,8 +20,8 @@ struct StateInfo {
 }
 
 pub struct RenderInfo {
-    sprite: usize,
-    attrs: SpriteAttrs,
+    pub sprite: usize,
+    pub attrs: SpriteAttrs,
 }
 
 pub trait Entity {

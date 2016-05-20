@@ -9,7 +9,7 @@ use ncollide::shape::ShapeHandle2;
 use engine::Engine;
 use engine::scene;
 use engine::scene::{EntityAccessor, Scene, PhysicsWorld, PhysicsInteraction};
-use engine::entity::Entity;
+use engine::entity::{Entity, RenderInfo};
 use engine::event::{Event, Handler as EventHandler, SysEvent};
 use engine::graphics::SpriteAttrs;
 
@@ -78,6 +78,13 @@ impl GraphicsComp {
 
     pub fn get_data(&self) -> &SpriteAttrs {
         &self.data
+    }
+
+    pub fn get_render_info(&self) -> RenderInfo {
+        RenderInfo {
+            sprite: self.sprite,
+            attrs: self.data,
+        }
     }
 }
 

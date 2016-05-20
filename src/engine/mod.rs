@@ -8,6 +8,7 @@ use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
 use std::ops::Deref;
+use std::collections::HashMap;
 use glium::glutin;
 use clock_ticks;
 
@@ -18,7 +19,7 @@ pub struct Engine<'a, E: entity::Entity> {
 }
 
 impl <'a, E: entity::Entity>Engine<'a, E> {
-    fn new() -> Engine<'a, E> {
+    pub fn new() -> Engine<'a, E> {
         Engine {
             events: Rc::new(RefCell::new(event::Handler::new())),
             scene: scene::Scene::new(),
@@ -26,11 +27,31 @@ impl <'a, E: entity::Entity>Engine<'a, E> {
         }
     }
 
-    fn run(&mut self) {
+    pub fn run(&mut self) {
         let mut previous_clock = clock_ticks::precise_time_ns();
         let mut accumulator = 0;
+        let mut entity_rendering: HashMap<usize, Vec<_>> = HashMap::new();
+
         loop {
+            for (_, entity) in self.scene.world.deref().entities.borrow().deref() {
+                let info = entity.borrow().render();
+                if !entity_rendering.contains_key(&info.sprite) {
+                    entity_rendering.insert(info.sprite, vec![info.attrs]);
+                } else {
+                    entity_rendering.get_mut(&info.sprite).unwrap().push(info.attrs);
+                
+                }
+            }
+
+            for (id, v) in entity_rendering.iter_mut() {
+                self.graphics.set_sprite_attrs(id, (&v[..]));
+            }
+
             self.graphics.render();
+            for (_, v) in entity_rendering.iter_mut() {
+                v.clear();
+            }
+
             let now = clock_ticks::precise_time_ns();
             accumulator += now - previous_clock;
             previous_clock = now;
@@ -53,6 +74,9 @@ impl <'a, E: entity::Entity>Engine<'a, E> {
                     self.scene.dispatch(id, event);
                 }
                 accumulator -= FRAME_DELAY_NANOSECS;
+            }
+            for event in self.events.deref().borrow_mut().flush_sys() {
+                // Create/Destroy shit
             }
             thread::sleep(Duration::from_millis(((FRAME_DELAY_NANOSECS - accumulator) / 1000000) as u64));
         }

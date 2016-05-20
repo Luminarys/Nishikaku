@@ -13,7 +13,7 @@ use engine::entity::Entity;
 use engine::entity::component::PhysicsData;
 
 pub struct World<E: Entity> {
-    entities: RefCell<HashMap<usize, RefCell<E>>>,
+    pub entities: RefCell<HashMap<usize, RefCell<E>>>,
     registry: RefCell<Registry>,
 }
 
