@@ -131,7 +131,7 @@ impl<E: Entity> EventComp<E> {
         self.handler.deref().borrow_mut().enqueue_sys(SysEvent::Destroy(self.id));
     }
 
-    pub fn create_entity(&self, f: fn(&Engine<E>) -> E) {
+    pub fn create_entity(&self, f: Box<Fn(&Engine<E>) -> E>) {
         self.handler.deref().borrow_mut().enqueue_sys(SysEvent::Create(f));
     }
 }

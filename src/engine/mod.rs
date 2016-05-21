@@ -13,12 +13,12 @@ use glium::glutin;
 use clock_ticks;
 
 pub struct Engine<'a, E: entity::Entity> {
-    events: Rc<RefCell<event::Handler<E>>>,
-    scene: scene::Scene<E>,
-    graphics: graphics::Graphics<'a>,
+    pub events: Rc<RefCell<event::Handler<E>>>,
+    pub scene: scene::Scene<E>,
+    pub graphics: graphics::Graphics<'a>,
 }
 
-impl <'a, E: entity::Entity>Engine<'a, E> {
+impl<'a, E: entity::Entity> Engine<'a, E> {
     pub fn new() -> Engine<'a, E> {
         Engine {
             events: Rc::new(RefCell::new(event::Handler::new())),
@@ -27,19 +27,44 @@ impl <'a, E: entity::Entity>Engine<'a, E> {
         }
     }
 
+    pub fn spawn(&self, spawner: Box<Fn(&Engine<E>) -> E>) {
+        let mut e = spawner(&self);
+        let id = e.id();
+        self.events.deref().borrow_mut().subscribe(id.clone(), event::Event::Update(0.0));
+        e.handle_event(event::Event::Spawn);
+        self.scene.world.deref().insert(id, e);
+    }
+
+    pub fn destroy(&self, id: usize) {
+        self.scene.world.deref().remove(&id);
+    }
+
     pub fn run(&mut self) {
         let mut previous_clock = clock_ticks::precise_time_ns();
         let mut accumulator = 0;
         let mut entity_rendering: HashMap<usize, Vec<_>> = HashMap::new();
 
+        // Lol
+        let glut_mouse_ev_to_local = |e| {
+            match e {
+                glutin::MouseButton::Left => event::MouseButton::Left,
+                glutin::MouseButton::Right => event::MouseButton::Right,
+                glutin::MouseButton::Middle => event::MouseButton::Middle,
+                glutin::MouseButton::Other(c) => event::MouseButton::Other(c),
+            }
+        };
+
         loop {
             for (_, entity) in self.scene.world.deref().entities.borrow().deref() {
-                let info = entity.borrow().render();
-                if !entity_rendering.contains_key(&info.sprite) {
-                    entity_rendering.insert(info.sprite, vec![info.attrs]);
-                } else {
-                    entity_rendering.get_mut(&info.sprite).unwrap().push(info.attrs);
-                
+                match entity.borrow().render() {
+                    Some(info) => {
+                        if !entity_rendering.contains_key(&info.sprite) {
+                            entity_rendering.insert(info.sprite, vec![info.attrs]);
+                        } else {
+                            entity_rendering.get_mut(&info.sprite).unwrap().push(info.attrs);
+                        };
+                    }
+                    None => { }
                 }
             }
 
@@ -60,10 +85,39 @@ impl <'a, E: entity::Entity>Engine<'a, E> {
             for event in self.graphics.get_window_events() {
                 match event {
                     glutin::Event::Closed => return,
-                    glutin::Event::KeyboardInput(e, c, vkc) => self.events.deref().borrow_mut().enqueue_all(event::Event::KeyInput(e, c, vkc)),
-                    glutin::Event::MouseMoved(x, y) => self.events.deref().borrow_mut().enqueue_all(event::Event::MouseMove((x, y))),
-                    glutin::Event::MouseInput(e, b) => self.events.deref().borrow_mut().enqueue_all(event::Event::MouseInput(e, b)),
-                    _ => { }
+                    glutin::Event::KeyboardInput(glutin::ElementState::Pressed, c, _) => {
+                        self.events
+                            .deref()
+                            .borrow_mut()
+                            .enqueue_all(event::Event::KeyInput(event::InputState::Pressed, c))
+                    }
+                    glutin::Event::KeyboardInput(glutin::ElementState::Released, c, _) => {
+                        self.events
+                            .deref()
+                            .borrow_mut()
+                            .enqueue_all(event::Event::KeyInput(event::InputState::Released, c))
+                    }
+                    glutin::Event::MouseMoved(x, y) => {
+                        self.events
+                            .deref()
+                            .borrow_mut()
+                            .enqueue_all(event::Event::MouseMove((x, y)))
+                    }
+                    glutin::Event::MouseInput(glutin::ElementState::Pressed, b) => {
+                        self.events
+                            .deref()
+                            .borrow_mut()
+                            .enqueue_all(event::Event::MouseInput(event::InputState::Pressed,
+                                                                  glut_mouse_ev_to_local(b)))
+                    }
+                    glutin::Event::MouseInput(glutin::ElementState::Released, b) => {
+                        self.events
+                            .deref()
+                            .borrow_mut()
+                            .enqueue_all(event::Event::MouseInput(event::InputState::Released,
+                                                                  glut_mouse_ev_to_local(b)))
+                    }
+                    _ => {}
                 }
             }
 
@@ -76,7 +130,10 @@ impl <'a, E: entity::Entity>Engine<'a, E> {
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
             for event in self.events.deref().borrow_mut().flush_sys() {
-                // Create/Destroy shit
+                match event {
+                    event::SysEvent::Create(f) => self.spawn(f),
+                    event::SysEvent::Destroy(id) => self.destroy(id),
+                }
             }
             thread::sleep(Duration::from_millis(((FRAME_DELAY_NANOSECS - accumulator) / 1000000) as u64));
         }

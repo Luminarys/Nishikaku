@@ -26,5 +26,6 @@ pub struct RenderInfo {
 
 pub trait Entity {
     fn handle_event(&mut self, e: Event);
-    fn render(&self) -> RenderInfo;
+    fn render(&self) -> Option<RenderInfo>;
+    fn id(&self) -> usize;
 }

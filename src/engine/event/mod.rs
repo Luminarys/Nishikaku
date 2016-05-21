@@ -4,23 +4,37 @@ use std::hash::{Hash, Hasher};
 use std::cmp::PartialEq;
 use std::mem;
 use std::ops::Deref;
-use glium::glutin::{ElementState, VirtualKeyCode, MouseButton};
 
 use engine::Engine;
 use engine::entity::Entity;
 
 #[derive(Clone)]
+pub enum InputState {
+    Pressed,
+    Released,
+}
+
+#[derive(Clone)]
+pub enum MouseButton {
+    Left,
+    Right,
+    Middle,
+    Other(u8),
+}
+
+#[derive(Clone)]
 pub enum Event {
     Update(f32),
     Collision(u64),
-    KeyInput(ElementState, u8, Option<VirtualKeyCode>),
+    KeyInput(InputState, u8),
     MouseMove((i32, i32)),
-    MouseInput(ElementState, MouseButton),
+    MouseInput(InputState, MouseButton),
+    Spawn,
 }
 
 pub enum SysEvent<E: Entity> {
     Destroy(usize),
-    Create(fn(&Engine<E>) -> E),
+    Create(Box<Fn(&Engine<E>) -> E>),
 }
 
 impl Hash for Event {
@@ -28,9 +42,10 @@ impl Hash for Event {
         match *self {
             Event::Update(_) => state.write_u8(0),
             Event::Collision(_) => state.write_u8(1),
-            Event::KeyInput(_, _, _) => state.write_u8(2),
+            Event::KeyInput(_, _) => state.write_u8(2),
             Event::MouseMove(_) => state.write_u8(3),
             Event::MouseInput(_, _) => state.write_u8(4),
+            Event::Spawn => state.write_u8(5),
         }
     }
 }
@@ -43,9 +58,10 @@ impl PartialEq for Event {
         match (self, other) {
             (&Event::Update(_), &Event::Update(_)) => true,
             (&Event::Collision(_), &Event::Collision(_)) => true,
-            (&Event::KeyInput(_, _, _), &Event::KeyInput(_, _, _)) => true,
+            (&Event::KeyInput(_, _), &Event::KeyInput(_, _)) => true,
             (&Event::MouseMove(_), &Event::MouseMove(_)) => true,
             (&Event::MouseInput(_, _), &Event::MouseInput(_, _)) => true,
+            (&Event::Spawn, &Event::Spawn) => true,
             _ => false,
         }
     }

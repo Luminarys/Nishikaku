@@ -3,7 +3,7 @@ use glium::program::{Program, Uniform};
 use glium::uniforms::{EmptyUniforms, UniformsStorage};
 use glium::backend::Facade;
 use glium::VertexBuffer;
-use glium::index::NoIndices;
+use glium::index::IndexBuffer;
 use glium::draw_parameters::DrawParameters;
 use glium::{DisplayBuild, Surface};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
@@ -17,9 +17,9 @@ pub struct Graphics<'a> {
 
 struct SpriteData<'a> {
     program: Program,
-    vbo: VertexBuffer<Sprite>,
+    vbo: VertexBuffer<SpriteVertex>,
     vertex_attrs: VertexBuffer<SpriteAttrs>,
-    indices: NoIndices,
+    indices: IndexBuffer<u16>,
     texture: CompressedSrgbTexture2d,
     draw_params: DrawParameters<'a>,
 }
@@ -36,13 +36,14 @@ impl<'a> Graphics<'a> {
                   id: usize,
                   vertex_shader: &str,
                   fragment_shader: &str,
-                  vbo: VertexBuffer<Sprite>,
-                  texture: CompressedSrgbTexture2d) {
+                  vbo: VertexBuffer<SpriteVertex>,
+                  texture: CompressedSrgbTexture2d,
+                  max_amount: usize) {
         let prog = Program::from_source(&self.display, vertex_shader, fragment_shader, None)
                        .unwrap();
-        let vertex_attrs = VertexBuffer::dynamic(&self.display, &[]).unwrap();
+        let vertex_attrs = VertexBuffer::empty_dynamic(&self.display, max_amount).unwrap();
         let draw_params = Default::default();
-        let indices = NoIndices(glium::index::PrimitiveType::TrianglesList);
+        let indices = IndexBuffer::immutable(&self.display, glium::index::PrimitiveType::TriangleStrip, &[1 as u16, 2, 0, 3]).unwrap();
         let data = SpriteData {
             program: prog,
             vbo: vbo,
@@ -57,10 +58,29 @@ impl<'a> Graphics<'a> {
     pub fn set_sprite_attrs(&mut self, id: &usize, attrs: &[SpriteAttrs]) {
         match self.sprites.get_mut(id) {
             Some(s) => {
-                s.vertex_attrs.write(attrs);
+                s.vertex_attrs.invalidate();
+                s.vertex_attrs.slice_mut(0..(attrs.len()-1)).unwrap().write(attrs);
             }
             None => {}
         }
+    }
+
+    pub fn make_sprite_vbo(&self, vertices: &[SpriteVertex]) -> VertexBuffer<SpriteVertex> {
+        VertexBuffer::new(&self.display, vertices).unwrap()
+    }
+
+    pub fn load_asset(&self, path: &str) -> CompressedSrgbTexture2d {
+        use std::fs::File;
+        use image;
+
+        let mut f = File::open(path).unwrap();
+        let image = image::load(f, image::PNG)
+                        .unwrap()
+                        .to_rgba();
+        let image_dimensions = image.dimensions();
+        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(),
+                                                                       image_dimensions);
+        glium::texture::CompressedSrgbTexture2d::new(&self.display, image).unwrap()
     }
 
     pub fn render(&mut self) {
@@ -86,15 +106,15 @@ impl<'a> Graphics<'a> {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct Sprite {
-    position: [f32; 2],
-    tex_coords: [f32; 2],
+#[derive(Clone, Copy, Debug)]
+pub struct SpriteVertex {
+    pub position: [f32; 2],
+    pub tex_coords: [f32; 2],
 }
 
-implement_vertex!(Sprite, position, tex_coords);
+implement_vertex!(SpriteVertex, position, tex_coords);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct SpriteAttrs {
     transform: [[f32; 4]; 4],
 }

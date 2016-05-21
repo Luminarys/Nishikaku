@@ -140,7 +140,7 @@ impl<E: Entity> World<E> {
         self.entities.borrow_mut().insert(id, RefCell::new(e));
     }
 
-    pub fn remove(&self, id: &usize, e: E) {
+    pub fn remove(&self, id: &usize) {
         self.entities.borrow_mut().remove(id);
     }
 
