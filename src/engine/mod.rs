@@ -54,6 +54,8 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
             }
         };
 
+        let mut fps_prev_clock = clock_ticks::precise_time_ms();
+        let mut framesDrawn = 0;
         loop {
             for (_, entity) in self.scene.world.deref().entities.borrow().deref() {
                 match entity.borrow().render() {
@@ -78,6 +80,14 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
             }
 
             let now = clock_ticks::precise_time_ns();
+            let fps_cur_clock = clock_ticks::precise_time_ms();
+            framesDrawn += 1;
+            if fps_cur_clock - fps_prev_clock >= 1000 {
+                println!("{:?} ms/frame", 1000.0/(framesDrawn as f32));
+                framesDrawn = 0;
+                fps_prev_clock = fps_cur_clock;
+            }
+
             accumulator += now - previous_clock;
             previous_clock = now;
             const FRAME_DELAY_NANOSECS: u64 = 16666667;

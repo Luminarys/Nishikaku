@@ -10,13 +10,13 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(engine: &engine::Engine<Object>) -> Player {
+    pub fn new(engine: &engine::Engine<Object>) -> Object {
         let g = GraphicsComp::new(1);
         let e = EventComp::new(1, engine.events.clone());
-        Player {
+        Object::Player(Player {
             gfx: g,
             ev: e,
-        }
+        })
     }
 
     pub fn handle_event(&mut self, e: Event) {
@@ -59,13 +59,13 @@ pub struct Bullet {
 }
 
 impl Bullet {
-    pub fn new(engine: &engine::Engine<Object>) -> Bullet {
+    pub fn new(engine: &engine::Engine<Object>) -> Object {
         let g = GraphicsComp::new(1);
         let e = EventComp::new(1, engine.events.clone());
-        Bullet {
+        Object::PlayerBullet(Bullet {
             gfx: g,
             ev: e,
-        }
+        })
     }
 
     pub fn handle_event(&mut self, e: Event) {

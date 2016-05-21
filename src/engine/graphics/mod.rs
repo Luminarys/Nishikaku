@@ -59,7 +59,9 @@ impl<'a> Graphics<'a> {
         match self.sprites.get_mut(id) {
             Some(s) => {
                 s.vertex_attrs.invalidate();
-                s.vertex_attrs.slice_mut(0..(attrs.len()-1)).unwrap().write(attrs);
+                if (attrs.len() > 0) {
+                    s.vertex_attrs.slice_mut(0..(attrs.len()-1)).unwrap().write(attrs);
+                }
             }
             None => {}
         }
