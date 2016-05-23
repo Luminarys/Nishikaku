@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::cmp::PartialEq;
 use std::mem;
-use std::ops::Deref;
 
 use engine::Engine;
 use engine::entity::Entity;

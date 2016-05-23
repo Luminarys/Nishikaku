@@ -55,7 +55,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
         };
 
         let mut fps_prev_clock = clock_ticks::precise_time_ms();
-        let mut framesDrawn = 0;
+        let mut frames_drawn = 0;
         loop {
             for (_, entity) in self.scene.world.deref().entities.borrow().deref() {
                 match entity.borrow().render() {
@@ -81,10 +81,10 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
 
             let now = clock_ticks::precise_time_ns();
             let fps_cur_clock = clock_ticks::precise_time_ms();
-            framesDrawn += 1;
+            frames_drawn += 1;
             if fps_cur_clock - fps_prev_clock >= 1000 {
-                println!("{:?} ms/frame", 1000.0/(framesDrawn as f32));
-                framesDrawn = 0;
+                println!("{:?} ms/frame", 1000.0/(frames_drawn as f32));
+                frames_drawn = 0;
                 fps_prev_clock = fps_cur_clock;
             }
 
@@ -134,12 +134,15 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
             while accumulator >= FRAME_DELAY_NANOSECS {
                 // Update state here
                 self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.16666667f32));
-                for (id, event) in self.events.deref().borrow_mut().flush() {
+                let ev_queue = { self.events.deref().borrow_mut().flush() };
+                for (id, event) in ev_queue {
                     self.scene.dispatch(id, event);
                 }
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
-            for event in self.events.deref().borrow_mut().flush_sys() {
+
+            let sys_ev_queue = { self.events.deref().borrow_mut().flush_sys() };
+            for event in sys_ev_queue {
                 match event {
                     event::SysEvent::Create(f) => self.spawn(f),
                     event::SysEvent::Destroy(id) => self.destroy(id),

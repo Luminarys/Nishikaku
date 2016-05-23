@@ -1,7 +1,5 @@
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
-use std::collections::HashMap;
-use std::mem;
 use std::ops::Deref;
 use nalgebra::{Vector2, Isometry2};
 use ncollide::shape::ShapeHandle2;
@@ -57,7 +55,7 @@ pub struct GraphicsComp {
 }
 
 impl GraphicsComp {
-    pub fn new (sprite: usize) -> GraphicsComp {
+    pub fn new(sprite: usize) -> GraphicsComp {
         GraphicsComp {
             sprite: sprite,
             data: Default::default(),
@@ -76,6 +74,10 @@ impl GraphicsComp {
         self.data.set_pos(x, y);
     }
 
+    pub fn get_pos(&self) -> (f32, f32) {
+        self.data.get_pos()
+    }
+
     pub fn get_data(&self) -> &SpriteAttrs {
         &self.data
     }
@@ -90,15 +92,26 @@ impl GraphicsComp {
 
 pub struct WorldComp<E: Entity> {
     world: Rc<scene::World<E>>,
+    pub id: usize,
 }
 
 impl<E: Entity> WorldComp<E> {
-    fn new(scene: &Scene<E>) -> WorldComp<E> {
-        WorldComp { world: scene.world.clone() }
+    pub fn new(scene: &Scene<E>) -> WorldComp<E> {
+        let id = scene.world.registry.borrow_mut().get_id();
+        WorldComp {
+            id: id,
+            world: scene.world.clone(),
+        }
     }
 
-    fn get_entity(&self, id: &usize) -> EntityAccessor<E> {
+    pub fn get_entity(&self, id: &usize) -> EntityAccessor<E> {
         self.world.deref().get_entity(id)
+    }
+}
+
+impl<E: Entity> Drop for WorldComp<E> {
+    fn drop(&mut self) {
+        self.world.registry.borrow_mut().return_id(self.id);
     }
 }
 
@@ -115,7 +128,7 @@ impl<E: Entity> EventComp<E> {
         }
     }
 
-    pub fn update(time: u64) {
+    pub fn update(time: f32) {
         // TODO: Update internal timers etc.
     }
 

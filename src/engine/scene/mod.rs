@@ -14,7 +14,7 @@ use engine::entity::component::PhysicsData;
 
 pub struct World<E: Entity> {
     pub entities: RefCell<HashMap<usize, RefCell<E>>>,
-    registry: RefCell<Registry>,
+    pub registry: RefCell<Registry>,
 }
 
 impl<E: Entity> World<E> {
@@ -24,7 +24,7 @@ impl<E: Entity> Default for World<E> {
     fn default() -> World<E> {
         World {
             entities: RefCell::new(HashMap::new()),
-            registry: RefCell::new(Registry{ }),
+            registry: RefCell::new(Registry::new()),
         }
     }
 }
@@ -162,7 +162,36 @@ impl<E: Entity> World<E> {
 }
 
 #[derive(Default)]
-struct Registry {
+pub struct Registry {
+    counter: usize,
+    free: Vec<usize>,
+}
+
+impl Registry {
+    pub fn new() -> Registry {
+        Registry {
+            counter: 1,
+            free: vec![],
+        }
+    }
+
+    pub fn get_id(&mut self) -> usize {
+        match self.free.pop() {
+            Some(num) => num,
+            None => {
+                self.counter += 1;
+                self.counter - 1
+            }
+        }
+    }
+
+    pub fn return_id(&mut self, id: usize) {
+        if id == self.counter - 1 {
+            self.counter -= 1;
+        } else {
+            self.free.push(id);
+        }
+    }
 }
 
 pub struct Scene<E: Entity> {

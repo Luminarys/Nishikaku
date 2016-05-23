@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-use glium::program::{Program, Uniform};
-use glium::uniforms::{EmptyUniforms, UniformsStorage};
-use glium::backend::Facade;
+use glium::program::Program;
+use glium::uniforms::UniformsStorage;
 use glium::VertexBuffer;
 use glium::index::IndexBuffer;
 use glium::draw_parameters::DrawParameters;
@@ -43,7 +42,7 @@ impl<'a> Graphics<'a> {
                        .unwrap();
         let vertex_attrs = VertexBuffer::empty_dynamic(&self.display, max_amount).unwrap();
         let draw_params = Default::default();
-        let indices = IndexBuffer::immutable(&self.display, glium::index::PrimitiveType::TriangleStrip, &[1 as u16, 2, 0, 3]).unwrap();
+        let indices = IndexBuffer::new(&self.display, glium::index::PrimitiveType::TriangleStrip, &[1 as u16, 2, 0, 3]).unwrap();
         let data = SpriteData {
             program: prog,
             vbo: vbo,
@@ -59,7 +58,7 @@ impl<'a> Graphics<'a> {
         match self.sprites.get_mut(id) {
             Some(s) => {
                 s.vertex_attrs.invalidate();
-                if (attrs.len() > 0) {
+                if attrs.len() > 0 {
                     s.vertex_attrs.slice_mut(0..(attrs.len()-1)).unwrap().write(attrs);
                 }
             }
@@ -75,7 +74,7 @@ impl<'a> Graphics<'a> {
         use std::fs::File;
         use image;
 
-        let mut f = File::open(path).unwrap();
+        let f = File::open(path).unwrap();
         let image = image::load(f, image::PNG)
                         .unwrap()
                         .to_rgba();
@@ -90,7 +89,7 @@ impl<'a> Graphics<'a> {
         target.clear_color(0.0, 0.0, 0.0, 1.0);
         for (_, sprite_data) in &self.sprites {
             let uniforms = uniform! {
-                texture: &sprite_data.texture
+                tex: &sprite_data.texture,
             };
             target.draw((&sprite_data.vbo,
                          sprite_data.vertex_attrs.per_instance().unwrap()),
@@ -137,6 +136,10 @@ impl SpriteAttrs {
     pub fn set_pos(&mut self, x: f32, y: f32) {
         self.transform[0][3] = x;
         self.transform[1][3] = y;
+    }
+
+    pub fn get_pos(self) -> (f32, f32) {
+        (self.transform[0][3], self.transform[1][3])
     }
 }
 
