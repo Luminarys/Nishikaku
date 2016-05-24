@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::ops::Deref;
-use nalgebra::{Vector2, Isometry2};
+use nalgebra::{Vector2, Isometry2, Translation};
 use ncollide::shape::ShapeHandle2;
 
 use engine::Engine;
@@ -13,29 +13,47 @@ use engine::graphics::SpriteAttrs;
 
 pub struct PhysicsComp {
     id: usize,
+    pub velocity: Vector2<f32>,
+    pub acceleration: Vector2<f32>,
     world: Rc<PhysicsWorld>,
 }
 
 impl PhysicsComp {
-    pub fn new<E: Entity>(id: usize,
+    pub fn new<E: Entity>(entity_id: usize,
+                          tag: String,
                           position: Vector2<f32>,
                           shape: ShapeHandle2<f32>,
                           interactivity: PhysicsInteraction,
                           scene: &Scene<E>)
                           -> PhysicsComp {
-        scene.physics.deref().add(id, position, shape, interactivity, Default::default());
+        let id = scene.physics.deref().add(position,
+                                           shape,
+                                           interactivity,
+                                           Rc::new(PhysicsData::new(entity_id, tag)));
         PhysicsComp {
             id: id,
+            velocity: Vector2::new(0.0, 0.0),
+            acceleration: Vector2::new(0.0, 0.0),
             world: scene.physics.clone(),
         }
     }
 
-    pub fn get_pos(&self) -> Option<Isometry2<f32>> {
-        self.world.deref().get_pos(self.id)
+    pub fn translate(&self, delta: Vector2<f32>) {
+        let pos = self.get_pos().append_translation(&delta);
+        self.set_pos(pos);
+    }
+
+    pub fn get_pos(&self) -> Isometry2<f32> {
+        self.world.deref().get_pos(self.id).unwrap()
     }
 
     pub fn set_pos(&self, pos: Isometry2<f32>) {
         self.world.deref().set_pos(self.id, pos);
+    }
+
+    pub fn update(&mut self, dt: f32) {
+        self.velocity += self.acceleration * dt;
+        self.translate(self.velocity * dt);
     }
 }
 
@@ -45,8 +63,19 @@ impl Drop for PhysicsComp {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct PhysicsData {
+    pub entity_id: usize,
+    pub tag: String,
+}
+
+impl PhysicsData {
+    pub fn new(entity_id: usize, tag: String) -> PhysicsData {
+        PhysicsData {
+            entity_id: entity_id,
+            tag: tag,
+        }
+    }
 }
 
 pub struct GraphicsComp {
@@ -142,6 +171,14 @@ impl<E: Entity> EventComp<E> {
 
     pub fn destroy_self(&self) {
         self.handler.deref().borrow_mut().enqueue_sys(SysEvent::Destroy(self.id));
+    }
+
+    pub fn dispatch(&self, event: Event) {
+        self.handler.deref().borrow_mut().enqueue_all(event);
+    }
+
+    pub fn dispatch_to(&self, id: usize, event: Event) {
+        self.handler.deref().borrow_mut().enqueue_specific(id, event);
     }
 
     pub fn create_entity(&self, f: Box<Fn(&Engine<E>) -> E>) {

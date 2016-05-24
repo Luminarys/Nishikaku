@@ -3,9 +3,13 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::cmp::PartialEq;
 use std::mem;
+use ncollide::query::{Contact, Proximity};
+use nalgebra::{Point2};
+use std::rc::Rc;
 
 use engine::Engine;
 use engine::entity::Entity;
+use engine::entity::component::PhysicsData;
 
 #[derive(Clone)]
 pub enum InputState {
@@ -24,11 +28,26 @@ pub enum MouseButton {
 #[derive(Clone)]
 pub enum Event {
     Update(f32),
-    Collision(u64),
+    Collision(usize, CollisionData),
+    Proximity(usize, ProximityData),
     KeyInput(InputState, u8),
     MouseMove((i32, i32)),
     MouseInput(InputState, MouseButton),
     Spawn,
+}
+
+#[derive(Clone)]
+pub struct CollisionData {
+    pub contact: Contact<Point2<f32>>,
+    pub this_object: Rc<PhysicsData>,
+    pub other_object: Rc<PhysicsData>,
+}
+
+#[derive(Clone)]
+pub struct ProximityData {
+    pub proximity: Proximity,
+    pub this_object: Rc<PhysicsData>,
+    pub other_object: Rc<PhysicsData>,
 }
 
 pub enum SysEvent<E: Entity> {
@@ -40,11 +59,12 @@ impl Hash for Event {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match *self {
             Event::Update(_) => state.write_u8(0),
-            Event::Collision(_) => state.write_u8(1),
+            Event::Collision(_, _) => state.write_u8(1),
             Event::KeyInput(_, _) => state.write_u8(2),
             Event::MouseMove(_) => state.write_u8(3),
             Event::MouseInput(_, _) => state.write_u8(4),
             Event::Spawn => state.write_u8(5),
+            Event::Proximity(_, _) => state.write_u8(6),
         }
     }
 }
@@ -56,7 +76,8 @@ impl PartialEq for Event {
     fn eq(&self, other: &Event) -> bool {
         match (self, other) {
             (&Event::Update(_), &Event::Update(_)) => true,
-            (&Event::Collision(_), &Event::Collision(_)) => true,
+            (&Event::Collision(_, _), &Event::Collision(_, _)) => true,
+            (&Event::Proximity(_, _), &Event::Proximity(_, _)) => true,
             (&Event::KeyInput(_, _), &Event::KeyInput(_, _)) => true,
             (&Event::MouseMove(_), &Event::MouseMove(_)) => true,
             (&Event::MouseInput(_, _), &Event::MouseInput(_, _)) => true,

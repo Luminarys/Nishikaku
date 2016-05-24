@@ -5,20 +5,21 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use ncollide::world::{CollisionWorld2, CollisionGroups, GeometricQueryType, CollisionObject2};
 use ncollide::shape::ShapeHandle2;
-use nalgebra::{Vector2, Isometry2};
+use ncollide::narrow_phase::{ProximityHandler, ContactHandler, ContactAlgorithm2};
+use ncollide::query::{Contact, Proximity};
+use nalgebra::{Vector2, Isometry2, Point2};
 use nalgebra;
 
-use engine::event::Event;
+use engine::event::{Event, CollisionData, ProximityData};
 use engine::entity::Entity;
-use engine::entity::component::PhysicsData;
+use engine::entity::component::{PhysicsData, EventComp};
 
 pub struct World<E: Entity> {
     pub entities: RefCell<HashMap<usize, RefCell<E>>>,
     pub registry: RefCell<Registry>,
 }
 
-impl<E: Entity> World<E> {
-}
+impl<E: Entity> World<E> {}
 
 impl<E: Entity> Default for World<E> {
     fn default() -> World<E> {
@@ -30,10 +31,73 @@ impl<E: Entity> Default for World<E> {
 }
 
 pub struct PhysicsWorld {
-    world: RefCell<CollisionWorld2<f32, RefCell<PhysicsData>>>,
+    world: RefCell<CollisionWorld2<f32, Rc<PhysicsData>>>,
+    registry: RefCell<Registry>,
     interactive: CollisionGroups,
     semi_interactive: CollisionGroups,
     non_interactive: CollisionGroups,
+}
+
+pub struct ProximityDispatcher<E: Entity> {
+    events: EventComp<E>,
+}
+
+impl<E: Entity> ProximityHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for ProximityDispatcher<E> {
+    fn handle_proximity(&mut self,
+                        co1: &CollisionObject2<f32, Rc<PhysicsData>>,
+                        co2: &CollisionObject2<f32, Rc<PhysicsData>>,
+                        old_proximity: Proximity,
+                        new_proximity: Proximity) {
+// The collision object with a None velocity is the coloured area.
+        self.events.dispatch_to(co1.data.entity_id,
+                                Event::Proximity(co2.data.entity_id,
+                                                 ProximityData {
+                                                     proximity: new_proximity,
+                                                     this_object: co1.data.clone(),
+                                                     other_object: co2.data.clone(),
+                                                 }));
+        self.events.dispatch_to(co2.data.entity_id,
+                                Event::Proximity(co1.data.entity_id,
+                                                 ProximityData {
+                                                     proximity: new_proximity,
+                                                     this_object: co2.data.clone(),
+                                                     other_object: co1.data.clone(),
+                                                 }));
+    }
+}
+
+pub struct CollisionDispatcher<E: Entity> {
+    events: EventComp<E>,
+    collector: Vec<Contact<Point2<f32>>>,
+}
+
+impl <E: Entity> ContactHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for CollisionDispatcher<E> {
+    fn handle_contact_started(&mut self,
+                        co1: &CollisionObject2<f32, Rc<PhysicsData>>,
+                        co2: &CollisionObject2<f32, Rc<PhysicsData>>,
+                        alg: &ContactAlgorithm2<f32>) {
+        alg.contacts(&mut self.collector);
+        self.events.dispatch_to(co1.data.entity_id,
+                                Event::Collision(co2.data.entity_id,
+                                                 CollisionData {
+                                                     contact: self.collector[0].clone(),
+                                                     this_object: co1.data.clone(),
+                                                     other_object: co2.data.clone(),
+                                                 }));
+        self.events.dispatch_to(co2.data.entity_id,
+                                Event::Collision(co1.data.entity_id,
+                                                 CollisionData {
+                                                     contact: self.collector[0].clone(),
+                                                     this_object: co2.data.clone(),
+                                                     other_object: co1.data.clone(),
+                                                 }));
+    }
+
+    fn handle_contact_stopped(&mut self,
+                        co1: &CollisionObject2<f32, Rc<PhysicsData>>,
+                        co2: &CollisionObject2<f32, Rc<PhysicsData>>) {
+// Nothing for now
+    }
 }
 
 pub enum PhysicsInteraction {
@@ -60,6 +124,7 @@ impl PhysicsWorld {
 
         PhysicsWorld {
             world: RefCell::new(CollisionWorld2::new(0.02, true)),
+            registry: RefCell::new(Registry::new()),
             interactive: int_groups,
             semi_interactive: semi_int_groups,
             non_interactive: non_int_groups,
@@ -67,11 +132,11 @@ impl PhysicsWorld {
     }
 
     pub fn add(&self,
-               id: usize,
                position: Vector2<f32>,
                shape: ShapeHandle2<f32>,
                interactivity: PhysicsInteraction,
-               data: RefCell<PhysicsData>) {
+               data: Rc<PhysicsData>)
+               -> usize {
         let (group, query) = match interactivity {
             PhysicsInteraction::Interactive => {
                 (self.interactive, GeometricQueryType::Contacts(0.0))
@@ -83,16 +148,19 @@ impl PhysicsWorld {
                 (self.non_interactive, GeometricQueryType::Proximity(0.0))
             }
         };
+        let id = self.registry.borrow_mut().get_id();
         self.world.borrow_mut().add(id,
                                     Isometry2::new(position, nalgebra::zero()),
                                     shape,
                                     group,
                                     query,
                                     data);
+        id
     }
 
     pub fn remove(&self, id: usize) {
         self.world.borrow_mut().deferred_remove(id);
+        self.registry.borrow_mut().return_id(id);
     }
 
     pub fn get_pos(&self, id: usize) -> Option<Isometry2<f32>> {
@@ -203,7 +271,7 @@ impl<E: Entity> Scene<E> {
     pub fn new() -> Scene<E> {
         Scene {
             world: Rc::new(Default::default()),
-            physics: Rc::new(PhysicsWorld::new())
+            physics: Rc::new(PhysicsWorld::new()),
         }
     }
 
@@ -216,7 +284,7 @@ impl<E: Entity> Scene<E> {
     }
 
     pub fn update(&self, dt: f32) {
-        //self.world.deref().update(dt);
-        //self.physics.deref().update();
+        // self.world.deref().update(dt);
+        // self.physics.deref().update();
     }
 }
