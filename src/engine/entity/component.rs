@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::ops::Deref;
 use nalgebra::{Vector2, Isometry2, Translation};
 use ncollide::shape::ShapeHandle2;
+use ncollide::world::GeometricQueryType;
 
 use engine::Engine;
 use engine::scene;
@@ -10,6 +11,62 @@ use engine::scene::{EntityAccessor, Scene, PhysicsWorld, PhysicsInteraction};
 use engine::entity::{Entity, RenderInfo};
 use engine::event::{Event, Handler as EventHandler, SysEvent};
 use engine::graphics::SpriteAttrs;
+
+/// Combined physics and graphics component,
+/// synchronizes their motion
+pub struct PGComp {
+    pub velocity: Vector2<f32>,
+    pub acceleration: Vector2<f32>,
+    physics: Vec<PhysicsComp>,
+    graphics: GraphicsComp,
+    world: Rc<PhysicsWorld>,
+    scaler: f32,
+}
+
+impl PGComp {
+    pub fn new(graphics: GraphicsComp, physics: Vec<PhysicsComp>, world: Rc<PhysicsWorld>) -> PGComp {
+        PGComp {
+            velocity: Vector2::new(0.0, 0.0),
+            acceleration: Vector2::new(0.0, 0.0),
+            graphics: graphics,
+            physics: physics,
+            scaler: world.scaler.clone(),
+            world: world,
+        }
+    }
+
+    pub fn get_render_info(&self) -> RenderInfo {
+        self.graphics.get_render_info()
+    }
+
+    pub fn translate(&mut self, delta: Vector2<f32>) {
+        for comp in self.physics.iter() {
+            comp.translate(delta);
+        }
+        self.graphics.translate(delta.x/self.scaler, delta.y/self.scaler);
+    }
+
+    pub fn get_pos(&self) -> (f32, f32) {
+        let (x, y) = self.graphics.get_pos();
+        (x * self.scaler, y * self.scaler)
+    }
+
+    pub fn set_pos(&mut self, pos: (f32, f32)) {
+        let (new_x, new_y) = (pos.0/self.scaler, pos.1/self.scaler);
+        let (old_x, old_y) = self.get_pos();
+        let (delta_x, delta_y) = ((new_x - old_x) * self.scaler, (new_y - old_y) * self.scaler);
+        let delta = Vector2::new(delta_x, delta_y);
+        for comp in self.physics.iter() {
+            comp.translate(delta);
+        }
+    }
+
+    pub fn update(&mut self, dt: f32) {
+        self.velocity += self.acceleration * dt;
+        let new_vel = self.velocity * dt;
+        self.translate(new_vel);
+    }
+}
 
 pub struct PhysicsComp {
     id: usize,
@@ -24,12 +81,15 @@ impl PhysicsComp {
                           position: Vector2<f32>,
                           shape: ShapeHandle2<f32>,
                           interactivity: PhysicsInteraction,
+                          query: GeometricQueryType<f32>,
                           scene: &Scene<E>)
                           -> PhysicsComp {
         let id = scene.physics.deref().add(position,
                                            shape,
                                            interactivity,
+                                           query,
                                            Rc::new(PhysicsData::new(entity_id, tag)));
+        println!("Creating new physics entity with id: {}", id);
         PhysicsComp {
             id: id,
             velocity: Vector2::new(0.0, 0.0),
@@ -59,6 +119,7 @@ impl PhysicsComp {
 
 impl Drop for PhysicsComp {
     fn drop(&mut self) {
+        println!("Removing physics entity with id: {}", self.id);
         self.world.deref().remove(self.id);
     }
 }
@@ -183,5 +244,11 @@ impl<E: Entity> EventComp<E> {
 
     pub fn create_entity(&self, f: Box<Fn(&Engine<E>) -> E>) {
         self.handler.deref().borrow_mut().enqueue_sys(SysEvent::Create(f));
+    }
+}
+
+impl<E: Entity> Drop for EventComp<E> {
+    fn drop(&mut self) {
+        self.handler.deref().borrow_mut().unsubscribe_all(self.id);
     }
 }

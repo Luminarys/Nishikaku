@@ -10,7 +10,7 @@ use ncollide::query::{Contact, Proximity};
 use nalgebra::{Vector2, Isometry2, Point2};
 use nalgebra;
 
-use engine::event::{Event, CollisionData, ProximityData};
+use engine::event::{Event, CollisionData, ProximityData, Handler as EventHandler, Dispatcher};
 use engine::entity::Entity;
 use engine::entity::component::{PhysicsData, EventComp};
 
@@ -36,67 +36,73 @@ pub struct PhysicsWorld {
     interactive: CollisionGroups,
     semi_interactive: CollisionGroups,
     non_interactive: CollisionGroups,
+    pub scaler: f32,
 }
 
-pub struct ProximityDispatcher<E: Entity> {
-    events: EventComp<E>,
+pub struct ProximityDispatcher {
+    pub dispatcher: Dispatcher,
 }
 
-impl<E: Entity> ProximityHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for ProximityDispatcher<E> {
+impl ProximityHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for ProximityDispatcher {
     fn handle_proximity(&mut self,
                         co1: &CollisionObject2<f32, Rc<PhysicsData>>,
                         co2: &CollisionObject2<f32, Rc<PhysicsData>>,
                         old_proximity: Proximity,
                         new_proximity: Proximity) {
-// The collision object with a None velocity is the coloured area.
-        self.events.dispatch_to(co1.data.entity_id,
-                                Event::Proximity(co2.data.entity_id,
-                                                 ProximityData {
-                                                     proximity: new_proximity,
-                                                     this_object: co1.data.clone(),
-                                                     other_object: co2.data.clone(),
-                                                 }));
-        self.events.dispatch_to(co2.data.entity_id,
-                                Event::Proximity(co1.data.entity_id,
-                                                 ProximityData {
-                                                     proximity: new_proximity,
-                                                     this_object: co2.data.clone(),
-                                                     other_object: co1.data.clone(),
-                                                 }));
+        self.dispatcher.dispatch(co1.data.entity_id,
+                                 Event::Proximity(co2.data.entity_id,
+                                                  ProximityData {
+                                                      proximity: new_proximity,
+                                                      this_object: co1.data.clone(),
+                                                      other_object: co2.data.clone(),
+                                                  }));
+        self.dispatcher.dispatch(co2.data.entity_id,
+                                 Event::Proximity(co1.data.entity_id,
+                                                  ProximityData {
+                                                      proximity: new_proximity,
+                                                      this_object: co2.data.clone(),
+                                                      other_object: co1.data.clone(),
+                                                  }));
     }
 }
 
-pub struct CollisionDispatcher<E: Entity> {
-    events: EventComp<E>,
-    collector: Vec<Contact<Point2<f32>>>,
+pub struct CollisionDispatcher {
+    pub dispatcher: Dispatcher,
+    pub collector: Vec<Contact<Point2<f32>>>,
 }
 
-impl <E: Entity> ContactHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for CollisionDispatcher<E> {
+impl ContactHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for CollisionDispatcher {
     fn handle_contact_started(&mut self,
-                        co1: &CollisionObject2<f32, Rc<PhysicsData>>,
-                        co2: &CollisionObject2<f32, Rc<PhysicsData>>,
-                        alg: &ContactAlgorithm2<f32>) {
+                              co1: &CollisionObject2<f32, Rc<PhysicsData>>,
+                              co2: &CollisionObject2<f32, Rc<PhysicsData>>,
+                              alg: &ContactAlgorithm2<f32>) {
         alg.contacts(&mut self.collector);
-        self.events.dispatch_to(co1.data.entity_id,
-                                Event::Collision(co2.data.entity_id,
-                                                 CollisionData {
-                                                     contact: self.collector[0].clone(),
-                                                     this_object: co1.data.clone(),
-                                                     other_object: co2.data.clone(),
-                                                 }));
-        self.events.dispatch_to(co2.data.entity_id,
-                                Event::Collision(co1.data.entity_id,
-                                                 CollisionData {
-                                                     contact: self.collector[0].clone(),
-                                                     this_object: co2.data.clone(),
-                                                     other_object: co1.data.clone(),
-                                                 }));
+        // In the speical entity id 0 case(special system handled event), don't dispatch to the
+        // other entity
+        if co2.data.entity_id != 0 {
+            self.dispatcher.dispatch(co1.data.entity_id,
+                                     Event::Collision(co2.data.entity_id,
+                                                      CollisionData {
+                                                          contact: self.collector[0].clone(),
+                                                          this_object: co1.data.clone(),
+                                                          other_object: co2.data.clone(),
+                                                      }));
+        }
+        if co1.data.entity_id != 0 {
+            self.dispatcher.dispatch(co2.data.entity_id,
+                                     Event::Collision(co1.data.entity_id,
+                                                      CollisionData {
+                                                          contact: self.collector[0].clone(),
+                                                          this_object: co2.data.clone(),
+                                                          other_object: co1.data.clone(),
+                                                      }));
+        }
     }
 
     fn handle_contact_stopped(&mut self,
-                        co1: &CollisionObject2<f32, Rc<PhysicsData>>,
-                        co2: &CollisionObject2<f32, Rc<PhysicsData>>) {
-// Nothing for now
+                              co1: &CollisionObject2<f32, Rc<PhysicsData>>,
+                              co2: &CollisionObject2<f32, Rc<PhysicsData>>) {
+        // Nothing for now
     }
 }
 
@@ -110,7 +116,7 @@ pub enum PhysicsInteraction {
 }
 
 impl PhysicsWorld {
-    pub fn new() -> PhysicsWorld {
+    pub fn new(scaler: f32) -> PhysicsWorld {
         let mut int_groups = CollisionGroups::new();
         int_groups.set_membership(&[1]);
 
@@ -122,31 +128,45 @@ impl PhysicsWorld {
         non_int_groups.set_membership(&[3]);
         non_int_groups.set_whitelist(&[2]);
 
+        let world = CollisionWorld2::new(0.02, true);
+
         PhysicsWorld {
-            world: RefCell::new(CollisionWorld2::new(0.02, true)),
+            world: RefCell::new(world),
             registry: RefCell::new(Registry::new()),
             interactive: int_groups,
             semi_interactive: semi_int_groups,
             non_interactive: non_int_groups,
+            scaler: scaler,
         }
+    }
+
+    pub fn register_handlers(&self, q: Rc<RefCell<Vec<(usize, Event)>>>) {
+        let prox = ProximityDispatcher { dispatcher: Dispatcher { queue: q.clone() } };
+
+        let contact = CollisionDispatcher {
+            dispatcher: Dispatcher { queue: q.clone() },
+            collector: Default::default(),
+        };
+
+        self.world.borrow_mut().register_proximity_handler("Proximity", prox);
+        self.world.borrow_mut().register_contact_handler("Contact", contact);
+    }
+
+    pub fn update(&self) {
+        self.world.borrow_mut().update();
     }
 
     pub fn add(&self,
                position: Vector2<f32>,
                shape: ShapeHandle2<f32>,
                interactivity: PhysicsInteraction,
+               query: GeometricQueryType<f32>,
                data: Rc<PhysicsData>)
                -> usize {
-        let (group, query) = match interactivity {
-            PhysicsInteraction::Interactive => {
-                (self.interactive, GeometricQueryType::Contacts(0.0))
-            }
-            PhysicsInteraction::SemiInteractive => {
-                (self.semi_interactive, GeometricQueryType::Proximity(0.0))
-            }
-            PhysicsInteraction::NonInteractive => {
-                (self.non_interactive, GeometricQueryType::Proximity(0.0))
-            }
+        let group = match interactivity {
+            PhysicsInteraction::Interactive => self.interactive,
+            PhysicsInteraction::SemiInteractive => self.semi_interactive,
+            PhysicsInteraction::NonInteractive => self.non_interactive,
         };
         let id = self.registry.borrow_mut().get_id();
         self.world.borrow_mut().add(id,
@@ -155,6 +175,7 @@ impl PhysicsWorld {
                                     group,
                                     query,
                                     data);
+        self.world.borrow_mut().update();
         id
     }
 
@@ -268,10 +289,10 @@ pub struct Scene<E: Entity> {
 }
 
 impl<E: Entity> Scene<E> {
-    pub fn new() -> Scene<E> {
+    pub fn new(scaler: f32) -> Scene<E> {
         Scene {
             world: Rc::new(Default::default()),
-            physics: Rc::new(PhysicsWorld::new()),
+            physics: Rc::new(PhysicsWorld::new(scaler)),
         }
     }
 

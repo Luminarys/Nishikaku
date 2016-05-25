@@ -9,8 +9,17 @@ use std::thread;
 use std::time::Duration;
 use std::ops::Deref;
 use std::collections::HashMap;
+use std::mem;
 use glium::glutin;
+use ncollide::shape::{Plane, Cuboid, ShapeHandle2};
+use ncollide::query::Proximity;
+use nalgebra::{Vector2, Isometry2};
+use ncollide::world::GeometricQueryType;
+use nalgebra as na;
 use clock_ticks;
+
+use self::entity::component::PhysicsData;
+use self::scene::{EntityAccessor, Scene, PhysicsWorld, PhysicsInteraction};
 
 pub struct Engine<'a, E: entity::Entity> {
     pub events: Rc<RefCell<event::Handler<E>>>,
@@ -20,9 +29,42 @@ pub struct Engine<'a, E: entity::Entity> {
 
 impl<'a, E: entity::Entity> Engine<'a, E> {
     pub fn new() -> Engine<'a, E> {
+        // Default physics dimensions are 400x400 - a square which has a half length 200 units away
+        // from the origin
+        let scene = scene::Scene::new(200.0);
+
+        let plane_left   = ShapeHandle2::new(Plane::new(Vector2::x()));
+        let plane_bottom = ShapeHandle2::new(Plane::new(Vector2::y()));
+        let plane_right  = ShapeHandle2::new(Plane::new(-Vector2::x()));
+        let plane_top    = ShapeHandle2::new(Plane::new(-Vector2::y()));
+
+        // Positions of the planes.
+        let planes_pos = [
+            Isometry2::new(Vector2::new(-200.0, 0.0), na::zero()),
+            Isometry2::new(Vector2::new(0.0, -200.0), na::zero()),
+            Isometry2::new(Vector2::new(200.0, 0.0),  na::zero()),
+            Isometry2::new(Vector2::new(0.0,  200.0), na::zero())
+        ];
+
+        let plane_data = Rc::new(PhysicsData::new(0, String::from("view_border")));
+
+        scene.physics.add(Vector2::new(-200.0, 0.0), plane_left, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
+        scene.physics.add(Vector2::new(0.0, -200.0), plane_bottom, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
+        scene.physics.add(Vector2::new(200.0, 0.0), plane_right, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
+        scene.physics.add(Vector2::new(0.0, 200.0), plane_top, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
+
+        let rect = ShapeHandle2::new(Cuboid::new(Vector2::new(200.0, 200.0)));
+        let rect_data = Rc::new(PhysicsData::new(0, String::from("view_area")));
+        scene.physics.add(Vector2::new(0.0, 0.0), rect, PhysicsInteraction::Interactive, GeometricQueryType::Proximity(0.2), rect_data);
+
+        let eh = event::Handler::new();
+        let queue = eh.queue.clone();
+        let events = Rc::new(RefCell::new(eh));
+        scene.physics.register_handlers(queue);
+
         Engine {
-            events: Rc::new(RefCell::new(event::Handler::new())),
-            scene: scene::Scene::new(),
+            events: events,
+            scene: scene,
             graphics: graphics::Graphics::new(),
         }
     }
@@ -136,8 +178,13 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
                 self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.16666667f32));
                 let ev_queue = { self.events.deref().borrow_mut().flush() };
                 for (id, event) in ev_queue {
-                    self.scene.dispatch(id, event);
+                    if id != 0 {
+                        self.scene.dispatch(id, event);
+                    } else {
+                        self.handle_internal_event(event);
+                    }
                 }
+                self.scene.physics.update();
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
 
@@ -149,6 +196,33 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
                 }
             }
             thread::sleep(Duration::from_millis(((FRAME_DELAY_NANOSECS - accumulator) / 1000000) as u64));
+        }
+    }
+
+    fn handle_internal_event(&mut self, event: event::Event) {
+        match event {
+            event::Event::Proximity(id, data) => {
+                match &data.this_object.tag[..] {
+                    "view_area" => {
+                        match data.proximity {
+                            Proximity::Intersecting => {
+                                self.events.deref().borrow_mut().enqueue_specific(id, event::Event::Entering);
+                            }
+                            Proximity::Disjoint => {
+                                self.events.deref().borrow_mut().enqueue_specific(id, event::Event::Exiting);
+                            }
+                            _ => { }
+                        }
+                    }
+                    "view_border" => {
+                        let mut new_data = data.clone();
+                        mem::swap(&mut new_data.this_object, &mut new_data.other_object);
+                        self.events.deref().borrow_mut().enqueue_specific(id, event::Event::Proximity(id, new_data));
+                    }
+                    _ => { }
+                }
+            }
+            _ => { }
         }
     }
 }

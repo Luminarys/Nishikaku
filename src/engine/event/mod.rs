@@ -6,6 +6,7 @@ use std::mem;
 use ncollide::query::{Contact, Proximity};
 use nalgebra::{Point2};
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use engine::Engine;
 use engine::entity::Entity;
@@ -34,6 +35,8 @@ pub enum Event {
     MouseMove((i32, i32)),
     MouseInput(InputState, MouseButton),
     Spawn,
+    Entering,
+    Exiting,
 }
 
 #[derive(Clone)]
@@ -65,6 +68,8 @@ impl Hash for Event {
             Event::MouseInput(_, _) => state.write_u8(4),
             Event::Spawn => state.write_u8(5),
             Event::Proximity(_, _) => state.write_u8(6),
+            Event::Entering => state.write_u8(7),
+            Event::Exiting=> state.write_u8(8),
         }
     }
 }
@@ -82,15 +87,27 @@ impl PartialEq for Event {
             (&Event::MouseMove(_), &Event::MouseMove(_)) => true,
             (&Event::MouseInput(_, _), &Event::MouseInput(_, _)) => true,
             (&Event::Spawn, &Event::Spawn) => true,
+            (&Event::Entering, &Event::Entering) => true,
+            (&Event::Exiting, &Event::Exiting) => true,
             _ => false,
         }
+    }
+}
+
+pub struct Dispatcher {
+    pub queue: Rc<RefCell<Vec<(usize, Event)>>>,
+}
+
+impl Dispatcher {
+    pub fn dispatch(&self, id: usize, e: Event) {
+        self.queue.borrow_mut().push((id, e));
     }
 }
 
 #[derive(Default)]
 pub struct Handler<E: Entity> {
     subscriptions: HashMap<Event, HashSet<usize>>,
-    queue: Vec<(usize, Event)>,
+    pub queue: Rc<RefCell<Vec<(usize, Event)>>>,
     sysqueue: Vec<SysEvent<E>>
 }
 
@@ -98,7 +115,7 @@ impl <E: Entity>Handler<E> {
     pub fn new() -> Handler<E> {
         Handler {
             sysqueue: vec![],
-            queue: vec![],
+            queue: Rc::new(RefCell::new(vec![])),
             subscriptions: Default::default()
         }
     }
@@ -119,11 +136,17 @@ impl <E: Entity>Handler<E> {
         }
     }
 
+    pub fn unsubscribe_all(&mut self, id: usize) {
+        for (_, subs) in self.subscriptions.iter_mut() {
+            subs.remove(&id);
+        }
+    }
+
     pub fn enqueue_all(&mut self, event: Event) {
         match self.subscriptions.get(&event) {
             Some(subscribers) => {
                 for sub in subscribers {
-                    self.queue.push((sub.clone(), event.clone()));
+                    self.queue.borrow_mut().push((sub.clone(), event.clone()));
                 };
             },
             None => { },
@@ -131,7 +154,7 @@ impl <E: Entity>Handler<E> {
     }
 
     pub fn enqueue_specific(&mut self, id: usize, event: Event) {
-        self.queue.push((id, event));
+        self.queue.borrow_mut().push((id, event));
     }
 
     pub fn enqueue_sys(&mut self, event: SysEvent<E>) {
@@ -139,7 +162,7 @@ impl <E: Entity>Handler<E> {
     }
 
     pub fn flush(&mut self) -> Vec<(usize, Event)> {
-        mem::replace(&mut self.queue, Default::default())
+        mem::replace(&mut self.queue.borrow_mut(), Default::default())
     }
 
     pub fn flush_sys(&mut self) -> Vec<SysEvent<E>> {
