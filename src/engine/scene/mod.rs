@@ -19,7 +19,11 @@ pub struct World<E: Entity> {
     pub registry: RefCell<Registry>,
 }
 
-impl<E: Entity> World<E> {}
+impl<E: Entity> World<E> {
+    pub fn update(&self) {
+        self.registry.borrow_mut().reclaim();
+    }
+}
 
 impl<E: Entity> Default for World<E> {
     fn default() -> World<E> {
@@ -154,6 +158,7 @@ impl PhysicsWorld {
 
     pub fn update(&self) {
         self.world.borrow_mut().update();
+        self.registry.borrow_mut().reclaim();
     }
 
     pub fn add(&self,
@@ -254,6 +259,7 @@ impl<E: Entity> World<E> {
 pub struct Registry {
     counter: usize,
     free: Vec<usize>,
+    reclaimed: Vec<usize>,
 }
 
 impl Registry {
@@ -261,6 +267,7 @@ impl Registry {
         Registry {
             counter: 1,
             free: vec![],
+            reclaimed: vec![],
         }
     }
 
@@ -275,11 +282,11 @@ impl Registry {
     }
 
     pub fn return_id(&mut self, id: usize) {
-        if id == self.counter - 1 {
-            self.counter -= 1;
-        } else {
-            self.free.push(id);
-        }
+        self.reclaimed.push(id);
+    }
+
+    pub fn reclaim(&mut self) {
+        self.free.append(&mut self.reclaimed);
     }
 }
 
@@ -304,8 +311,8 @@ impl<E: Entity> Scene<E> {
         };
     }
 
-    pub fn update(&self, dt: f32) {
-        // self.world.deref().update(dt);
-        // self.physics.deref().update();
+    pub fn update(&self) {
+        self.world.deref().update();
+        self.physics.deref().update();
     }
 }

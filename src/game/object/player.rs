@@ -84,7 +84,8 @@ impl Bullet {
                                  GeometricQueryType::Contacts(0.0),
                                  &engine.scene);
         g.translate(pos.0, pos.1);
-        let pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
+        let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
+        pg.velocity = Vector2::new(0.0, 20.0);
         Object::PlayerBullet(Bullet {
             pg: pg,
             ev: e,
@@ -96,7 +97,7 @@ impl Bullet {
         match e {
             Event::Spawn => {}
             Event::Update(t) => {
-                self.pg.translate(Vector2::new(0.0, 2.0));
+                self.pg.update(t);
             }
             Event::Exiting => {
                 self.ev.destroy_self();

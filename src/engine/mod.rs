@@ -184,7 +184,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
                         self.handle_internal_event(event);
                     }
                 }
-                self.scene.physics.update();
+                self.scene.update();
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
 
