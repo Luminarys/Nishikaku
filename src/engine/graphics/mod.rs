@@ -21,6 +21,7 @@ struct SpriteData<'a> {
     indices: IndexBuffer<u16>,
     texture: CompressedSrgbTexture2d,
     draw_params: DrawParameters<'a>,
+    last_amount: usize,
 }
 
 impl<'a> Graphics<'a> {
@@ -50,17 +51,30 @@ impl<'a> Graphics<'a> {
             vertex_attrs: vertex_attrs,
             texture: texture,
             draw_params: draw_params,
+            last_amount: 0,
         };
         self.sprites.insert(id, data);
     }
 
     pub fn set_sprite_attrs(&mut self, id: &usize, attrs: &[SpriteAttrs]) {
+        const removed_attrs: SpriteAttrs =
+            SpriteAttrs {
+                transform: [[1.0, 0.0, 0.0, 100.0],
+                            [0.0, 1.0, 0.0, 100.0],
+                            [0.0, 0.0, 1.0, 0.0],
+                            [0.0, 0.0, 0.0, 1.0]],
+            };
         match self.sprites.get_mut(id) {
             Some(s) => {
                 s.vertex_attrs.invalidate();
                 if attrs.len() > 0 {
                     s.vertex_attrs.slice_mut(0..(attrs.len()-1)).unwrap().write(attrs);
                 }
+                if attrs.len() < s.last_amount {
+                    // This might not be that efficient
+                    s.vertex_attrs.slice_mut(attrs.len()..s.last_amount).unwrap().write(&vec![removed_attrs; s.last_amount - attrs.len()]);
+                }
+                s.last_amount = attrs.len();
             }
             None => {}
         }
@@ -117,7 +131,7 @@ implement_vertex!(SpriteVertex, position, tex_coords);
 
 #[derive(Clone, Copy, Debug)]
 pub struct SpriteAttrs {
-    transform: [[f32; 4]; 4],
+    pub transform: [[f32; 4]; 4],
 }
 
 impl SpriteAttrs {
