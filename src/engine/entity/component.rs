@@ -21,6 +21,8 @@ pub struct PGComp {
     graphics: GraphicsComp,
     world: Rc<PhysicsWorld>,
     scaler: f32,
+    screen_locked: bool,
+    half_widths: (f32, f32)
 }
 
 impl PGComp {
@@ -32,7 +34,14 @@ impl PGComp {
             physics: physics,
             scaler: world.scaler.clone(),
             world: world,
+            screen_locked: false,
+            half_widths: (0.0, 0.0),
         }
+    }
+
+    pub fn screen_lock(&mut self, half_widths: (f32, f32)) {
+        self.screen_locked = true;
+        self.half_widths = (half_widths.0/self.scaler, half_widths.1/self.scaler);
     }
 
     pub fn get_render_info(&self) -> RenderInfo {
@@ -40,10 +49,10 @@ impl PGComp {
     }
 
     pub fn translate(&mut self, delta: Vector2<f32>) {
+        self.graphics.translate(delta.x/self.scaler, delta.y/self.scaler);
         for comp in self.physics.iter() {
             comp.translate(delta);
         }
-        self.graphics.translate(delta.x/self.scaler, delta.y/self.scaler);
     }
 
     pub fn get_pos(&self) -> (f32, f32) {
@@ -51,20 +60,47 @@ impl PGComp {
         (x * self.scaler, y * self.scaler)
     }
 
+    pub fn get_gfx_pos(&self) -> (f32, f32) {
+        self.graphics.get_pos()
+    }
+
     pub fn set_pos(&mut self, pos: (f32, f32)) {
         let (new_x, new_y) = (pos.0/self.scaler, pos.1/self.scaler);
         let (old_x, old_y) = self.get_pos();
         let (delta_x, delta_y) = ((new_x - old_x) * self.scaler, (new_y - old_y) * self.scaler);
         let delta = Vector2::new(delta_x, delta_y);
+        self.graphics.set_pos(new_x, new_y);
         for comp in self.physics.iter() {
             comp.translate(delta);
         }
     }
 
+    pub fn set_gfx_pos(&mut self, pos: (f32, f32)) {
+        let converted_pos = (pos.0 * self.scaler, pos.1 * self.scaler);
+        self.set_pos(converted_pos);
+    }
+
     pub fn update(&mut self, dt: f32) {
         self.velocity += self.acceleration * dt;
-        let new_vel = self.velocity * dt;
-        self.translate(new_vel);
+        let delta = self.velocity * dt;
+        self.translate(delta);
+
+        if self.screen_locked {
+            let new_pos = self.get_gfx_pos();
+            let mut actual_pos = new_pos;
+            if new_pos.0 > 1.0 - self.half_widths.0 {
+                actual_pos.0 = 1.0 - self.half_widths.0;
+            } else if new_pos.0 < -1.0 + self.half_widths.0 {
+                actual_pos.0 = -1.0 + self.half_widths.0;
+            }
+
+            if new_pos.1 > 1.0 - self.half_widths.1 {
+                actual_pos.1 = 1.0 - self.half_widths.1 ;
+            } else if new_pos.1 < -1.0 + self.half_widths.1 {
+                actual_pos.1 = -1.0 + self.half_widths.1;
+            }
+            self.set_gfx_pos(actual_pos);
+        }
     }
 }
 

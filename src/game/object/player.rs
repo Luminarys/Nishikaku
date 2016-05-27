@@ -1,5 +1,5 @@
 use nalgebra::{Isometry2, Vector2};
-use ncollide::shape::{Ball, ShapeHandle2};
+use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 use nalgebra;
 
@@ -11,7 +11,7 @@ use engine::entity::RenderInfo;
 use game::object::Object;
 
 pub struct Player {
-    gfx: GraphicsComp,
+    pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
 }
@@ -21,8 +21,19 @@ impl Player {
         let w = WorldComp::new(&engine.scene);
         let g = GraphicsComp::new(1);
         let e = EventComp::new(1, engine.events.clone());
+
+        let scaler = engine.scene.physics.scaler;
+        let p = PhysicsComp::new(w.id,
+                                 String::from("collision_box"),
+                                 Vector2::new(0.0, 0.0),
+                                 ShapeHandle2::new(Cuboid::new(Vector2::new(25.0, 50.0))),
+                                 PhysicsInteraction::SemiInteractive,
+                                 GeometricQueryType::Contacts(0.1),
+                                 &engine.scene);
+        let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
+        pg.screen_lock((25.0, 50.0));
         Object::Player(Player {
-            gfx: g,
+            pg: pg,
             ev: e,
             world: w,
         })
@@ -33,22 +44,24 @@ impl Player {
             Event::Spawn => {
                 self.ev.subscribe(Event::KeyInput(InputState::Pressed, 0));
             }
-            Event::Update(t) => {}
-            Event::KeyInput(InputState::Pressed, 111) => {
-                self.gfx.translate(0.0, 0.01);
+            Event::Update(t) => {
+                self.pg.update(t);
             }
-            Event::KeyInput(InputState::Pressed, 113) => {
-                self.gfx.translate(-0.01, 0.0);
+            Event::KeyInput(InputState::Pressed, 111) | Event::KeyInput(InputState::Released, 116) => {
+                self.pg.velocity += Vector2::new(0.0, 10.0);
             }
-            Event::KeyInput(InputState::Pressed, 114) => {
-                self.gfx.translate(0.01, 0.0);
+            Event::KeyInput(InputState::Pressed, 113) | Event::KeyInput(InputState::Released, 114) => {
+                self.pg.velocity += Vector2::new(-10.0, 0.0);
             }
-            Event::KeyInput(InputState::Pressed, 116) => {
-                self.gfx.translate(0.0, -0.01);
+            Event::KeyInput(InputState::Pressed, 114) | Event::KeyInput(InputState::Released, 113) => {
+                self.pg.velocity += Vector2::new(10.0, 0.0);
+            }
+            Event::KeyInput(InputState::Pressed, 116) | Event::KeyInput(InputState::Released, 111) => {
+                self.pg.velocity += Vector2::new(0.0, -10.0);
             }
             Event::KeyInput(InputState::Pressed, 52) => {
                 // Shoot bullet
-                let pos = self.gfx.get_pos();
+                let pos = self.pg.get_pos();
                 self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos)));
             }
             _ => {}
@@ -56,7 +69,7 @@ impl Player {
     }
 
     pub fn render(&self) -> Option<RenderInfo> {
-        Some(self.gfx.get_render_info())
+        Some(self.pg.get_render_info())
     }
 
     pub fn id(&self) -> usize {
@@ -78,12 +91,12 @@ impl Bullet {
         let scaler = engine.scene.physics.scaler;
         let p = PhysicsComp::new(w.id,
                                  String::from("bullet"),
-                                 Vector2::new(pos.0 * scaler, pos.1 * scaler),
+                                 Vector2::new(pos.0, pos.1),
                                  ShapeHandle2::new(Ball::new(50.0)),
                                  PhysicsInteraction::SemiInteractive,
                                  GeometricQueryType::Contacts(0.0),
                                  &engine.scene);
-        g.translate(pos.0, pos.1);
+        g.translate(pos.0/scaler, pos.1/scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
         pg.velocity = Vector2::new(0.0, 20.0);
         Object::PlayerBullet(Bullet {

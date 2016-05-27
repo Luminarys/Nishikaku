@@ -98,6 +98,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
 
         let mut fps_prev_clock = clock_ticks::precise_time_ms();
         let mut frames_drawn = 0;
+        let mut key_counter = [0 as u8; 255];
         loop {
             for (_, entity) in self.scene.world.deref().entities.borrow().deref() {
                 match entity.borrow().render() {
@@ -138,12 +139,16 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
                 match event {
                     glutin::Event::Closed => return,
                     glutin::Event::KeyboardInput(glutin::ElementState::Pressed, c, _) => {
-                        self.events
-                            .deref()
-                            .borrow_mut()
-                            .enqueue_all(event::Event::KeyInput(event::InputState::Pressed, c))
+                        if key_counter[c as usize] == 0 {
+                            key_counter[c as usize] = 1;
+                            self.events
+                                .deref()
+                                .borrow_mut()
+                                .enqueue_all(event::Event::KeyInput(event::InputState::Pressed, c))
+                        }
                     }
                     glutin::Event::KeyboardInput(glutin::ElementState::Released, c, _) => {
+                        key_counter[c as usize] = 0;
                         self.events
                             .deref()
                             .borrow_mut()
