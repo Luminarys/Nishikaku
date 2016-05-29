@@ -53,7 +53,7 @@ fn load_char(engine: &mut Engine<Object>) {
                                    tex_coords: [1.0, 0.0],
                                }]);
 
-    let texture = engine.graphics.load_asset("target/sakuya.png");
+    let texture = engine.graphics.load_asset("assets/sakuya.png");
     engine.graphics.new_sprite(1, vertex_shader_src, fragment_shader_src, vertex_buffer, texture, 1);
 }
 
@@ -103,6 +103,6 @@ fn load_bullet(engine: &mut Engine<Object>) {
                                    tex_coords: [1.0, 0.0],
                                }]);
 
-    let texture = engine.graphics.load_asset("target/bullet.png");
+    let texture = engine.graphics.load_asset("assets/bullet.png");
     engine.graphics.new_sprite(2, vertex_shader_src, fragment_shader_src, vertex_buffer, texture, 100);
 }
