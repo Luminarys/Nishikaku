@@ -3,10 +3,11 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::cmp::PartialEq;
 use std::mem;
-use ncollide::query::{Contact, Proximity};
-use nalgebra::{Point2};
 use std::rc::Rc;
 use std::cell::RefCell;
+use ncollide::query::{Contact, Proximity};
+use nalgebra::{Point2};
+use glutin::VirtualKeyCode;
 
 use engine::Engine;
 use engine::entity::Entity;
@@ -31,13 +32,16 @@ pub enum Event {
     Update(f32),
     Collision(usize, CollisionData),
     Proximity(usize, ProximityData),
-    KeyInput(InputState, u8),
+    KeyInput(InputState, KeyCode),
     MouseMove((i32, i32)),
     MouseInput(InputState, MouseButton),
     Spawn,
     Entering,
     Exiting,
+    Timer(usize),
 }
+
+pub type KeyCode = VirtualKeyCode;
 
 #[derive(Clone)]
 pub struct CollisionData {
@@ -70,6 +74,7 @@ impl Hash for Event {
             Event::Proximity(_, _) => state.write_u8(6),
             Event::Entering => state.write_u8(7),
             Event::Exiting=> state.write_u8(8),
+            Event::Timer(_)=> state.write_u8(9),
         }
     }
 }
@@ -89,6 +94,7 @@ impl PartialEq for Event {
             (&Event::Spawn, &Event::Spawn) => true,
             (&Event::Entering, &Event::Entering) => true,
             (&Event::Exiting, &Event::Exiting) => true,
+            (&Event::Timer(_), &Event::Timer(_)) => true,
             _ => false,
         }
     }

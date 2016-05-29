@@ -22,11 +22,14 @@ pub struct PGComp {
     world: Rc<PhysicsWorld>,
     scaler: f32,
     screen_locked: bool,
-    half_widths: (f32, f32)
+    half_widths: (f32, f32),
 }
 
 impl PGComp {
-    pub fn new(graphics: GraphicsComp, physics: Vec<PhysicsComp>, world: Rc<PhysicsWorld>) -> PGComp {
+    pub fn new(graphics: GraphicsComp,
+               physics: Vec<PhysicsComp>,
+               world: Rc<PhysicsWorld>)
+               -> PGComp {
         PGComp {
             velocity: Vector2::new(0.0, 0.0),
             acceleration: Vector2::new(0.0, 0.0),
@@ -41,7 +44,7 @@ impl PGComp {
 
     pub fn screen_lock(&mut self, half_widths: (f32, f32)) {
         self.screen_locked = true;
-        self.half_widths = (half_widths.0/self.scaler, half_widths.1/self.scaler);
+        self.half_widths = (half_widths.0 / self.scaler, half_widths.1 / self.scaler);
     }
 
     pub fn get_render_info(&self) -> RenderInfo {
@@ -49,7 +52,7 @@ impl PGComp {
     }
 
     pub fn translate(&mut self, delta: Vector2<f32>) {
-        self.graphics.translate(delta.x/self.scaler, delta.y/self.scaler);
+        self.graphics.translate(delta.x / self.scaler, delta.y / self.scaler);
         for comp in self.physics.iter() {
             comp.translate(delta);
         }
@@ -65,7 +68,7 @@ impl PGComp {
     }
 
     pub fn set_pos(&mut self, pos: (f32, f32)) {
-        let (new_x, new_y) = (pos.0/self.scaler, pos.1/self.scaler);
+        let (new_x, new_y) = (pos.0 / self.scaler, pos.1 / self.scaler);
         let (old_x, old_y) = self.get_pos();
         let (delta_x, delta_y) = ((new_x - old_x) * self.scaler, (new_y - old_y) * self.scaler);
         let delta = Vector2::new(delta_x, delta_y);
@@ -95,7 +98,7 @@ impl PGComp {
             }
 
             if new_pos.1 > 1.0 - self.half_widths.1 {
-                actual_pos.1 = 1.0 - self.half_widths.1 ;
+                actual_pos.1 = 1.0 - self.half_widths.1;
             } else if new_pos.1 < -1.0 + self.half_widths.1 {
                 actual_pos.1 = -1.0 + self.half_widths.1;
             }
@@ -125,7 +128,6 @@ impl PhysicsComp {
                                            interactivity,
                                            query,
                                            Rc::new(PhysicsData::new(entity_id, tag)));
-        println!("Creating new physics entity with id: {}", id);
         PhysicsComp {
             id: id,
             velocity: Vector2::new(0.0, 0.0),
@@ -155,7 +157,6 @@ impl PhysicsComp {
 
 impl Drop for PhysicsComp {
     fn drop(&mut self) {
-        println!("Removing physics entity with id: {}", self.id);
         self.world.deref().remove(self.id);
     }
 }
@@ -241,9 +242,38 @@ impl<E: Entity> Drop for WorldComp<E> {
     }
 }
 
+pub struct Timer {
+    pub id: usize,
+    pub repeat: bool,
+    amount: f32,
+    left: f32,
+}
+
+impl Timer {
+    pub fn new(id: usize, amount: f32, repeat: bool) -> Timer {
+        Timer {
+            id: id,
+            repeat: repeat,
+            left: amount,
+            amount: amount,
+        }
+    }
+
+    pub fn update(&mut self, time: f32) -> bool {
+        self.left -= time;
+        if self.repeat && self.left <= 0.0 {
+            self.left = self.amount + self.left;
+            true
+        } else {
+            self.left <= 0.0
+        }
+    }
+}
+
 pub struct EventComp<E: Entity> {
     id: usize,
     handler: Rc<RefCell<EventHandler<E>>>,
+    timers: Vec<Timer>,
 }
 
 impl<E: Entity> EventComp<E> {
@@ -251,11 +281,39 @@ impl<E: Entity> EventComp<E> {
         EventComp {
             id: id,
             handler: handler,
+            timers: vec![],
         }
     }
 
-    pub fn update(time: f32) {
-        // TODO: Update internal timers etc.
+    pub fn update(&mut self, time: f32) {
+        let mut expired = vec![];
+        for (i, timer) in self.timers.iter_mut().enumerate() {
+            if timer.update(time) {
+                // self.dispatch_to(self.id, Event::Timer(timer.id));
+                self.handler.deref().borrow_mut().enqueue_specific(self.id, Event::Timer(timer.id));
+                if !timer.repeat {
+                    expired.push(i);
+                }
+            }
+        }
+        for i in expired {
+            self.timers.remove(i);
+        }
+    }
+
+    pub fn set_timer(&mut self, id: usize, amount: f32) {
+        self.timers.push(Timer::new(id, amount, false));
+    }
+
+    pub fn set_repeating_timer(&mut self, id: usize, amount: f32) {
+        self.timers.push(Timer::new(id, amount, true));
+    }
+
+    pub fn remove_timer(&mut self, id: usize) {
+        match self.timers.iter().position(|timer| timer.id == id) {
+            Some(pos) => { self.timers.remove(pos); },
+            None => { }
+        }
     }
 
     pub fn subscribe(&self, event: Event) {

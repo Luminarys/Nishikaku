@@ -2,6 +2,7 @@ use nalgebra::{Isometry2, Vector2};
 use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 use nalgebra;
+use glutin::VirtualKeyCode;
 
 use engine;
 use engine::entity::component::*;
@@ -14,6 +15,7 @@ pub struct Player {
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
+    slowdown: f32,
 }
 
 impl Player {
@@ -36,36 +38,56 @@ impl Player {
             pg: pg,
             ev: e,
             world: w,
+            slowdown: 1.0,
         })
     }
 
     pub fn handle_event(&mut self, e: Event) {
         match e {
             Event::Spawn => {
-                self.ev.subscribe(Event::KeyInput(InputState::Pressed, 0));
+                self.ev.subscribe(Event::KeyInput(InputState::Pressed, VirtualKeyCode::A));
             }
             Event::Update(t) => {
                 self.pg.update(t);
+                self.ev.update(t);
             }
-            Event::KeyInput(InputState::Pressed, 111) | Event::KeyInput(InputState::Released, 116) => {
-                self.pg.velocity += Vector2::new(0.0, 10.0);
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Up) | Event::KeyInput(InputState::Released, VirtualKeyCode::Down) => {
+                self.pg.velocity += Vector2::new(0.0, 100.0) * self.slowdown;
             }
-            Event::KeyInput(InputState::Pressed, 113) | Event::KeyInput(InputState::Released, 114) => {
-                self.pg.velocity += Vector2::new(-10.0, 0.0);
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Left) | Event::KeyInput(InputState::Released, VirtualKeyCode::Right) => {
+                self.pg.velocity += Vector2::new(-100.0, 0.0) * self.slowdown;
             }
-            Event::KeyInput(InputState::Pressed, 114) | Event::KeyInput(InputState::Released, 113) => {
-                self.pg.velocity += Vector2::new(10.0, 0.0);
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Right) | Event::KeyInput(InputState::Released, VirtualKeyCode::Left) => {
+                self.pg.velocity += Vector2::new(100.0, 0.0) * self.slowdown;
             }
-            Event::KeyInput(InputState::Pressed, 116) | Event::KeyInput(InputState::Released, 111) => {
-                self.pg.velocity += Vector2::new(0.0, -10.0);
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Down) | Event::KeyInput(InputState::Released, VirtualKeyCode::Up) => {
+                self.pg.velocity += Vector2::new(0.0, -100.0) * self.slowdown;
             }
-            Event::KeyInput(InputState::Pressed, 52) => {
-                // Shoot bullet
-                let pos = self.pg.get_pos();
-                self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos)));
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::LShift) => {
+                self.slowdown = 0.5;
+                self.pg.velocity *= self.slowdown;
+            }
+            Event::KeyInput(InputState::Released, VirtualKeyCode::LShift) => {
+                self.pg.velocity *= 1.0/self.slowdown;
+                self.slowdown = 1.0;
+            }
+            Event::Timer(1) => {
+                self.shoot_bullet();
+            }
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Z) => {
+                self.shoot_bullet();
+                self.ev.set_repeating_timer(1, 0.167);
+            }
+            Event::KeyInput(InputState::Released, VirtualKeyCode::Z) => {
+                self.ev.remove_timer(1);
             }
             _ => {}
         };
+    }
+
+    fn shoot_bullet(&self) {
+        let pos = self.pg.get_pos();
+        self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos)));
     }
 
     pub fn render(&self) -> Option<RenderInfo> {
@@ -98,7 +120,7 @@ impl Bullet {
                                  &engine.scene);
         g.translate(pos.0/scaler, pos.1/scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
-        pg.velocity = Vector2::new(0.0, 20.0);
+        pg.velocity = Vector2::new(0.0, 200.0);
         Object::PlayerBullet(Bullet {
             pg: pg,
             ev: e,

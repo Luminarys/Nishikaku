@@ -33,29 +33,47 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
         // from the origin
         let scene = scene::Scene::new(200.0);
 
-        let plane_left   = ShapeHandle2::new(Plane::new(Vector2::x()));
+        let plane_left = ShapeHandle2::new(Plane::new(Vector2::x()));
         let plane_bottom = ShapeHandle2::new(Plane::new(Vector2::y()));
-        let plane_right  = ShapeHandle2::new(Plane::new(-Vector2::x()));
-        let plane_top    = ShapeHandle2::new(Plane::new(-Vector2::y()));
+        let plane_right = ShapeHandle2::new(Plane::new(-Vector2::x()));
+        let plane_top = ShapeHandle2::new(Plane::new(-Vector2::y()));
 
         // Positions of the planes.
-        let planes_pos = [
-            Isometry2::new(Vector2::new(-200.0, 0.0), na::zero()),
-            Isometry2::new(Vector2::new(0.0, -200.0), na::zero()),
-            Isometry2::new(Vector2::new(200.0, 0.0),  na::zero()),
-            Isometry2::new(Vector2::new(0.0,  200.0), na::zero())
-        ];
+        let planes_pos = [Isometry2::new(Vector2::new(-200.0, 0.0), na::zero()),
+                          Isometry2::new(Vector2::new(0.0, -200.0), na::zero()),
+                          Isometry2::new(Vector2::new(200.0, 0.0), na::zero()),
+                          Isometry2::new(Vector2::new(0.0, 200.0), na::zero())];
 
         let plane_data = Rc::new(PhysicsData::new(0, String::from("view_border")));
 
-        scene.physics.add(Vector2::new(-200.0, 0.0), plane_left, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
-        scene.physics.add(Vector2::new(0.0, -200.0), plane_bottom, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
-        scene.physics.add(Vector2::new(200.0, 0.0), plane_right, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
-        scene.physics.add(Vector2::new(0.0, 200.0), plane_top, PhysicsInteraction::Interactive, GeometricQueryType::Contacts(0.2), plane_data.clone());
+        scene.physics.add(Vector2::new(-200.0, 0.0),
+                          plane_left,
+                          PhysicsInteraction::Interactive,
+                          GeometricQueryType::Contacts(0.2),
+                          plane_data.clone());
+        scene.physics.add(Vector2::new(0.0, -200.0),
+                          plane_bottom,
+                          PhysicsInteraction::Interactive,
+                          GeometricQueryType::Contacts(0.2),
+                          plane_data.clone());
+        scene.physics.add(Vector2::new(200.0, 0.0),
+                          plane_right,
+                          PhysicsInteraction::Interactive,
+                          GeometricQueryType::Contacts(0.2),
+                          plane_data.clone());
+        scene.physics.add(Vector2::new(0.0, 200.0),
+                          plane_top,
+                          PhysicsInteraction::Interactive,
+                          GeometricQueryType::Contacts(0.2),
+                          plane_data.clone());
 
         let rect = ShapeHandle2::new(Cuboid::new(Vector2::new(200.0, 200.0)));
         let rect_data = Rc::new(PhysicsData::new(0, String::from("view_area")));
-        scene.physics.add(Vector2::new(0.0, 0.0), rect, PhysicsInteraction::Interactive, GeometricQueryType::Proximity(0.2), rect_data);
+        scene.physics.add(Vector2::new(0.0, 0.0),
+                          rect,
+                          PhysicsInteraction::Interactive,
+                          GeometricQueryType::Proximity(0.2),
+                          rect_data);
 
         let eh = event::Handler::new();
         let queue = eh.queue.clone();
@@ -109,7 +127,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
                             entity_rendering.get_mut(&info.sprite).unwrap().push(info.attrs);
                         };
                     }
-                    None => { }
+                    None => {}
                 }
             }
 
@@ -138,21 +156,26 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
             for event in self.graphics.get_window_events() {
                 match event {
                     glutin::Event::Closed => return,
-                    glutin::Event::KeyboardInput(glutin::ElementState::Pressed, c, _) => {
-                        if key_counter[c as usize] == 0 {
-                            key_counter[c as usize] = 1;
+                    glutin::Event::KeyboardInput(glutin::ElementState::Pressed, n, c) => {
+                        if key_counter[n as usize] == 0 && !c.is_none() {
+                            key_counter[n as usize] = 1;
                             self.events
                                 .deref()
                                 .borrow_mut()
-                                .enqueue_all(event::Event::KeyInput(event::InputState::Pressed, c))
+                                .enqueue_all(event::Event::KeyInput(event::InputState::Pressed,
+                                                                    c.unwrap()))
                         }
                     }
-                    glutin::Event::KeyboardInput(glutin::ElementState::Released, c, _) => {
-                        key_counter[c as usize] = 0;
-                        self.events
-                            .deref()
-                            .borrow_mut()
-                            .enqueue_all(event::Event::KeyInput(event::InputState::Released, c))
+                    glutin::Event::KeyboardInput(glutin::ElementState::Released, n, c) => {
+                        if !c.is_none() {
+                            key_counter[n as usize] = 0;
+                            self.events
+                                .deref()
+                                .borrow_mut()
+                                .enqueue_all(event::Event::KeyInput(event::InputState::Released,
+                                                                    c.unwrap()))
+
+                        }
                     }
                     glutin::Event::MouseMoved(x, y) => {
                         self.events
@@ -180,8 +203,10 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
 
             while accumulator >= FRAME_DELAY_NANOSECS {
                 // Update state here
-                self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.16666667f32));
-                let ev_queue = { self.events.deref().borrow_mut().flush() };
+                self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.016666667f32));
+                let ev_queue = {
+                    self.events.deref().borrow_mut().flush()
+                };
                 for (id, event) in ev_queue {
                     if id != 0 {
                         self.scene.dispatch(id, event);
@@ -193,7 +218,9 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
 
-            let sys_ev_queue = { self.events.deref().borrow_mut().flush_sys() };
+            let sys_ev_queue = {
+                self.events.deref().borrow_mut().flush_sys()
+            };
             for event in sys_ev_queue {
                 match event {
                     event::SysEvent::Create(f) => self.spawn(f),
@@ -211,23 +238,32 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
                     "view_area" => {
                         match data.proximity {
                             Proximity::Intersecting => {
-                                self.events.deref().borrow_mut().enqueue_specific(id, event::Event::Entering);
+                                self.events
+                                    .deref()
+                                    .borrow_mut()
+                                    .enqueue_specific(id, event::Event::Entering);
                             }
                             Proximity::Disjoint => {
-                                self.events.deref().borrow_mut().enqueue_specific(id, event::Event::Exiting);
+                                self.events
+                                    .deref()
+                                    .borrow_mut()
+                                    .enqueue_specific(id, event::Event::Exiting);
                             }
-                            _ => { }
+                            _ => {}
                         }
                     }
                     "view_border" => {
                         let mut new_data = data.clone();
                         mem::swap(&mut new_data.this_object, &mut new_data.other_object);
-                        self.events.deref().borrow_mut().enqueue_specific(id, event::Event::Proximity(id, new_data));
+                        self.events
+                            .deref()
+                            .borrow_mut()
+                            .enqueue_specific(id, event::Event::Proximity(id, new_data));
                     }
-                    _ => { }
+                    _ => {}
                 }
             }
-            _ => { }
+            _ => {}
         }
     }
 }
