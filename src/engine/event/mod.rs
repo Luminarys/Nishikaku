@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use ncollide::query::{Contact, Proximity};
 use nalgebra::Point2;
-use glutin::VirtualKeyCode;
+use glium::glutin::VirtualKeyCode;
 
 use engine::Engine;
 use engine::entity::Entity;
@@ -39,6 +39,7 @@ pub enum Event {
     Entering,
     Exiting,
     Timer(usize),
+    Render,
 }
 
 pub type KeyCode = VirtualKeyCode;
@@ -75,6 +76,7 @@ impl Hash for Event {
             Event::Entering => state.write_u8(7),
             Event::Exiting => state.write_u8(8),
             Event::Timer(_) => state.write_u8(9),
+            Event::Render => state.write_u8(10),
         }
     }
 }
@@ -94,6 +96,7 @@ impl PartialEq for Event {
             (&Event::Entering, &Event::Entering) => true,
             (&Event::Exiting, &Event::Exiting) => true,
             (&Event::Timer(_), &Event::Timer(_)) => true,
+            (&Event::Render, &Event::Render) => true,
             _ => false,
         }
     }

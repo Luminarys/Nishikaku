@@ -13,9 +13,9 @@ pub fn load_assets(engine: &mut Engine<Object>) {
 
 fn load_sound(_engine: &mut Engine<Object>) {
     println!("Loading songs!");
-    //let path = Path::new("/tmp/song.flac");
-    //engine.audio.borrow_mut().load(1, path);
-    //engine.audio.borrow().play(&1);
+    // let path = Path::new("/tmp/song.flac");
+    // engine.audio.borrow_mut().load(1, path);
+    // engine.audio.borrow().play(&1);
 }
 
 fn load_char(engine: &mut Engine<Object>) {
@@ -46,7 +46,8 @@ fn load_char(engine: &mut Engine<Object>) {
         }
     "#;
 
-    let vertex_buffer = engine.graphics.make_sprite_vbo(&[SpriteVertex {
+    let mut gfx = engine.graphics.borrow_mut();
+    let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
                                                               position: [-0.125, -0.25],
                                                               tex_coords: [0.0, 0.0],
                                                           },
@@ -63,8 +64,8 @@ fn load_char(engine: &mut Engine<Object>) {
                                                               tex_coords: [1.0, 0.0],
                                                           }]);
 
-    let texture = engine.graphics.load_asset("assets/sakuya.png");
-    engine.graphics.new_sprite(1,
+    let texture = gfx.load_asset("assets/sakuya.png");
+    gfx.new_sprite(1,
                                vertex_shader_src,
                                fragment_shader_src,
                                vertex_buffer,
@@ -100,28 +101,30 @@ fn load_bullet(engine: &mut Engine<Object>) {
         }
     "#;
 
-    let vertex_buffer = engine.graphics.make_sprite_vbo(&[SpriteVertex {
-                                                              position: [-0.125, -0.125],
-                                                              tex_coords: [0.0, 0.0],
-                                                          },
-                                                          SpriteVertex {
-                                                              position: [-0.125, 0.125],
-                                                              tex_coords: [0.0, 1.0],
-                                                          },
-                                                          SpriteVertex {
-                                                              position: [0.125, 0.125],
-                                                              tex_coords: [1.0, 1.0],
-                                                          },
-                                                          SpriteVertex {
-                                                              position: [0.125, -0.125],
-                                                              tex_coords: [1.0, 0.0],
-                                                          }]);
+    let mut gfx = engine.graphics.borrow_mut();
+    let size_dec = 10.0;
+    let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
+                                                  position: [-0.125 / size_dec, -0.125 / size_dec],
+                                                  tex_coords: [0.0, 0.0],
+                                              },
+                                              SpriteVertex {
+                                                  position: [-0.125 / size_dec, 0.125 / size_dec],
+                                                  tex_coords: [0.0, 1.0],
+                                              },
+                                              SpriteVertex {
+                                                  position: [0.125 / size_dec, 0.125 / size_dec],
+                                                  tex_coords: [1.0, 1.0],
+                                              },
+                                              SpriteVertex {
+                                                  position: [0.125 / size_dec, -0.125 / size_dec],
+                                                  tex_coords: [1.0, 0.0],
+                                              }]);
 
-    let texture = engine.graphics.load_asset("assets/bullet.png");
-    engine.graphics.new_sprite(2,
-                               vertex_shader_src,
-                               fragment_shader_src,
-                               vertex_buffer,
-                               texture,
-                               100);
+    let texture = gfx.load_asset("assets/bullet.png");
+    gfx.new_sprite(2,
+                   vertex_shader_src,
+                   fragment_shader_src,
+                   vertex_buffer,
+                   texture,
+                   300);
 }

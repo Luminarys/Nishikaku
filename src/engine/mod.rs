@@ -9,7 +9,6 @@ use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
 use std::ops::Deref;
-use std::collections::HashMap;
 use std::mem;
 use glium::glutin;
 use ncollide::shape::{Plane, Cuboid, ShapeHandle2};
@@ -21,15 +20,15 @@ use clock_ticks;
 use self::entity::component::PhysicsData;
 use self::scene::PhysicsInteraction;
 
-pub struct Engine<'a, E: entity::Entity> {
+pub struct Engine<E: entity::Entity> {
     pub events: Rc<RefCell<event::Handler<E>>>,
     pub scene: scene::Scene<E>,
-    pub graphics: graphics::Graphics<'a>,
+    pub graphics: Rc<RefCell<graphics::Graphics>>,
     pub audio: Rc<RefCell<audio::Audio>>,
 }
 
-impl<'a, E: entity::Entity> Engine<'a, E> {
-    pub fn new() -> Engine<'a, E> {
+impl<E: entity::Entity> Engine<E> {
+    pub fn new() -> Engine<E> {
         // Default physics dimensions are 400x400 - a square which has a half length 200 units away
         // from the origin
         let scene = scene::Scene::new(200.0);
@@ -78,7 +77,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
         Engine {
             events: events,
             scene: scene,
-            graphics: graphics::Graphics::new(),
+            graphics: Rc::new(RefCell::new(graphics::Graphics::new())),
             audio: Rc::new(RefCell::new(audio::Audio::new())),
         }
     }
@@ -87,6 +86,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
         let mut e = spawner(&self);
         let id = e.id();
         self.events.deref().borrow_mut().subscribe(id.clone(), event::Event::Update(0.0));
+        self.events.deref().borrow_mut().subscribe(id.clone(), event::Event::Render);
         e.handle_event(event::Event::Spawn);
         self.scene.world.deref().insert(id, e);
     }
@@ -98,7 +98,6 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
     pub fn run(&mut self) {
         let mut previous_clock = clock_ticks::precise_time_ns();
         let mut accumulator = 0;
-        let mut entity_rendering: HashMap<usize, Vec<_>> = HashMap::new();
 
         // Lol
         let glut_mouse_ev_to_local = |e| {
@@ -114,27 +113,19 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
         let mut frames_drawn = 0;
         let mut key_counter = [0 as u8; 255];
         loop {
-            for (_, entity) in self.scene.world.deref().entities.borrow().deref() {
-                match entity.borrow().render() {
-                    Some(info) => {
-                        if !entity_rendering.contains_key(&info.sprite) {
-                            entity_rendering.insert(info.sprite, vec![info.attrs]);
-                        } else {
-                            entity_rendering.get_mut(&info.sprite).unwrap().push(info.attrs);
-                        };
-                    }
-                    None => {}
+            self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
+            let ev_queue = {
+                self.events.deref().borrow_mut().flush()
+            };
+            for (id, event) in ev_queue {
+                if id != 0 {
+                    self.scene.dispatch(id, event);
+                } else {
+                    self.handle_internal_event(event);
                 }
             }
 
-            for (id, v) in entity_rendering.iter_mut() {
-                self.graphics.set_sprite_attrs(id, (&v[..]));
-            }
-
-            self.graphics.render();
-            for (_, v) in entity_rendering.iter_mut() {
-                v.clear();
-            }
+            self.graphics.borrow_mut().render();
 
             let now = clock_ticks::precise_time_ns();
             let fps_cur_clock = clock_ticks::precise_time_ms();
@@ -149,7 +140,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
             previous_clock = now;
             const FRAME_DELAY_NANOSECS: u64 = 16666667;
 
-            for event in self.graphics.get_window_events() {
+            for event in self.graphics.borrow_mut().get_window_events() {
                 match event {
                     glutin::Event::Closed => return,
                     glutin::Event::KeyboardInput(glutin::ElementState::Pressed, n, c) => {

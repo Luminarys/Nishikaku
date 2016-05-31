@@ -8,26 +8,34 @@ use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
 use glium::texture::compressed_srgb_texture2d::CompressedSrgbTexture2d;
 use glium;
 
-pub struct Graphics<'a> {
-    sprites: HashMap<usize, SpriteData<'a>>,
+use engine::scene::Registry;
+
+pub struct Graphics {
+    sprites: HashMap<usize, SpriteData>,
     display: GlutinFacade,
 }
 
-struct SpriteData<'a> {
+struct SpriteData {
     program: Program,
     vbo: VertexBuffer<SpriteVertex>,
     vertex_attrs: VertexBuffer<SpriteAttrs>,
     indices: IndexBuffer<u16>,
     texture: CompressedSrgbTexture2d,
-    draw_params: DrawParameters<'a>,
     last_amount: usize,
+    pub registry: Registry,
 }
 
-impl<'a> Graphics<'a> {
-    pub fn new() -> Graphics<'a> {
+impl Graphics {
+    pub fn new() -> Graphics {
         Graphics {
             sprites: Default::default(),
-            display: glium::glutin::WindowBuilder::new().build_glium().unwrap(),
+            display: glium::glutin::WindowBuilder::new()
+                         .with_dimensions(800, 800)
+                         .with_max_dimensions(800, 800)
+                         .with_min_dimensions(800, 800)
+                         .with_vsync()
+                         .build_glium()
+                         .unwrap(),
         }
     }
 
@@ -41,19 +49,20 @@ impl<'a> Graphics<'a> {
         let prog = Program::from_source(&self.display, vertex_shader, fragment_shader, None)
                        .unwrap();
         let vertex_attrs = VertexBuffer::empty_dynamic(&self.display, max_amount).unwrap();
-        let draw_params = Default::default();
         let indices = IndexBuffer::new(&self.display,
                                        glium::index::PrimitiveType::TriangleStrip,
                                        &[1 as u16, 2, 0, 3])
                           .unwrap();
+        let mut reg = Registry::new();
+        reg.no_reclaim();
         let data = SpriteData {
             program: prog,
             vbo: vbo,
             indices: indices,
             vertex_attrs: vertex_attrs,
             texture: texture,
-            draw_params: draw_params,
             last_amount: 0,
+            registry: reg,
         };
         self.sprites.insert(id, data);
     }
@@ -79,6 +88,35 @@ impl<'a> Graphics<'a> {
                      .write(&vec![REMOVED_ATTRS; s.last_amount - attrs.len()]);
                 }
                 s.last_amount = attrs.len();
+            }
+            None => {}
+        }
+    }
+
+    pub fn get_id(&mut self, sprite: &usize) -> Option<usize> {
+        match self.sprites.get_mut(sprite) {
+            Some(s) => {
+                Some(s.registry.get_id())
+            }
+            None => None,
+        }
+    }
+
+    pub fn return_id(&mut self, sprite: &usize, id: usize) {
+        match self.sprites.get_mut(sprite) {
+            Some(s) => {
+                s.registry.return_id(id)
+            }
+            None => { }
+        }
+    }
+
+    pub fn set_sprite_attr(&mut self, sprite: &usize, pos: usize, attrs: &SpriteAttrs) {
+        match self.sprites.get_mut(sprite) {
+            Some(s) => {
+                // Starts at 1 in registry
+                // println!("Slicing at {}", pos);
+                s.vertex_attrs.slice_mut((pos-1)..(pos)).unwrap().write(&[*attrs]);
             }
             None => {}
         }
@@ -114,7 +152,7 @@ impl<'a> Graphics<'a> {
                         &sprite_data.indices,
                         &sprite_data.program,
                         &uniforms,
-                        &sprite_data.draw_params)
+                        &Default::default())
                   .unwrap();
         }
         target.finish().unwrap();

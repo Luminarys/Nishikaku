@@ -260,6 +260,7 @@ pub struct Registry {
     counter: usize,
     free: Vec<usize>,
     reclaimed: Vec<usize>,
+    reclaimable: bool,
 }
 
 impl Registry {
@@ -268,7 +269,13 @@ impl Registry {
             counter: 1,
             free: vec![],
             reclaimed: vec![],
+            reclaimable: true,
         }
+    }
+
+    pub fn no_reclaim(&mut self) {
+        self.reclaim();
+        self.reclaimable = false;
     }
 
     pub fn get_id(&mut self) -> usize {
@@ -282,7 +289,11 @@ impl Registry {
     }
 
     pub fn return_id(&mut self, id: usize) {
-        self.reclaimed.push(id);
+        if self.reclaimable {
+            self.reclaimed.push(id);
+        } else {
+            self.free.push(id);
+        }
     }
 
     pub fn reclaim(&mut self) {

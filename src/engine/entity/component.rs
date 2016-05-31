@@ -10,7 +10,7 @@ use engine::scene;
 use engine::scene::{EntityAccessor, Scene, PhysicsWorld, PhysicsInteraction};
 use engine::entity::{Entity, RenderInfo};
 use engine::event::{Event, Handler as EventHandler, SysEvent};
-use engine::graphics::SpriteAttrs;
+use engine::graphics::{Graphics, SpriteAttrs};
 
 /// Combined physics and graphics component,
 /// synchronizes their motion
@@ -49,6 +49,10 @@ impl PGComp {
 
     pub fn get_render_info(&self) -> RenderInfo {
         self.graphics.get_render_info()
+    }
+
+    pub fn render(&self) {
+        self.graphics.render();
     }
 
     pub fn translate(&mut self, delta: Vector2<f32>) {
@@ -178,14 +182,19 @@ impl PhysicsData {
 
 pub struct GraphicsComp {
     sprite: usize,
+    id: usize,
     data: SpriteAttrs,
+    graphics: Rc<RefCell<Graphics>>
 }
 
 impl GraphicsComp {
-    pub fn new(sprite: usize) -> GraphicsComp {
+    pub fn new(graphics: Rc<RefCell<Graphics>>, sprite: usize) -> GraphicsComp {
+        let id = graphics.borrow_mut().get_id(&sprite).unwrap();
         GraphicsComp {
             sprite: sprite,
             data: Default::default(),
+            graphics: graphics,
+            id: id,
         }
     }
 
@@ -209,11 +218,21 @@ impl GraphicsComp {
         &self.data
     }
 
+    pub fn render(&self) {
+        self.graphics.borrow_mut().set_sprite_attr(&self.sprite, self.id, &self.data);
+    }
+
     pub fn get_render_info(&self) -> RenderInfo {
         RenderInfo {
             sprite: self.sprite,
             attrs: self.data,
         }
+    }
+}
+
+impl Drop for GraphicsComp {
+    fn drop(&mut self) {
+        self.graphics.borrow_mut().return_id(&self.sprite, self.id);
     }
 }
 

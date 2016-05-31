@@ -1,7 +1,7 @@
 use nalgebra::Vector2;
 use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
-use glutin::VirtualKeyCode;
+use glium::glutin::VirtualKeyCode;
 
 use engine;
 use engine::entity::component::*;
@@ -20,7 +20,7 @@ pub struct Player {
 impl Player {
     pub fn new(engine: &engine::Engine<Object>) -> Object {
         let w = WorldComp::new(&engine.scene);
-        let g = GraphicsComp::new(1);
+        let g = GraphicsComp::new(engine.graphics.clone(), 1);
         let e = EventComp::new(1, engine.events.clone());
 
         let p = PhysicsComp::new(w.id,
@@ -49,6 +49,9 @@ impl Player {
             Event::Update(t) => {
                 self.pg.update(t);
                 self.ev.update(t);
+            }
+            Event::Render => {
+                self.pg.render();
             }
             Event::KeyInput(InputState::Pressed, VirtualKeyCode::Up) |
             Event::KeyInput(InputState::Released, VirtualKeyCode::Down) => {
@@ -79,7 +82,7 @@ impl Player {
             }
             Event::KeyInput(InputState::Pressed, VirtualKeyCode::Z) => {
                 self.shoot_bullet();
-                self.ev.set_repeating_timer(1, 0.167);
+                self.ev.set_repeating_timer(1, 0.0167);
             }
             Event::KeyInput(InputState::Released, VirtualKeyCode::Z) => {
                 self.ev.remove_timer(1);
@@ -110,14 +113,14 @@ pub struct Bullet {
 
 impl Bullet {
     pub fn new_at_pos(engine: &engine::Engine<Object>, pos: (f32, f32)) -> Object {
-        let mut g = GraphicsComp::new(2);
+        let mut g = GraphicsComp::new(engine.graphics.clone(), 2);
         let w = WorldComp::new(&engine.scene);
         let e = EventComp::new(w.id, engine.events.clone());
         let scaler = engine.scene.physics.scaler;
         let p = PhysicsComp::new(w.id,
                                  String::from("bullet"),
                                  Vector2::new(pos.0, pos.1),
-                                 ShapeHandle2::new(Ball::new(50.0)),
+                                 ShapeHandle2::new(Ball::new(5.0)),
                                  PhysicsInteraction::SemiInteractive,
                                  GeometricQueryType::Contacts(0.0),
                                  &engine.scene);
@@ -139,6 +142,9 @@ impl Bullet {
             }
             Event::Exiting => {
                 self.ev.destroy_self();
+            }
+            Event::Render => {
+                self.pg.render();
             }
             _ => {}
         };
