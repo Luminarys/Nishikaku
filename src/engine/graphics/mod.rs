@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use glium::program::Program;
-use glium::uniforms::UniformsStorage;
 use glium::VertexBuffer;
 use glium::index::IndexBuffer;
 use glium::draw_parameters::DrawParameters;
@@ -33,17 +32,20 @@ impl<'a> Graphics<'a> {
     }
 
     pub fn new_sprite(&mut self,
-                  id: usize,
-                  vertex_shader: &str,
-                  fragment_shader: &str,
-                  vbo: VertexBuffer<SpriteVertex>,
-                  texture: CompressedSrgbTexture2d,
-                  max_amount: usize) {
+                      id: usize,
+                      vertex_shader: &str,
+                      fragment_shader: &str,
+                      vbo: VertexBuffer<SpriteVertex>,
+                      texture: CompressedSrgbTexture2d,
+                      max_amount: usize) {
         let prog = Program::from_source(&self.display, vertex_shader, fragment_shader, None)
                        .unwrap();
         let vertex_attrs = VertexBuffer::empty_dynamic(&self.display, max_amount).unwrap();
         let draw_params = Default::default();
-        let indices = IndexBuffer::new(&self.display, glium::index::PrimitiveType::TriangleStrip, &[1 as u16, 2, 0, 3]).unwrap();
+        let indices = IndexBuffer::new(&self.display,
+                                       glium::index::PrimitiveType::TriangleStrip,
+                                       &[1 as u16, 2, 0, 3])
+                          .unwrap();
         let data = SpriteData {
             program: prog,
             vbo: vbo,
@@ -57,22 +59,24 @@ impl<'a> Graphics<'a> {
     }
 
     pub fn set_sprite_attrs(&mut self, id: &usize, attrs: &[SpriteAttrs]) {
-        const removed_attrs: SpriteAttrs =
-            SpriteAttrs {
-                transform: [[1.0, 0.0, 0.0, 100.0],
-                            [0.0, 1.0, 0.0, 100.0],
-                            [0.0, 0.0, 1.0, 0.0],
-                            [0.0, 0.0, 0.0, 1.0]],
-            };
+        const REMOVED_ATTRS: SpriteAttrs = SpriteAttrs {
+            transform: [[1.0, 0.0, 0.0, 100.0],
+                        [0.0, 1.0, 0.0, 100.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0]],
+        };
         match self.sprites.get_mut(id) {
             Some(s) => {
                 s.vertex_attrs.invalidate();
                 if attrs.len() > 0 {
-                    s.vertex_attrs.slice_mut(0..(attrs.len()-1)).unwrap().write(attrs);
+                    s.vertex_attrs.slice_mut(0..(attrs.len() - 1)).unwrap().write(attrs);
                 }
                 if attrs.len() < s.last_amount {
                     // This might not be that efficient
-                    s.vertex_attrs.slice_mut(attrs.len()..s.last_amount).unwrap().write(&vec![removed_attrs; s.last_amount - attrs.len()]);
+                    s.vertex_attrs
+                     .slice_mut(attrs.len()..s.last_amount)
+                     .unwrap()
+                     .write(&vec![REMOVED_ATTRS; s.last_amount - attrs.len()]);
                 }
                 s.last_amount = attrs.len();
             }

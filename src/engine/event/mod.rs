@@ -6,7 +6,7 @@ use std::mem;
 use std::rc::Rc;
 use std::cell::RefCell;
 use ncollide::query::{Contact, Proximity};
-use nalgebra::{Point2};
+use nalgebra::Point2;
 use glutin::VirtualKeyCode;
 
 use engine::Engine;
@@ -73,14 +73,13 @@ impl Hash for Event {
             Event::Spawn => state.write_u8(5),
             Event::Proximity(_, _) => state.write_u8(6),
             Event::Entering => state.write_u8(7),
-            Event::Exiting=> state.write_u8(8),
-            Event::Timer(_)=> state.write_u8(9),
+            Event::Exiting => state.write_u8(8),
+            Event::Timer(_) => state.write_u8(9),
         }
     }
 }
 
-impl Eq for Event {
-}
+impl Eq for Event {}
 
 impl PartialEq for Event {
     fn eq(&self, other: &Event) -> bool {
@@ -114,15 +113,15 @@ impl Dispatcher {
 pub struct Handler<E: Entity> {
     subscriptions: HashMap<Event, HashSet<usize>>,
     pub queue: Rc<RefCell<Vec<(usize, Event)>>>,
-    sysqueue: Vec<SysEvent<E>>
+    sysqueue: Vec<SysEvent<E>>,
 }
 
-impl <E: Entity>Handler<E> {
+impl<E: Entity> Handler<E> {
     pub fn new() -> Handler<E> {
         Handler {
             sysqueue: vec![],
             queue: Rc::new(RefCell::new(vec![])),
-            subscriptions: Default::default()
+            subscriptions: Default::default(),
         }
     }
 
@@ -137,8 +136,8 @@ impl <E: Entity>Handler<E> {
         match self.subscriptions.get_mut(&event) {
             Some(subscribers) => {
                 subscribers.remove(&id);
-            },
-            None => { },
+            }
+            None => {}
         }
     }
 
@@ -153,9 +152,9 @@ impl <E: Entity>Handler<E> {
             Some(subscribers) => {
                 for sub in subscribers {
                     self.queue.borrow_mut().push((sub.clone(), event.clone()));
-                };
-            },
-            None => { },
+                }
+            }
+            None => {}
         }
     }
 

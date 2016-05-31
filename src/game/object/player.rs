@@ -1,13 +1,12 @@
-use nalgebra::{Isometry2, Vector2};
+use nalgebra::Vector2;
 use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
-use nalgebra;
 use glutin::VirtualKeyCode;
 
 use engine;
 use engine::entity::component::*;
 use engine::event::{Event, InputState};
-use engine::scene::{PhysicsInteraction};
+use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
 
@@ -24,7 +23,6 @@ impl Player {
         let g = GraphicsComp::new(1);
         let e = EventComp::new(1, engine.events.clone());
 
-        let scaler = engine.scene.physics.scaler;
         let p = PhysicsComp::new(w.id,
                                  String::from("collision_box"),
                                  Vector2::new(0.0, 0.0),
@@ -46,21 +44,26 @@ impl Player {
         match e {
             Event::Spawn => {
                 self.ev.subscribe(Event::KeyInput(InputState::Pressed, VirtualKeyCode::A));
+                let _ = self.world.get_entity(&100);
             }
             Event::Update(t) => {
                 self.pg.update(t);
                 self.ev.update(t);
             }
-            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Up) | Event::KeyInput(InputState::Released, VirtualKeyCode::Down) => {
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Up) |
+            Event::KeyInput(InputState::Released, VirtualKeyCode::Down) => {
                 self.pg.velocity += Vector2::new(0.0, 100.0) * self.slowdown;
             }
-            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Left) | Event::KeyInput(InputState::Released, VirtualKeyCode::Right) => {
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Left) |
+            Event::KeyInput(InputState::Released, VirtualKeyCode::Right) => {
                 self.pg.velocity += Vector2::new(-100.0, 0.0) * self.slowdown;
             }
-            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Right) | Event::KeyInput(InputState::Released, VirtualKeyCode::Left) => {
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Right) |
+            Event::KeyInput(InputState::Released, VirtualKeyCode::Left) => {
                 self.pg.velocity += Vector2::new(100.0, 0.0) * self.slowdown;
             }
-            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Down) | Event::KeyInput(InputState::Released, VirtualKeyCode::Up) => {
+            Event::KeyInput(InputState::Pressed, VirtualKeyCode::Down) |
+            Event::KeyInput(InputState::Released, VirtualKeyCode::Up) => {
                 self.pg.velocity += Vector2::new(0.0, -100.0) * self.slowdown;
             }
             Event::KeyInput(InputState::Pressed, VirtualKeyCode::LShift) => {
@@ -68,7 +71,7 @@ impl Player {
                 self.pg.velocity *= self.slowdown;
             }
             Event::KeyInput(InputState::Released, VirtualKeyCode::LShift) => {
-                self.pg.velocity *= 1.0/self.slowdown;
+                self.pg.velocity *= 1.0 / self.slowdown;
                 self.slowdown = 1.0;
             }
             Event::Timer(1) => {
@@ -118,7 +121,7 @@ impl Bullet {
                                  PhysicsInteraction::SemiInteractive,
                                  GeometricQueryType::Contacts(0.0),
                                  &engine.scene);
-        g.translate(pos.0/scaler, pos.1/scaler);
+        g.translate(pos.0 / scaler, pos.1 / scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
         pg.velocity = Vector2::new(0.0, 200.0);
         Object::PlayerBullet(Bullet {

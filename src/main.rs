@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 #[macro_use]
 extern crate glium;
 extern crate glutin;
@@ -5,11 +7,14 @@ extern crate ncollide;
 extern crate nalgebra;
 extern crate clock_ticks;
 extern crate image;
+extern crate sdl2;
+extern crate sdl2_mixer;
 
 #[macro_use]
 mod macros;
 mod engine;
 mod game;
+
 
 use game::object::Object;
 use engine::Engine;

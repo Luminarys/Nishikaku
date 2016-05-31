@@ -311,8 +311,10 @@ impl<E: Entity> EventComp<E> {
 
     pub fn remove_timer(&mut self, id: usize) {
         match self.timers.iter().position(|timer| timer.id == id) {
-            Some(pos) => { self.timers.remove(pos); },
-            None => { }
+            Some(pos) => {
+                self.timers.remove(pos);
+            }
+            None => {}
         }
     }
 

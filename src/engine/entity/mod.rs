@@ -3,7 +3,6 @@ pub mod component;
 use nalgebra::Vector2;
 
 use engine::event::Event;
-use engine::Engine;
 use engine::graphics::SpriteAttrs;
 
 struct EntityData<D> {

@@ -2,6 +2,7 @@ pub mod event;
 pub mod scene;
 pub mod entity;
 pub mod graphics;
+pub mod audio;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -13,18 +14,18 @@ use std::mem;
 use glium::glutin;
 use ncollide::shape::{Plane, Cuboid, ShapeHandle2};
 use ncollide::query::Proximity;
-use nalgebra::{Vector2, Isometry2};
+use nalgebra::Vector2;
 use ncollide::world::GeometricQueryType;
-use nalgebra as na;
 use clock_ticks;
 
 use self::entity::component::PhysicsData;
-use self::scene::{EntityAccessor, Scene, PhysicsWorld, PhysicsInteraction};
+use self::scene::PhysicsInteraction;
 
 pub struct Engine<'a, E: entity::Entity> {
     pub events: Rc<RefCell<event::Handler<E>>>,
     pub scene: scene::Scene<E>,
     pub graphics: graphics::Graphics<'a>,
+    pub audio: Rc<RefCell<audio::Audio>>,
 }
 
 impl<'a, E: entity::Entity> Engine<'a, E> {
@@ -37,12 +38,6 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
         let plane_bottom = ShapeHandle2::new(Plane::new(Vector2::y()));
         let plane_right = ShapeHandle2::new(Plane::new(-Vector2::x()));
         let plane_top = ShapeHandle2::new(Plane::new(-Vector2::y()));
-
-        // Positions of the planes.
-        let planes_pos = [Isometry2::new(Vector2::new(-200.0, 0.0), na::zero()),
-                          Isometry2::new(Vector2::new(0.0, -200.0), na::zero()),
-                          Isometry2::new(Vector2::new(200.0, 0.0), na::zero()),
-                          Isometry2::new(Vector2::new(0.0, 200.0), na::zero())];
 
         let plane_data = Rc::new(PhysicsData::new(0, String::from("view_border")));
 
@@ -84,6 +79,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
             events: events,
             scene: scene,
             graphics: graphics::Graphics::new(),
+            audio: Rc::new(RefCell::new(audio::Audio::new())),
         }
     }
 
@@ -144,7 +140,7 @@ impl<'a, E: entity::Entity> Engine<'a, E> {
             let fps_cur_clock = clock_ticks::precise_time_ms();
             frames_drawn += 1;
             if fps_cur_clock - fps_prev_clock >= 1000 {
-                println!("{:?} ms/frame", 1000.0/(frames_drawn as f32));
+                println!("{:?} ms/frame", 1000.0 / (frames_drawn as f32));
                 frames_drawn = 0;
                 fps_prev_clock = fps_cur_clock;
             }

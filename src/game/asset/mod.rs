@@ -1,10 +1,21 @@
+// use std::path::Path;
+
 use engine::Engine;
 use engine::graphics::SpriteVertex;
 use game::object::Object;
 
 pub fn load_assets(engine: &mut Engine<Object>) {
+    println!("Loading assets!");
     load_bullet(engine);
     load_char(engine);
+    load_sound(engine);
+}
+
+fn load_sound(_engine: &mut Engine<Object>) {
+    println!("Loading songs!");
+    //let path = Path::new("/tmp/song.flac");
+    //engine.audio.borrow_mut().load(1, path);
+    //engine.audio.borrow().play(&1);
 }
 
 fn load_char(engine: &mut Engine<Object>) {
@@ -35,26 +46,30 @@ fn load_char(engine: &mut Engine<Object>) {
         }
     "#;
 
-    let vertex_buffer = engine.graphics.make_sprite_vbo(
-                             &[SpriteVertex {
-                                   position: [-0.125, -0.25],
-                                   tex_coords: [0.0, 0.0],
-                               },
-                               SpriteVertex {
-                                   position: [-0.125, 0.25],
-                                   tex_coords: [0.0, 1.0],
-                               },
-                               SpriteVertex {
-                                   position: [0.125, 0.25],
-                                   tex_coords: [1.0, 1.0],
-                               },
-                               SpriteVertex {
-                                   position: [0.125, -0.25],
-                                   tex_coords: [1.0, 0.0],
-                               }]);
+    let vertex_buffer = engine.graphics.make_sprite_vbo(&[SpriteVertex {
+                                                              position: [-0.125, -0.25],
+                                                              tex_coords: [0.0, 0.0],
+                                                          },
+                                                          SpriteVertex {
+                                                              position: [-0.125, 0.25],
+                                                              tex_coords: [0.0, 1.0],
+                                                          },
+                                                          SpriteVertex {
+                                                              position: [0.125, 0.25],
+                                                              tex_coords: [1.0, 1.0],
+                                                          },
+                                                          SpriteVertex {
+                                                              position: [0.125, -0.25],
+                                                              tex_coords: [1.0, 0.0],
+                                                          }]);
 
     let texture = engine.graphics.load_asset("assets/sakuya.png");
-    engine.graphics.new_sprite(1, vertex_shader_src, fragment_shader_src, vertex_buffer, texture, 1);
+    engine.graphics.new_sprite(1,
+                               vertex_shader_src,
+                               fragment_shader_src,
+                               vertex_buffer,
+                               texture,
+                               1);
 }
 
 fn load_bullet(engine: &mut Engine<Object>) {
@@ -85,24 +100,28 @@ fn load_bullet(engine: &mut Engine<Object>) {
         }
     "#;
 
-    let vertex_buffer = engine.graphics.make_sprite_vbo(
-                             &[SpriteVertex {
-                                   position: [-0.125, -0.125],
-                                   tex_coords: [0.0, 0.0],
-                               },
-                               SpriteVertex {
-                                   position: [-0.125, 0.125],
-                                   tex_coords: [0.0, 1.0],
-                               },
-                               SpriteVertex {
-                                   position: [0.125, 0.125],
-                                   tex_coords: [1.0, 1.0],
-                               },
-                               SpriteVertex {
-                                   position: [0.125, -0.125],
-                                   tex_coords: [1.0, 0.0],
-                               }]);
+    let vertex_buffer = engine.graphics.make_sprite_vbo(&[SpriteVertex {
+                                                              position: [-0.125, -0.125],
+                                                              tex_coords: [0.0, 0.0],
+                                                          },
+                                                          SpriteVertex {
+                                                              position: [-0.125, 0.125],
+                                                              tex_coords: [0.0, 1.0],
+                                                          },
+                                                          SpriteVertex {
+                                                              position: [0.125, 0.125],
+                                                              tex_coords: [1.0, 1.0],
+                                                          },
+                                                          SpriteVertex {
+                                                              position: [0.125, -0.125],
+                                                              tex_coords: [1.0, 0.0],
+                                                          }]);
 
     let texture = engine.graphics.load_asset("assets/bullet.png");
-    engine.graphics.new_sprite(2, vertex_shader_src, fragment_shader_src, vertex_buffer, texture, 100);
+    engine.graphics.new_sprite(2,
+                               vertex_shader_src,
+                               fragment_shader_src,
+                               vertex_buffer,
+                               texture,
+                               100);
 }

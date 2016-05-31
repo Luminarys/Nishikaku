@@ -10,9 +10,9 @@ use ncollide::query::{Contact, Proximity};
 use nalgebra::{Vector2, Isometry2, Point2};
 use nalgebra;
 
-use engine::event::{Event, CollisionData, ProximityData, Handler as EventHandler, Dispatcher};
+use engine::event::{Event, CollisionData, ProximityData, Dispatcher};
 use engine::entity::Entity;
-use engine::entity::component::{PhysicsData, EventComp};
+use engine::entity::component::PhysicsData;
 
 pub struct World<E: Entity> {
     pub entities: RefCell<HashMap<usize, RefCell<E>>>,
@@ -51,7 +51,7 @@ impl ProximityHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for Proximit
     fn handle_proximity(&mut self,
                         co1: &CollisionObject2<f32, Rc<PhysicsData>>,
                         co2: &CollisionObject2<f32, Rc<PhysicsData>>,
-                        old_proximity: Proximity,
+                        _old_proximity: Proximity,
                         new_proximity: Proximity) {
         self.dispatcher.dispatch(co1.data.entity_id,
                                  Event::Proximity(co2.data.entity_id,
@@ -104,8 +104,8 @@ impl ContactHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for CollisionD
     }
 
     fn handle_contact_stopped(&mut self,
-                              co1: &CollisionObject2<f32, Rc<PhysicsData>>,
-                              co2: &CollisionObject2<f32, Rc<PhysicsData>>) {
+                              _co1: &CollisionObject2<f32, Rc<PhysicsData>>,
+                              _co2: &CollisionObject2<f32, Rc<PhysicsData>>) {
         // Nothing for now
     }
 }
