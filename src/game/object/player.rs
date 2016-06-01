@@ -2,6 +2,7 @@ use nalgebra::Vector2;
 use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 use glium::glutin::VirtualKeyCode;
+use std::rc::Rc;
 
 use engine;
 use engine::entity::component::*;
@@ -40,8 +41,8 @@ impl Player {
         })
     }
 
-    pub fn handle_event(&mut self, e: Event) {
-        match e {
+    pub fn handle_event(&mut self, e: Rc<Event>) {
+        match *e {
             Event::Spawn => {
                 self.ev.subscribe(Event::KeyInput(InputState::Pressed, VirtualKeyCode::A));
                 let _ = self.world.get_entity(&100);
@@ -82,7 +83,7 @@ impl Player {
             }
             Event::KeyInput(InputState::Pressed, VirtualKeyCode::Z) => {
                 self.shoot_bullet();
-                self.ev.set_repeating_timer(1, 0.0167);
+                self.ev.set_repeating_timer(1, 0.08);
             }
             Event::KeyInput(InputState::Released, VirtualKeyCode::Z) => {
                 self.ev.remove_timer(1);
@@ -134,8 +135,8 @@ impl Bullet {
         })
     }
 
-    pub fn handle_event(&mut self, e: Event) {
-        match e {
+    pub fn handle_event(&mut self, e: Rc<Event>) {
+        match *e {
             Event::Spawn => {}
             Event::Update(t) => {
                 self.pg.update(t);

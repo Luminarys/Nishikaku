@@ -1,5 +1,6 @@
 pub mod component;
 
+use std::rc::Rc;
 use nalgebra::Vector2;
 
 use engine::event::Event;
@@ -24,7 +25,6 @@ pub struct RenderInfo {
 }
 
 pub trait Entity {
-    fn handle_event(&mut self, e: Event);
-    fn render(&self) -> Option<RenderInfo>;
+    fn handle_event(&mut self, e: Rc<Event>);
     fn id(&self) -> usize;
 }

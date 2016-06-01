@@ -144,7 +144,7 @@ impl PhysicsWorld {
         }
     }
 
-    pub fn register_handlers(&self, q: Rc<RefCell<Vec<(usize, Event)>>>) {
+    pub fn register_handlers(&self, q: Rc<RefCell<Vec<(usize, Rc<Event>)>>>) {
         let prox = ProximityDispatcher { dispatcher: Dispatcher { queue: q.clone() } };
 
         let contact = CollisionDispatcher {
@@ -314,7 +314,7 @@ impl<E: Entity> Scene<E> {
         }
     }
 
-    pub fn dispatch(&self, id: usize, ev: Event) {
+    pub fn dispatch(&self, id: usize, ev: Rc<Event>) {
         let acc = self.world.deref().get_entity_mut(&id);
         match acc.access() {
             Some(mut e) => e.deref_mut().handle_event(ev),

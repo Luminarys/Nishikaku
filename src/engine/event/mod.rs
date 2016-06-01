@@ -5,6 +5,7 @@ use std::cmp::PartialEq;
 use std::mem;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::any::Any;
 use ncollide::query::{Contact, Proximity};
 use nalgebra::Point2;
 use glium::glutin::VirtualKeyCode;
@@ -27,7 +28,6 @@ pub enum MouseButton {
     Other(u8),
 }
 
-#[derive(Clone)]
 pub enum Event {
     Update(f32),
     Collision(usize, CollisionData),
@@ -40,6 +40,7 @@ pub enum Event {
     Exiting,
     Timer(usize),
     Render,
+    Custom(Box<Any>),
 }
 
 pub type KeyCode = VirtualKeyCode;
@@ -77,6 +78,7 @@ impl Hash for Event {
             Event::Exiting => state.write_u8(8),
             Event::Timer(_) => state.write_u8(9),
             Event::Render => state.write_u8(10),
+            Event::Custom(_) => state.write_u8(11),
         }
     }
 }
@@ -97,25 +99,26 @@ impl PartialEq for Event {
             (&Event::Exiting, &Event::Exiting) => true,
             (&Event::Timer(_), &Event::Timer(_)) => true,
             (&Event::Render, &Event::Render) => true,
+            (&Event::Custom(_), &Event::Custom(_)) => true,
             _ => false,
         }
     }
 }
 
 pub struct Dispatcher {
-    pub queue: Rc<RefCell<Vec<(usize, Event)>>>,
+    pub queue: Rc<RefCell<Vec<(usize, Rc<Event>)>>>,
 }
 
 impl Dispatcher {
     pub fn dispatch(&self, id: usize, e: Event) {
-        self.queue.borrow_mut().push((id, e));
+        self.queue.borrow_mut().push((id, Rc::new(e)));
     }
 }
 
 #[derive(Default)]
 pub struct Handler<E: Entity> {
     subscriptions: HashMap<Event, HashSet<usize>>,
-    pub queue: Rc<RefCell<Vec<(usize, Event)>>>,
+    pub queue: Rc<RefCell<Vec<(usize, Rc<Event>)>>>,
     sysqueue: Vec<SysEvent<E>>,
 }
 
@@ -130,9 +133,12 @@ impl<E: Entity> Handler<E> {
 
     pub fn subscribe(&mut self, id: usize, event: Event) {
         if !self.subscriptions.contains_key(&event) {
-            self.subscriptions.insert(event.clone(), Default::default());
+            let mut set: HashSet<usize> = Default::default();
+            set.insert(id);
+            self.subscriptions.insert(event, set);
+        } else {
+            self.subscriptions.get_mut(&event).unwrap().insert(id);
         }
-        self.subscriptions.get_mut(&event).unwrap().insert(id);
     }
 
     pub fn unsubscribe(&mut self, id: usize, event: Event) {
@@ -153,8 +159,9 @@ impl<E: Entity> Handler<E> {
     pub fn enqueue_all(&mut self, event: Event) {
         match self.subscriptions.get(&event) {
             Some(subscribers) => {
+                let rc = Rc::new(event);
                 for sub in subscribers {
-                    self.queue.borrow_mut().push((sub.clone(), event.clone()));
+                    self.queue.borrow_mut().push((sub.clone(), rc.clone()));
                 }
             }
             None => {}
@@ -162,14 +169,14 @@ impl<E: Entity> Handler<E> {
     }
 
     pub fn enqueue_specific(&mut self, id: usize, event: Event) {
-        self.queue.borrow_mut().push((id, event));
+        self.queue.borrow_mut().push((id, Rc::new(event)));
     }
 
     pub fn enqueue_sys(&mut self, event: SysEvent<E>) {
         self.sysqueue.push(event);
     }
 
-    pub fn flush(&mut self) -> Vec<(usize, Event)> {
+    pub fn flush(&mut self) -> Vec<(usize, Rc<Event>)> {
         mem::replace(&mut self.queue.borrow_mut(), Default::default())
     }
 

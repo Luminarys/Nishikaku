@@ -67,32 +67,6 @@ impl Graphics {
         self.sprites.insert(id, data);
     }
 
-    pub fn set_sprite_attrs(&mut self, id: &usize, attrs: &[SpriteAttrs]) {
-        const REMOVED_ATTRS: SpriteAttrs = SpriteAttrs {
-            transform: [[1.0, 0.0, 0.0, 100.0],
-                        [0.0, 1.0, 0.0, 100.0],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0, 0.0, 0.0, 1.0]],
-        };
-        match self.sprites.get_mut(id) {
-            Some(s) => {
-                s.vertex_attrs.invalidate();
-                if attrs.len() > 0 {
-                    s.vertex_attrs.slice_mut(0..(attrs.len() - 1)).unwrap().write(attrs);
-                }
-                if attrs.len() < s.last_amount {
-                    // This might not be that efficient
-                    s.vertex_attrs
-                     .slice_mut(attrs.len()..s.last_amount)
-                     .unwrap()
-                     .write(&vec![REMOVED_ATTRS; s.last_amount - attrs.len()]);
-                }
-                s.last_amount = attrs.len();
-            }
-            None => {}
-        }
-    }
-
     pub fn get_id(&mut self, sprite: &usize) -> Option<usize> {
         match self.sprites.get_mut(sprite) {
             Some(s) => {
@@ -115,7 +89,6 @@ impl Graphics {
         match self.sprites.get_mut(sprite) {
             Some(s) => {
                 // Starts at 1 in registry
-                // println!("Slicing at {}", pos);
                 s.vertex_attrs.slice_mut((pos-1)..(pos)).unwrap().write(&[*attrs]);
             }
             None => {}
