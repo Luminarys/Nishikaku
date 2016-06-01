@@ -95,6 +95,19 @@ impl<E: entity::Entity> Engine<E> {
         self.scene.world.deref().remove(&id);
     }
 
+    pub fn handle_events(&mut self) {
+        let ev_queue = {
+            self.events.deref().borrow_mut().flush()
+        };
+        for (id, event) in ev_queue {
+            if id != 0 {
+                self.scene.dispatch(id, event);
+            } else {
+                self.handle_internal_event(event);
+            }
+        }
+    }
+
     pub fn run(&mut self) {
         let mut previous_clock = clock_ticks::precise_time_ns();
         let mut accumulator = 0;
@@ -114,17 +127,7 @@ impl<E: entity::Entity> Engine<E> {
         let mut key_counter = [0 as u8; 255];
         loop {
             self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
-            let ev_queue = {
-                self.events.deref().borrow_mut().flush()
-            };
-            for (id, event) in ev_queue {
-                if id != 0 {
-                    self.scene.dispatch(id, event);
-                } else {
-                    self.handle_internal_event(event);
-                }
-            }
-
+            self.handle_events();
             self.graphics.borrow_mut().render();
 
             let now = clock_ticks::precise_time_ns();
@@ -141,66 +144,45 @@ impl<E: entity::Entity> Engine<E> {
             const FRAME_DELAY_NANOSECS: u64 = 16666667;
 
             for event in self.graphics.borrow_mut().get_window_events() {
-                match event {
+                let to_queue = match event {
                     glutin::Event::Closed => return,
                     glutin::Event::KeyboardInput(glutin::ElementState::Pressed, n, c) => {
                         if key_counter[n as usize] == 0 && !c.is_none() {
                             key_counter[n as usize] = 1;
-                            self.events
-                                .deref()
-                                .borrow_mut()
-                                .enqueue_all(event::Event::KeyInput(event::InputState::Pressed,
-                                                                    c.unwrap()))
+                            Some(event::Event::KeyInput(event::InputState::Pressed, c.unwrap()))
+                        } else {
+                            None
                         }
                     }
                     glutin::Event::KeyboardInput(glutin::ElementState::Released, n, c) => {
-                        if !c.is_none() {
-                            key_counter[n as usize] = 0;
-                            self.events
-                                .deref()
-                                .borrow_mut()
-                                .enqueue_all(event::Event::KeyInput(event::InputState::Released,
-                                                                    c.unwrap()))
-
+                        match c {
+                            Some(code) => {
+                                key_counter[n as usize] = 0;
+                                Some(event::Event::KeyInput(event::InputState::Released, code))
+                            }
+                            None => None,
                         }
                     }
-                    glutin::Event::MouseMoved(x, y) => {
-                        self.events
-                            .deref()
-                            .borrow_mut()
-                            .enqueue_all(event::Event::MouseMove((x, y)))
-                    }
+                    glutin::Event::MouseMoved(x, y) => Some(event::Event::MouseMove((x, y))),
                     glutin::Event::MouseInput(glutin::ElementState::Pressed, b) => {
-                        self.events
-                            .deref()
-                            .borrow_mut()
-                            .enqueue_all(event::Event::MouseInput(event::InputState::Pressed,
-                                                                  glut_mouse_ev_to_local(b)))
+                        Some(event::Event::MouseInput(event::InputState::Pressed,
+                                                      glut_mouse_ev_to_local(b)))
                     }
                     glutin::Event::MouseInput(glutin::ElementState::Released, b) => {
-                        self.events
-                            .deref()
-                            .borrow_mut()
-                            .enqueue_all(event::Event::MouseInput(event::InputState::Released,
-                                                                  glut_mouse_ev_to_local(b)))
+                        Some(event::Event::MouseInput(event::InputState::Released,
+                                                      glut_mouse_ev_to_local(b)))
                     }
-                    _ => {}
+                    _ => None, 
+                };
+                if let Some(ev) = to_queue {
+                    self.events.borrow_mut().enqueue_all(ev);
                 }
             }
 
             while accumulator >= FRAME_DELAY_NANOSECS {
                 // Update state here
                 self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.016666667f32));
-                let ev_queue = {
-                    self.events.deref().borrow_mut().flush()
-                };
-                for (id, event) in ev_queue {
-                    if id != 0 {
-                        self.scene.dispatch(id, event);
-                    } else {
-                        self.handle_internal_event(event);
-                    }
-                }
+                self.handle_events();
                 self.scene.update();
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
