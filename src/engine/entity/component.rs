@@ -232,6 +232,8 @@ impl GraphicsComp {
 
 impl Drop for GraphicsComp {
     fn drop(&mut self) {
+        self.set_pos(10.0, 10.0);
+        self.graphics.borrow_mut().set_sprite_attr(&self.sprite, self.id, &self.data);
         self.graphics.borrow_mut().return_id(&self.sprite, self.id);
     }
 }
