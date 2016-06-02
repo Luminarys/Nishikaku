@@ -41,33 +41,33 @@ impl<E: entity::Entity> Engine<E> {
         let plane_data = Rc::new(PhysicsData::new(0, String::from("view_border")));
 
         scene.physics.add(Vector2::new(-200.0, 0.0),
-                          plane_left,
-                          PhysicsInteraction::Interactive,
-                          GeometricQueryType::Contacts(0.2),
-                          plane_data.clone());
+        plane_left,
+        PhysicsInteraction::Interactive,
+        GeometricQueryType::Contacts(0.2),
+        plane_data.clone());
         scene.physics.add(Vector2::new(0.0, -200.0),
-                          plane_bottom,
-                          PhysicsInteraction::Interactive,
-                          GeometricQueryType::Contacts(0.2),
-                          plane_data.clone());
+        plane_bottom,
+        PhysicsInteraction::Interactive,
+        GeometricQueryType::Contacts(0.2),
+        plane_data.clone());
         scene.physics.add(Vector2::new(200.0, 0.0),
-                          plane_right,
-                          PhysicsInteraction::Interactive,
-                          GeometricQueryType::Contacts(0.2),
-                          plane_data.clone());
+        plane_right,
+        PhysicsInteraction::Interactive,
+        GeometricQueryType::Contacts(0.2),
+        plane_data.clone());
         scene.physics.add(Vector2::new(0.0, 200.0),
-                          plane_top,
-                          PhysicsInteraction::Interactive,
-                          GeometricQueryType::Contacts(0.2),
-                          plane_data.clone());
+        plane_top,
+        PhysicsInteraction::Interactive,
+        GeometricQueryType::Contacts(0.2),
+        plane_data.clone());
 
         let rect = ShapeHandle2::new(Cuboid::new(Vector2::new(200.0, 200.0)));
         let rect_data = Rc::new(PhysicsData::new(0, String::from("view_area")));
         scene.physics.add(Vector2::new(0.0, 0.0),
-                          rect,
-                          PhysicsInteraction::Interactive,
-                          GeometricQueryType::Proximity(0.2),
-                          rect_data);
+        rect,
+        PhysicsInteraction::Interactive,
+        GeometricQueryType::Proximity(0.2),
+        rect_data);
 
         let eh = event::Handler::new();
         let queue = eh.queue.clone();
@@ -166,7 +166,7 @@ impl<E: entity::Entity> Engine<E> {
                             None => None,
                         }
                     }
-                    glutin::Event::MouseMoved(x, y) => Some(event::Event::MouseMove((x as f32 * (2.0 * scaler/res_x) - scaler, y as f32 * (2.0 * scaler/res_y) - scaler))),
+                    glutin::Event::MouseMoved(x, y) => Some(event::Event::MouseMove((x as f32 * (2.0 * scaler/res_x) - scaler, -1.0 * (y as f32 * (2.0 * scaler/res_y) - scaler)))),
                     glutin::Event::MouseInput(glutin::ElementState::Pressed, b) => {
                         Some(event::Event::MouseInput(event::InputState::Pressed,
                                                       glut_mouse_ev_to_local(b)))
