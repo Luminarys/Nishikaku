@@ -310,7 +310,6 @@ impl<E: Entity> EventComp<E> {
         let mut expired = vec![];
         for (i, timer) in self.timers.iter_mut().enumerate() {
             if timer.update(time) {
-                // self.dispatch_to(self.id, Event::Timer(timer.id));
                 self.handler.deref().borrow_mut().enqueue_specific(self.id, Event::Timer(timer.id));
                 if !timer.repeat {
                     expired.push(i);

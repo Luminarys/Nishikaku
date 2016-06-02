@@ -28,10 +28,10 @@ pub struct Engine<E: entity::Entity> {
 }
 
 impl<E: entity::Entity> Engine<E> {
-    pub fn new() -> Engine<E> {
+    pub fn new(size: f32, res: u32) -> Engine<E> {
         // Default physics dimensions are 400x400 - a square which has a half length 200 units away
         // from the origin
-        let scene = scene::Scene::new(200.0);
+        let scene = scene::Scene::new(size);
 
         let plane_left = ShapeHandle2::new(Plane::new(Vector2::x()));
         let plane_bottom = ShapeHandle2::new(Plane::new(Vector2::y()));
@@ -77,7 +77,7 @@ impl<E: entity::Entity> Engine<E> {
         Engine {
             events: events,
             scene: scene,
-            graphics: Rc::new(RefCell::new(graphics::Graphics::new())),
+            graphics: Rc::new(RefCell::new(graphics::Graphics::new(res, res))),
             audio: Rc::new(RefCell::new(audio::Audio::new())),
         }
     }
@@ -125,6 +125,9 @@ impl<E: entity::Entity> Engine<E> {
         let mut fps_prev_clock = clock_ticks::precise_time_ms();
         let mut frames_drawn = 0;
         let mut key_counter = [0 as u8; 255];
+        let res_x = self.graphics.borrow().dimensions.0 as f32;
+        let res_y = self.graphics.borrow().dimensions.1 as f32;
+        let scaler = self.scene.physics.scaler;
         loop {
             self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
             self.handle_events();
@@ -163,7 +166,7 @@ impl<E: entity::Entity> Engine<E> {
                             None => None,
                         }
                     }
-                    glutin::Event::MouseMoved(x, y) => Some(event::Event::MouseMove((x, y))),
+                    glutin::Event::MouseMoved(x, y) => Some(event::Event::MouseMove((x as f32 * (2.0 * scaler/res_x) - scaler, y as f32 * (2.0 * scaler/res_y) - scaler))),
                     glutin::Event::MouseInput(glutin::ElementState::Pressed, b) => {
                         Some(event::Event::MouseInput(event::InputState::Pressed,
                                                       glut_mouse_ev_to_local(b)))

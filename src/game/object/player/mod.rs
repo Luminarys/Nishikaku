@@ -4,7 +4,7 @@ use ncollide::world::GeometricQueryType;
 use glium::glutin::VirtualKeyCode;
 use std::rc::Rc;
 
-use engine;
+use engine::Engine;
 use engine::entity::component::*;
 use engine::event::{Event, InputState};
 use engine::scene::PhysicsInteraction;
@@ -19,10 +19,10 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(engine: &engine::Engine<Object>) -> Object {
+    pub fn new(engine: &Engine<Object>) -> Object {
         let w = WorldComp::new(&engine.scene);
         let g = GraphicsComp::new(engine.graphics.clone(), 1);
-        let e = EventComp::new(1, engine.events.clone());
+        let e = EventComp::new(w.id, engine.events.clone());
 
         let p = PhysicsComp::new(w.id,
                                  String::from("collision_box"),
@@ -113,7 +113,7 @@ pub struct Bullet {
 }
 
 impl Bullet {
-    pub fn new_at_pos(engine: &engine::Engine<Object>, pos: (f32, f32)) -> Object {
+    pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32)) -> Object {
         let mut g = GraphicsComp::new(engine.graphics.clone(), 2);
         let w = WorldComp::new(&engine.scene);
         let e = EventComp::new(w.id, engine.events.clone());

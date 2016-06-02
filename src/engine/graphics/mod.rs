@@ -13,6 +13,7 @@ use engine::scene::Registry;
 pub struct Graphics {
     sprites: HashMap<usize, SpriteData>,
     display: GlutinFacade,
+    pub dimensions: (u32, u32),
 }
 
 struct SpriteData {
@@ -20,22 +21,23 @@ struct SpriteData {
     vbo: VertexBuffer<SpriteVertex>,
     vertex_attrs: VertexBuffer<SpriteAttrs>,
     indices: IndexBuffer<u16>,
-    texture: CompressedSrgbTexture2d,
+    texture: Option<CompressedSrgbTexture2d>,
     last_amount: usize,
     pub registry: Registry,
 }
 
 impl Graphics {
-    pub fn new() -> Graphics {
+    pub fn new(x_res: u32, y_res: u32) -> Graphics {
         Graphics {
             sprites: Default::default(),
             display: glium::glutin::WindowBuilder::new()
-                         .with_dimensions(800, 800)
-                         .with_max_dimensions(800, 800)
-                         .with_min_dimensions(800, 800)
+                         .with_dimensions(x_res, y_res)
+                         .with_max_dimensions(x_res, y_res)
+                         .with_min_dimensions(x_res, y_res)
                          .with_vsync()
                          .build_glium()
                          .unwrap(),
+            dimensions: (x_res, y_res),
         }
     }
 
@@ -44,7 +46,7 @@ impl Graphics {
                       vertex_shader: &str,
                       fragment_shader: &str,
                       vbo: VertexBuffer<SpriteVertex>,
-                      texture: CompressedSrgbTexture2d,
+                      texture: Option<CompressedSrgbTexture2d>,
                       max_amount: usize) {
         let prog = Program::from_source(&self.display, vertex_shader, fragment_shader, None)
                        .unwrap();
@@ -117,16 +119,28 @@ impl Graphics {
         let mut target = self.display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
         for (_, sprite_data) in &self.sprites {
-            let uniforms = uniform! {
-                tex: &sprite_data.texture,
-            };
-            target.draw((&sprite_data.vbo,
-                         sprite_data.vertex_attrs.per_instance().unwrap()),
-                        &sprite_data.indices,
-                        &sprite_data.program,
-                        &uniforms,
-                        &Default::default())
-                  .unwrap();
+
+            if let Some(ref tex) = sprite_data.texture {
+                let uniforms = uniform! {
+                    tex: tex,
+                };
+                target.draw((&sprite_data.vbo,
+                             sprite_data.vertex_attrs.per_instance().unwrap()),
+                            &sprite_data.indices,
+                            &sprite_data.program,
+                            &uniforms,
+                            &Default::default())
+                      .unwrap();
+            } else {
+                let uniforms = uniform!{ };
+                target.draw((&sprite_data.vbo,
+                             sprite_data.vertex_attrs.per_instance().unwrap()),
+                            &sprite_data.indices,
+                            &sprite_data.program,
+                            &uniforms,
+                            &Default::default())
+                      .unwrap();
+            }
         }
         target.finish().unwrap();
     }

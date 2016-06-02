@@ -33,7 +33,7 @@ pub enum Event {
     Collision(usize, CollisionData),
     Proximity(usize, ProximityData),
     KeyInput(InputState, KeyCode),
-    MouseMove((i32, i32)),
+    MouseMove((f32, f32)),
     MouseInput(InputState, MouseButton),
     Spawn,
     Entering,

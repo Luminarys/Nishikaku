@@ -2,6 +2,7 @@
 name = "nishikaku"
 version = "0.1.0"
 authors = ["Luminarys <postmaster@gensok.io>"]
+build = "build/main.rs"
 
 [dependencies]
 glium = "0.14.0"

@@ -261,6 +261,7 @@ pub struct Registry {
     free: Vec<usize>,
     reclaimed: Vec<usize>,
     reclaimable: bool,
+    names: HashMap<String, usize>,
 }
 
 impl Registry {
@@ -270,12 +271,25 @@ impl Registry {
             free: vec![],
             reclaimed: vec![],
             reclaimable: true,
+            names: HashMap::new(),
         }
     }
 
     pub fn no_reclaim(&mut self) {
         self.reclaim();
         self.reclaimable = false;
+    }
+
+    pub fn create_alias(&mut self, name: String, id: usize) {
+        self.names.insert(name, id);
+    }
+
+    pub fn get_aliased_id(&mut self, name: &String) -> Option<&usize> {
+        self.names.get(name)
+    }
+
+    pub fn remove_alias(&mut self, name: &String) {
+        self.names.remove(name);
     }
 
     pub fn get_id(&mut self) -> usize {
