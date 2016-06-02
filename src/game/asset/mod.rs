@@ -48,29 +48,29 @@ fn load_char(engine: &mut Engine<Object>) {
 
     let mut gfx = engine.graphics.borrow_mut();
     let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
-                                                              position: [-0.125, -0.25],
-                                                              tex_coords: [0.0, 0.0],
-                                                          },
-                                                          SpriteVertex {
-                                                              position: [-0.125, 0.25],
-                                                              tex_coords: [0.0, 1.0],
-                                                          },
-                                                          SpriteVertex {
-                                                              position: [0.125, 0.25],
-                                                              tex_coords: [1.0, 1.0],
-                                                          },
-                                                          SpriteVertex {
-                                                              position: [0.125, -0.25],
-                                                              tex_coords: [1.0, 0.0],
-                                                          }]);
+                                                  position: [-0.125, -0.25],
+                                                  tex_coords: [0.0, 0.0],
+                                              },
+                                              SpriteVertex {
+                                                  position: [-0.125, 0.25],
+                                                  tex_coords: [0.0, 1.0],
+                                              },
+                                              SpriteVertex {
+                                                  position: [0.125, 0.25],
+                                                  tex_coords: [1.0, 1.0],
+                                              },
+                                              SpriteVertex {
+                                                  position: [0.125, -0.25],
+                                                  tex_coords: [1.0, 0.0],
+                                              }]);
 
     let texture = gfx.load_asset("assets/sakuya.png");
     gfx.new_sprite(1,
-                               vertex_shader_src,
-                               fragment_shader_src,
-                               vertex_buffer,
-                               texture,
-                               1);
+                   vertex_shader_src,
+                   fragment_shader_src,
+                   vertex_buffer,
+                   texture,
+                   1);
 }
 
 fn load_bullet(engine: &mut Engine<Object>) {

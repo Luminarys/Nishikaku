@@ -172,7 +172,7 @@ impl<E: entity::Entity> Engine<E> {
                         Some(event::Event::MouseInput(event::InputState::Released,
                                                       glut_mouse_ev_to_local(b)))
                     }
-                    _ => None, 
+                    _ => None,
                 };
                 if let Some(ev) = to_queue {
                     self.events.borrow_mut().enqueue_all(ev);
