@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::mem;
 use glium::program::Program;
 use glium::VertexBuffer;
 use glium::index::IndexBuffer;
@@ -7,6 +8,7 @@ use glium::uniforms::Uniforms;
 use glium::{DisplayBuild, Surface};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
 use glium::texture::compressed_srgb_texture2d::CompressedSrgbTexture2d;
+use glium::Frame;
 use glium;
 
 use engine::scene::Registry;
@@ -15,6 +17,7 @@ pub struct Graphics {
     custom_sprites: HashMap<usize, CustomSpriteData>,
     sprites: HashMap<usize, SpriteData>,
     display: GlutinFacade,
+    current_frame: Option<Frame>,
     pub dimensions: (u32, u32),
 }
 
@@ -46,6 +49,7 @@ impl Graphics {
                          .with_vsync()
                          .build_glium()
                          .unwrap(),
+            current_frame: None,
             dimensions: (x_res, y_res),
         }
     }
@@ -144,50 +148,66 @@ impl Graphics {
         glium::texture::CompressedSrgbTexture2d::new(&self.display, image).unwrap()
     }
 
-    pub fn clear(&mut self) {
+    pub fn start_frame(&mut self) {
         let mut target = self.display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
-        target.finish().unwrap();
+        self.current_frame = Some(target);
     }
 
     pub fn render_custom<U: Uniforms>(&mut self,  sprite: &usize, uniforms: &U, params: &DrawParameters) {
-        if let Some(sprite_data) = self.custom_sprites.get(sprite) {
-            let mut target = self.display.draw();
-            target.draw(&sprite_data.vbo,
+        match (&mut self.current_frame, self.custom_sprites.get(sprite)) {
+            (&mut Some(ref mut target), Some(sprite_data)) => {
+                target.draw(&sprite_data.vbo,
                             &sprite_data.indices,
                             &sprite_data.program,
                             uniforms,
                             &params).unwrap();
-            target.finish().unwrap();
+            }
+            (&mut None, _) => { println!("Cannot render custom sprite without initialized frame!"); }
+            (_, None) => { println!("Invalid custom sprite identifier passed!"); }
         }
     }
 
     pub fn render(&mut self) {
-        let mut target = self.display.draw();
-        for (_, sprite_data) in &self.sprites {
-            if let Some(ref tex) = sprite_data.texture {
-                let uniforms = uniform! {
-                    tex: tex,
-                };
-                target.draw((&sprite_data.vbo,
-                             sprite_data.vertex_attrs.per_instance().unwrap()),
-                            &sprite_data.indices,
-                            &sprite_data.program,
-                            &uniforms,
-                            &Default::default())
-                      .unwrap();
-            } else {
-                let uniforms = uniform!{ };
-                target.draw((&sprite_data.vbo,
-                             sprite_data.vertex_attrs.per_instance().unwrap()),
-                            &sprite_data.indices,
-                            &sprite_data.program,
-                            &uniforms,
-                            &Default::default())
-                      .unwrap();
+        match self.current_frame {
+            Some(ref mut target) => {
+                for (_, sprite_data) in &self.sprites {
+                    if let Some(ref tex) = sprite_data.texture {
+                        let uniforms = uniform! {
+                            tex: tex,
+                        };
+                        target.draw((&sprite_data.vbo,
+                                     sprite_data.vertex_attrs.per_instance().unwrap()),
+                                    &sprite_data.indices,
+                                    &sprite_data.program,
+                                    &uniforms,
+                                    &Default::default())
+                              .unwrap();
+                    } else {
+                        let uniforms = uniform!{ };
+                        target.draw((&sprite_data.vbo,
+                                     sprite_data.vertex_attrs.per_instance().unwrap()),
+                                    &sprite_data.indices,
+                                    &sprite_data.program,
+                                    &uniforms,
+                                    &Default::default())
+                              .unwrap();
+                    }
+                }
+            }
+            None => {
+                println!("Frame must be started before rendering can occur!");
             }
         }
-        target.finish().unwrap();
+    }
+
+    pub fn finish_frame(&mut self) {
+        if self.current_frame.is_none() {
+            println!("A frame must be started before being finished!");
+        } else {
+            let target = mem::replace(&mut self.current_frame, None);
+            target.unwrap().finish().unwrap();
+        }
     }
 
     pub fn get_window_events(&self) -> PollEventsIter {

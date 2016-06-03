@@ -14,10 +14,11 @@ pub enum Object {
     Controller(controller::Controller),
     Mouse(mouse::Mouse),
     MainMenu(menu::MainMenu),
+    MainMenuBar(menu::MainMenuBar),
     Level(level::Level),
     Player(player::Player),
     PlayerBullet(player::Bullet),
     ScreenArea(level::ScreenArea),
 }
 
-impl_entity_enum!(Object, Player, PlayerBullet, MainMenu, Mouse, Controller, ScreenArea, Level);
+impl_entity_enum!(Object, Player, PlayerBullet, MainMenu, Mouse, Controller, ScreenArea, Level, MainMenuBar);

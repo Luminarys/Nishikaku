@@ -82,10 +82,11 @@ impl<E: entity::Entity> Engine<E> {
         let res_y = self.graphics.borrow().dimensions.1 as f32;
         let scaler = self.scene.physics.scaler;
         loop {
-            self.graphics.borrow_mut().clear();
+            self.graphics.borrow_mut().start_frame();
             self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
             self.handle_events();
             self.graphics.borrow_mut().render();
+            self.graphics.borrow_mut().finish_frame();
 
             let now = clock_ticks::precise_time_ns();
             let fps_cur_clock = clock_ticks::precise_time_ms();
