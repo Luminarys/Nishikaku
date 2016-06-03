@@ -11,6 +11,7 @@ use glium;
 use engine::scene::Registry;
 
 pub struct Graphics {
+    custom_sprites: HashMap<usize, CustomSpriteData>,
     sprites: HashMap<usize, SpriteData>,
     display: GlutinFacade,
     pub dimensions: (u32, u32),
@@ -26,10 +27,17 @@ struct SpriteData {
     pub registry: Registry,
 }
 
+struct CustomSpriteData {
+    program: Program,
+    vbo: VertexBuffer<SpriteVertex>,
+    indices: IndexBuffer<u16>,
+}
+
 impl Graphics {
     pub fn new(x_res: u32, y_res: u32) -> Graphics {
         Graphics {
-            sprites: Default::default(),
+            sprites: HashMap::new(),
+            custom_sprites: HashMap::new(),
             display: glium::glutin::WindowBuilder::new()
                          .with_dimensions(x_res, y_res)
                          .with_max_dimensions(x_res, y_res)
@@ -67,6 +75,26 @@ impl Graphics {
             registry: reg,
         };
         self.sprites.insert(id, data);
+    }
+
+    pub fn new_custom_sprite(&mut self,
+                      id: usize,
+                      vertex_shader: &str,
+                      fragment_shader: &str,
+                      vbo: VertexBuffer<SpriteVertex>,
+                      ) {
+        let prog = Program::from_source(&self.display, vertex_shader, fragment_shader, None)
+                       .unwrap();
+        let indices = IndexBuffer::new(&self.display,
+                                       glium::index::PrimitiveType::TriangleStrip,
+                                       &[1 as u16, 2, 0, 3])
+                          .unwrap();
+        let data = CustomSpriteData {
+            program: prog,
+            vbo: vbo,
+            indices: indices,
+        };
+        self.custom_sprites.insert(id, data);
     }
 
     pub fn get_id(&mut self, sprite: &usize) -> Option<usize> {
