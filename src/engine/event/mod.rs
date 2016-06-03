@@ -36,8 +36,6 @@ pub enum Event {
     MouseMove((f32, f32)),
     MouseInput(InputState, MouseButton),
     Spawn,
-    Entering,
-    Exiting,
     Timer(usize),
     Render,
     Custom(Box<Any>),
@@ -74,11 +72,9 @@ impl Hash for Event {
             Event::MouseInput(_, _) => state.write_u8(4),
             Event::Spawn => state.write_u8(5),
             Event::Proximity(_, _) => state.write_u8(6),
-            Event::Entering => state.write_u8(7),
-            Event::Exiting => state.write_u8(8),
-            Event::Timer(_) => state.write_u8(9),
-            Event::Render => state.write_u8(10),
-            Event::Custom(_) => state.write_u8(11),
+            Event::Timer(_) => state.write_u8(7),
+            Event::Render => state.write_u8(8),
+            Event::Custom(_) => state.write_u8(9),
         }
     }
 }
@@ -95,8 +91,6 @@ impl PartialEq for Event {
             (&Event::MouseMove(_), &Event::MouseMove(_)) => true,
             (&Event::MouseInput(_, _), &Event::MouseInput(_, _)) => true,
             (&Event::Spawn, &Event::Spawn) => true,
-            (&Event::Entering, &Event::Entering) => true,
-            (&Event::Exiting, &Event::Exiting) => true,
             (&Event::Timer(_), &Event::Timer(_)) => true,
             (&Event::Render, &Event::Render) => true,
             (&Event::Custom(_), &Event::Custom(_)) => true,

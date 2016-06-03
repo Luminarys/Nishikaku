@@ -29,46 +29,7 @@ pub struct Engine<E: entity::Entity> {
 
 impl<E: entity::Entity> Engine<E> {
     pub fn new(size: f32, res: u32) -> Engine<E> {
-        // Default physics dimensions are 400x400 - a square which has a half length 200 units away
-        // from the origin
         let scene = scene::Scene::new(size);
-
-        let plane_left = ShapeHandle2::new(Plane::new(Vector2::x()));
-        let plane_bottom = ShapeHandle2::new(Plane::new(Vector2::y()));
-        let plane_right = ShapeHandle2::new(Plane::new(-Vector2::x()));
-        let plane_top = ShapeHandle2::new(Plane::new(-Vector2::y()));
-
-        let plane_data = Rc::new(PhysicsData::new(0, String::from("view_border")));
-
-        scene.physics.add(Vector2::new(-200.0, 0.0),
-        plane_left,
-        PhysicsInteraction::Interactive,
-        GeometricQueryType::Contacts(0.2),
-        plane_data.clone());
-        scene.physics.add(Vector2::new(0.0, -200.0),
-        plane_bottom,
-        PhysicsInteraction::Interactive,
-        GeometricQueryType::Contacts(0.2),
-        plane_data.clone());
-        scene.physics.add(Vector2::new(200.0, 0.0),
-        plane_right,
-        PhysicsInteraction::Interactive,
-        GeometricQueryType::Contacts(0.2),
-        plane_data.clone());
-        scene.physics.add(Vector2::new(0.0, 200.0),
-        plane_top,
-        PhysicsInteraction::Interactive,
-        GeometricQueryType::Contacts(0.2),
-        plane_data.clone());
-
-        let rect = ShapeHandle2::new(Cuboid::new(Vector2::new(200.0, 200.0)));
-        let rect_data = Rc::new(PhysicsData::new(0, String::from("view_area")));
-        scene.physics.add(Vector2::new(0.0, 0.0),
-        rect,
-        PhysicsInteraction::Interactive,
-        GeometricQueryType::Proximity(0.2),
-        rect_data);
-
         let eh = event::Handler::new();
         let queue = eh.queue.clone();
         let events = Rc::new(RefCell::new(eh));
@@ -203,39 +164,7 @@ impl<E: entity::Entity> Engine<E> {
         }
     }
 
-    fn handle_internal_event(&mut self, event: Rc<event::Event>) {
-        match *event {
-            event::Event::Proximity(id, ref data) => {
-                match &data.this_object.tag[..] {
-                    "view_area" => {
-                        match data.proximity {
-                            Proximity::Intersecting => {
-                                self.events
-                                    .deref()
-                                    .borrow_mut()
-                                    .enqueue_specific(id, event::Event::Entering);
-                            }
-                            Proximity::Disjoint => {
-                                self.events
-                                    .deref()
-                                    .borrow_mut()
-                                    .enqueue_specific(id, event::Event::Exiting);
-                            }
-                            _ => {}
-                        }
-                    }
-                    "view_border" => {
-                        let mut new_data = data.clone();
-                        mem::swap(&mut new_data.this_object, &mut new_data.other_object);
-                        self.events
-                            .deref()
-                            .borrow_mut()
-                            .enqueue_specific(id, event::Event::Proximity(id, new_data));
-                    }
-                    _ => {}
-                }
-            }
-            _ => {}
-        }
+    fn handle_internal_event(&mut self, _event: Rc<event::Event>) {
+        // Maybe do something here in the future?
     }
 }

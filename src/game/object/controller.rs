@@ -6,6 +6,7 @@ use engine::event::{Event, InputState};
 
 use game::object::Object;
 use game::object::mouse::Mouse;
+use game::object::level::Level;
 
 /// Top level game controller
 pub struct Controller {
@@ -28,6 +29,7 @@ impl Controller {
             Event::Spawn => {
                 println!("Spawned controller!");
                 self.ev.create_entity(Box::new(move |engine| Mouse::new(engine)));
+                self.ev.create_entity(Box::new(move |engine| Level::new(engine)));
             }
             _ => {}
         };

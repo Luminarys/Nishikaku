@@ -120,7 +120,7 @@ pub struct PhysicsComp {
 
 impl PhysicsComp {
     pub fn new<E: Entity>(entity_id: usize,
-                          tag: String,
+                          tag: usize,
                           position: Vector2<f32>,
                           shape: ShapeHandle2<f32>,
                           interactivity: PhysicsInteraction,
@@ -168,11 +168,11 @@ impl Drop for PhysicsComp {
 #[derive(Clone, Default)]
 pub struct PhysicsData {
     pub entity_id: usize,
-    pub tag: String,
+    pub tag: usize,
 }
 
 impl PhysicsData {
-    pub fn new(entity_id: usize, tag: String) -> PhysicsData {
+    pub fn new(entity_id: usize, tag: usize) -> PhysicsData {
         PhysicsData {
             entity_id: entity_id,
             tag: tag,
@@ -249,6 +249,29 @@ impl<E: Entity> WorldComp<E> {
         WorldComp {
             id: id,
             world: scene.world.clone(),
+        }
+    }
+
+    pub fn with_alias(scene: &Scene<E>, alias: String) -> WorldComp<E> {
+        let id = scene.world.registry.borrow_mut().get_id();
+        scene.world.registry.borrow_mut().create_alias(alias, id.clone());
+        WorldComp {
+            id: id,
+            world: scene.world.clone(),
+        }
+    }
+
+    pub fn find_aliased_entity_id(&self, alias: &String) -> Option<usize> {
+        match self.world.registry.borrow_mut().get_aliased_id(alias) {
+            Some(id) => Some(*id),
+            None => None,
+        }
+    }
+
+    pub fn find_aliased_entity_alias(&self, id: &usize) -> Option<String> {
+        match self.world.registry.borrow_mut().get_aliased_string(id) {
+            Some(s) => Some(s.clone()),
+            None => None,
         }
     }
 

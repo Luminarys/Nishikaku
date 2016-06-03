@@ -81,9 +81,6 @@ impl ContactHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for CollisionD
                               co2: &CollisionObject2<f32, Rc<PhysicsData>>,
                               alg: &ContactAlgorithm2<f32>) {
         alg.contacts(&mut self.collector);
-        // In the speical entity id 0 case(special system handled event), don't dispatch to the
-        // other entity
-        if co2.data.entity_id != 0 {
             self.dispatcher.dispatch(co1.data.entity_id,
                                      Event::Collision(co2.data.entity_id,
                                                       CollisionData {
@@ -91,8 +88,6 @@ impl ContactHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for CollisionD
                                                           this_object: co1.data.clone(),
                                                           other_object: co2.data.clone(),
                                                       }));
-        }
-        if co1.data.entity_id != 0 {
             self.dispatcher.dispatch(co2.data.entity_id,
                                      Event::Collision(co1.data.entity_id,
                                                       CollisionData {
@@ -100,7 +95,6 @@ impl ContactHandler<Point2<f32>, Isometry2<f32>, Rc<PhysicsData>> for CollisionD
                                                           this_object: co2.data.clone(),
                                                           other_object: co1.data.clone(),
                                                       }));
-        }
     }
 
     fn handle_contact_stopped(&mut self,
@@ -262,6 +256,7 @@ pub struct Registry {
     reclaimed: Vec<usize>,
     reclaimable: bool,
     names: HashMap<String, usize>,
+    rev_names: HashMap<usize, String>,
 }
 
 impl Registry {
@@ -272,6 +267,7 @@ impl Registry {
             reclaimed: vec![],
             reclaimable: true,
             names: HashMap::new(),
+            rev_names: HashMap::new(),
         }
     }
 
@@ -281,15 +277,22 @@ impl Registry {
     }
 
     pub fn create_alias(&mut self, name: String, id: usize) {
-        self.names.insert(name, id);
+        self.names.insert(name.clone(), id.clone());
+        self.rev_names.insert(id, name);
     }
 
     pub fn get_aliased_id(&mut self, name: &String) -> Option<&usize> {
         self.names.get(name)
     }
 
+    pub fn get_aliased_string(&mut self, id: &usize) -> Option<&String> {
+        self.rev_names.get(id)
+    }
+
     pub fn remove_alias(&mut self, name: &String) {
-        self.names.remove(name);
+        if let Some(id) = self.names.remove(name) {
+            self.rev_names.remove(&id);
+        }
     }
 
     pub fn get_id(&mut self) -> usize {

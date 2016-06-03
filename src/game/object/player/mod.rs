@@ -1,6 +1,7 @@
 use nalgebra::Vector2;
 use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
+use ncollide::query::Proximity;
 use glium::glutin::VirtualKeyCode;
 use std::rc::Rc;
 
@@ -25,7 +26,7 @@ impl Player {
         let e = EventComp::new(w.id, engine.events.clone());
 
         let p = PhysicsComp::new(w.id,
-                                 String::from("collision_box"),
+                                 0,
                                  Vector2::new(0.0, 0.0),
                                  ShapeHandle2::new(Cuboid::new(Vector2::new(25.0, 50.0))),
                                  PhysicsInteraction::SemiInteractive,
@@ -119,7 +120,7 @@ impl Bullet {
         let e = EventComp::new(w.id, engine.events.clone());
         let scaler = engine.scene.physics.scaler;
         let p = PhysicsComp::new(w.id,
-                                 String::from("bullet"),
+                                 0,
                                  Vector2::new(pos.0, pos.1),
                                  ShapeHandle2::new(Ball::new(5.0)),
                                  PhysicsInteraction::SemiInteractive,
@@ -141,8 +142,15 @@ impl Bullet {
             Event::Update(t) => {
                 self.pg.update(t);
             }
-            Event::Exiting => {
-                self.ev.destroy_self();
+            Event::Proximity(id, ref data) => {
+                if let Some(s) = self.world.find_aliased_entity_alias(&id) {
+                    match (&s[..], data.proximity) {
+                        ("screen_area", Proximity::Disjoint) => {
+                            self.ev.destroy_self();
+                        }
+                        _ => { }
+                    }
+                }
             }
             Event::Render => {
                 self.pg.render();

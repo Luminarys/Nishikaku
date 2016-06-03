@@ -29,7 +29,6 @@ impl Mouse {
                 self.ev.subscribe(Event::MouseMove((0.0, 0.0)));
             }
             Event::MouseMove(pos) => {
-                println!("{:?}", pos);
                 self.pos = pos;
             }
             _ => {}
