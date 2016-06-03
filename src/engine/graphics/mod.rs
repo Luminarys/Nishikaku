@@ -3,6 +3,7 @@ use glium::program::Program;
 use glium::VertexBuffer;
 use glium::index::IndexBuffer;
 use glium::draw_parameters::DrawParameters;
+use glium::uniforms::Uniforms;
 use glium::{DisplayBuild, Surface};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
 use glium::texture::compressed_srgb_texture2d::CompressedSrgbTexture2d;
@@ -143,11 +144,27 @@ impl Graphics {
         glium::texture::CompressedSrgbTexture2d::new(&self.display, image).unwrap()
     }
 
-    pub fn render(&mut self) {
+    pub fn clear(&mut self) {
         let mut target = self.display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
-        for (_, sprite_data) in &self.sprites {
+        target.finish().unwrap();
+    }
 
+    pub fn render_custom<U: Uniforms>(&mut self,  sprite: &usize, uniforms: &U, params: &DrawParameters) {
+        if let Some(sprite_data) = self.custom_sprites.get(sprite) {
+            let mut target = self.display.draw();
+            target.draw(&sprite_data.vbo,
+                            &sprite_data.indices,
+                            &sprite_data.program,
+                            uniforms,
+                            &params).unwrap();
+            target.finish().unwrap();
+        }
+    }
+
+    pub fn render(&mut self) {
+        let mut target = self.display.draw();
+        for (_, sprite_data) in &self.sprites {
             if let Some(ref tex) = sprite_data.texture {
                 let uniforms = uniform! {
                     tex: tex,

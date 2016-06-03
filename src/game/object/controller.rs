@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use engine::Engine;
 use engine::entity::component::*;
-use engine::event::{Event, InputState};
+use engine::event::Event;
 
 use game::object::Object;
 use game::object::mouse::Mouse;

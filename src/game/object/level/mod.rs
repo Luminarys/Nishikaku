@@ -2,9 +2,9 @@ use std::rc::Rc;
 
 use engine::Engine;
 use engine::entity::component::*;
-use engine::event::{Event, InputState};
+use engine::event::Event;
 use engine::scene::PhysicsInteraction;
-use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
+use ncollide::shape::{Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 use nalgebra::Vector2;
 

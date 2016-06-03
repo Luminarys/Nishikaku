@@ -9,16 +9,8 @@ use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
 use std::ops::Deref;
-use std::mem;
 use glium::glutin;
-use ncollide::shape::{Plane, Cuboid, ShapeHandle2};
-use ncollide::query::Proximity;
-use nalgebra::Vector2;
-use ncollide::world::GeometricQueryType;
 use clock_ticks;
-
-use self::entity::component::PhysicsData;
-use self::scene::PhysicsInteraction;
 
 pub struct Engine<E: entity::Entity> {
     pub events: Rc<RefCell<event::Handler<E>>>,
@@ -90,6 +82,7 @@ impl<E: entity::Entity> Engine<E> {
         let res_y = self.graphics.borrow().dimensions.1 as f32;
         let scaler = self.scene.physics.scaler;
         loop {
+            self.graphics.borrow_mut().clear();
             self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
             self.handle_events();
             self.graphics.borrow_mut().render();
