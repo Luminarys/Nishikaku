@@ -68,6 +68,7 @@ impl MainMenuBar {
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Spawn => {
+                println!("Spawned menu bar!");
             }
             Event::Render => {
                 self.pg.render();

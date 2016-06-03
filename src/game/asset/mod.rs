@@ -8,6 +8,7 @@ pub fn load_assets(engine: &mut Engine<Object>) {
     println!("Loading assets!");
     load_bullet(engine);
     load_char(engine);
+    load_menu(engine);
     load_sound(engine);
 }
 
@@ -153,19 +154,19 @@ fn load_menu(engine: &mut Engine<Object>) {
 
     let mut gfx = engine.graphics.borrow_mut();
     let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
-                                                  position: [-0.6, -0.2],
+                                                  position: [-0.6, -0.1],
                                                   tex_coords: [0.0, 0.0],
                                               },
                                               SpriteVertex {
-                                                  position: [-0.6, 0.2],
+                                                  position: [-0.6, 0.1],
                                                   tex_coords: [0.0, 1.0],
                                               },
                                               SpriteVertex {
-                                                  position: [0.6, 0.2],
+                                                  position: [0.6, 0.1],
                                                   tex_coords: [1.0, 1.0],
                                               },
                                               SpriteVertex {
-                                                  position: [0.6, -0.2],
+                                                  position: [0.6, -0.1],
                                                   tex_coords: [1.0, 0.0],
                                               }]);
 

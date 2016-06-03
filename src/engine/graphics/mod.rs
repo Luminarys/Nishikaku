@@ -10,6 +10,8 @@ use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
 use glium::texture::compressed_srgb_texture2d::CompressedSrgbTexture2d;
 use glium::Frame;
 use glium;
+use glium_text::{FontTexture, TextSystem, TextDisplay};
+use glium_text;
 
 use engine::scene::Registry;
 
@@ -18,6 +20,7 @@ pub struct Graphics {
     sprites: HashMap<usize, SpriteData>,
     display: GlutinFacade,
     current_frame: Option<Frame>,
+    tex_sys: TextSystem,
     pub dimensions: (u32, u32),
 }
 
@@ -39,17 +42,20 @@ struct CustomSpriteData {
 
 impl Graphics {
     pub fn new(x_res: u32, y_res: u32) -> Graphics {
-        Graphics {
-            sprites: HashMap::new(),
-            custom_sprites: HashMap::new(),
-            display: glium::glutin::WindowBuilder::new()
+        let display = glium::glutin::WindowBuilder::new()
                          .with_dimensions(x_res, y_res)
                          .with_max_dimensions(x_res, y_res)
                          .with_min_dimensions(x_res, y_res)
                          .with_vsync()
                          .build_glium()
-                         .unwrap(),
+                         .unwrap();
+        let tex_sys = TextSystem::new(&display);
+        Graphics {
+            sprites: HashMap::new(),
+            custom_sprites: HashMap::new(),
+            display: display,
             current_frame: None,
+            tex_sys: tex_sys,
             dimensions: (x_res, y_res),
         }
     }
@@ -148,6 +154,13 @@ impl Graphics {
         glium::texture::CompressedSrgbTexture2d::new(&self.display, image).unwrap()
     }
 
+    pub fn load_font(&self, path: &str) -> FontTexture {
+        use std::fs::File;
+
+        let f = File::open(path).unwrap();
+        FontTexture::new(&self.display, f, 24).unwrap()
+    }
+
     pub fn start_frame(&mut self) {
         let mut target = self.display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -165,6 +178,16 @@ impl Graphics {
             }
             (&mut None, _) => { println!("Cannot render custom sprite without initialized frame!"); }
             (_, None) => { println!("Invalid custom sprite identifier passed!"); }
+        }
+    }
+
+    pub fn render_text (&mut self,  font: &FontTexture, msg: &str, transform: [[f32; 4]; 4], color: (f32, f32, f32, f32)) {
+        match self.current_frame {
+            Some(ref mut target) => {
+                let text = TextDisplay::new(&self.tex_sys, font, msg);
+                glium_text::draw(&text, &self.tex_sys, target, transform, color);
+            }
+             None => { println!("Cannot render text without initialized frame!"); }
         }
     }
 
