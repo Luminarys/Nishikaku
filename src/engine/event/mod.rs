@@ -9,6 +9,7 @@ use std::any::Any;
 use ncollide::query::{Contact, Proximity};
 use nalgebra::Point2;
 use glium::glutin::VirtualKeyCode;
+use glium::glutin::MouseButton;
 
 use engine::Engine;
 use engine::entity::Entity;
@@ -18,14 +19,6 @@ use engine::entity::component::PhysicsData;
 pub enum InputState {
     Pressed,
     Released,
-}
-
-#[derive(Clone)]
-pub enum MouseButton {
-    Left,
-    Right,
-    Middle,
-    Other(u8),
 }
 
 pub enum Event {

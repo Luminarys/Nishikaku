@@ -5,6 +5,7 @@ use ncollide::world::GeometricQueryType;
 use ncollide::query::Proximity;
 
 use game::object::Object;
+use game::event::Event as CEvent;
 use engine::Engine;
 use engine::scene::PhysicsInteraction;
 use engine::entity::component::*;
@@ -79,11 +80,26 @@ impl MainMenuBar {
                 self.pg.render();
                 self.text.render();
             }
-            Event::Proximity(id, ref data) => {
-                println!("Proximity ev");
+            Event::Custom(ref ev) => {
+                self.handle_custom_event(ev.downcast_ref::<CEvent>().unwrap());
             }
             _ => {}
         };
+    }
+
+    fn handle_custom_event(&mut self, e: &CEvent) {
+        match *e {
+            CEvent::MouseOver => {
+                println!("Moused over menu bar!");
+            }
+            CEvent::MouseLeft => {
+                println!("Moused left menu bar!");
+            }
+            CEvent::MouseClickedOver => {
+                println!("Mouse clicked menu bar!");
+            }
+            _ => { }
+        }
     }
 
     pub fn id(&self) -> usize {

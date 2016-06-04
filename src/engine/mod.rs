@@ -65,16 +65,6 @@ impl<E: entity::Entity> Engine<E> {
         let mut previous_clock = clock_ticks::precise_time_ns();
         let mut accumulator = 0;
 
-        // Lol
-        let glut_mouse_ev_to_local = |e| {
-            match e {
-                glutin::MouseButton::Left => event::MouseButton::Left,
-                glutin::MouseButton::Right => event::MouseButton::Right,
-                glutin::MouseButton::Middle => event::MouseButton::Middle,
-                glutin::MouseButton::Other(c) => event::MouseButton::Other(c),
-            }
-        };
-
         let mut fps_prev_clock = clock_ticks::precise_time_ms();
         let mut frames_drawn = 0;
         let mut key_counter = [0 as u8; 255];
@@ -125,12 +115,10 @@ impl<E: entity::Entity> Engine<E> {
                     }
                     glutin::Event::MouseMoved(x, y) => Some(event::Event::MouseMove((x as f32 * (2.0 * scaler/res_x) - scaler, -1.0 * (y as f32 * (2.0 * scaler/res_y) - scaler)))),
                     glutin::Event::MouseInput(glutin::ElementState::Pressed, b) => {
-                        Some(event::Event::MouseInput(event::InputState::Pressed,
-                                                      glut_mouse_ev_to_local(b)))
+                        Some(event::Event::MouseInput(event::InputState::Pressed, b))
                     }
                     glutin::Event::MouseInput(glutin::ElementState::Released, b) => {
-                        Some(event::Event::MouseInput(event::InputState::Released,
-                                                      glut_mouse_ev_to_local(b)))
+                        Some(event::Event::MouseInput(event::InputState::Released, b))
                     }
                     _ => None,
                 };
