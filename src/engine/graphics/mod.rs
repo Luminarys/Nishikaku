@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::mem;
+use std::fs::File;
 use glium::program::Program;
 use glium::VertexBuffer;
 use glium::index::IndexBuffer;
@@ -19,8 +20,9 @@ pub struct Graphics {
     custom_sprites: HashMap<usize, CustomSpriteData>,
     sprites: HashMap<usize, SpriteData>,
     display: GlutinFacade,
-    current_frame: Option<Frame>,
+    fonts: HashMap<usize, FontTexture>,
     tex_sys: TextSystem,
+    current_frame: Option<Frame>,
     pub dimensions: (u32, u32),
 }
 
@@ -44,6 +46,7 @@ impl Graphics {
     pub fn new(x_res: u32, y_res: u32) -> Graphics {
         let display = glium::glutin::WindowBuilder::new()
                          .with_dimensions(x_res, y_res)
+                         .with_title(String::from("Nishikaku"))
                          .with_max_dimensions(x_res, y_res)
                          .with_min_dimensions(x_res, y_res)
                          .with_vsync()
@@ -54,6 +57,7 @@ impl Graphics {
             sprites: HashMap::new(),
             custom_sprites: HashMap::new(),
             display: display,
+            fonts: HashMap::new(),
             current_frame: None,
             tex_sys: tex_sys,
             dimensions: (x_res, y_res),
@@ -154,11 +158,10 @@ impl Graphics {
         glium::texture::CompressedSrgbTexture2d::new(&self.display, image).unwrap()
     }
 
-    pub fn load_font(&self, path: &str) -> FontTexture {
-        use std::fs::File;
-
+    pub fn load_font(&mut self, id: usize, path: &str) {
         let f = File::open(path).unwrap();
-        FontTexture::new(&self.display, f, 24).unwrap()
+        let font = FontTexture::new(&self.display, f, 24).unwrap();
+        self.fonts.insert(id, font);
     }
 
     pub fn start_frame(&mut self) {
@@ -181,11 +184,13 @@ impl Graphics {
         }
     }
 
-    pub fn render_text (&mut self,  font: &FontTexture, msg: &str, transform: [[f32; 4]; 4], color: (f32, f32, f32, f32)) {
+    pub fn render_text (&mut self,  id: &usize, msg: &str, transform: [[f32; 4]; 4], color: (f32, f32, f32, f32)) {
         match self.current_frame {
             Some(ref mut target) => {
-                let text = TextDisplay::new(&self.tex_sys, font, msg);
-                glium_text::draw(&text, &self.tex_sys, target, transform, color);
+                if let Some(font) = self.fonts.get(id) {
+                    let text = TextDisplay::new(&self.tex_sys, font, msg);
+                    glium_text::draw(&text, &self.tex_sys, target, transform, color);
+                }
             }
              None => { println!("Cannot render text without initialized frame!"); }
         }

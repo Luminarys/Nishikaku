@@ -1,4 +1,4 @@
-// use std::path::Path;
+use std::path::Path;
 
 use engine::Engine;
 use engine::graphics::SpriteVertex;
@@ -10,13 +10,19 @@ pub fn load_assets(engine: &mut Engine<Object>) {
     load_char(engine);
     load_menu(engine);
     load_sound(engine);
+    load_fonts(engine);
 }
 
-fn load_sound(_engine: &mut Engine<Object>) {
+fn load_fonts(engine: &mut Engine<Object>) {
+    println!("Loading fonts!");
+    engine.graphics.borrow_mut().load_font(1, "assets/OxygenMono-Regular.ttf");
+}
+
+fn load_sound(engine: &mut Engine<Object>) {
     println!("Loading songs!");
-    // let path = Path::new("/tmp/song.flac");
-    // engine.audio.borrow_mut().load(1, path);
-    // engine.audio.borrow().play(&1);
+    let path = Path::new("assets/main.mp3");
+    engine.audio.borrow_mut().load(1, path);
+    engine.audio.borrow().play(&1);
 }
 
 fn load_char(engine: &mut Engine<Object>) {

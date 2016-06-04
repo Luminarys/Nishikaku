@@ -19,7 +19,7 @@ use game::object::Object;
 use engine::Engine;
 
 fn main() {
-    let mut engine: Engine<Object> = Engine::new(200.0, 800);
+    let mut engine: Engine<Object> = Engine::new(200.0, 700);
     game::asset::load_assets(&mut engine);
     engine.spawn(Box::new(|e| {
         game::object::controller::Controller::new(e)
