@@ -22,7 +22,6 @@ fn load_sound(engine: &mut Engine<Object>) {
     println!("Loading songs!");
     let path = Path::new("assets/main.mp3");
     engine.audio.borrow_mut().load(1, path);
-    engine.audio.borrow().play(&1);
 }
 
 fn load_char(engine: &mut Engine<Object>) {

@@ -83,9 +83,11 @@ impl<E: entity::Entity> Engine<E> {
         let scaler = self.scene.physics.scaler;
         loop {
             self.graphics.borrow_mut().start_frame();
+            // TODO: Figure out a cleaner way to get prioritiztion of custom sprites/text over generic sprites
+            // Maybe just don't care and force text to be used with custom sprites?
+            self.graphics.borrow_mut().render();
             self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
             self.handle_events();
-            self.graphics.borrow_mut().render();
             self.graphics.borrow_mut().finish_frame();
 
             let now = clock_ticks::precise_time_ns();

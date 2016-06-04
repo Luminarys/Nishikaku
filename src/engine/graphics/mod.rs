@@ -16,6 +16,8 @@ use glium_text;
 
 use engine::scene::Registry;
 
+// TODO: Using reversed matrices is probably a bad practice, invert everything
+
 pub struct Graphics {
     custom_sprites: HashMap<usize, CustomSpriteData>,
     sprites: HashMap<usize, SpriteData>,
@@ -184,12 +186,12 @@ impl Graphics {
         }
     }
 
-    pub fn render_text (&mut self,  id: &usize, msg: &str, transform: [[f32; 4]; 4], color: (f32, f32, f32, f32)) {
+    pub fn render_text (&mut self,  id: &usize, msg: &str, transform: &[[f32; 4]; 4], color: &(f32, f32, f32, f32)) {
         match self.current_frame {
             Some(ref mut target) => {
                 if let Some(font) = self.fonts.get(id) {
                     let text = TextDisplay::new(&self.tex_sys, font, msg);
-                    glium_text::draw(&text, &self.tex_sys, target, transform, color);
+                    glium_text::draw(&text, &self.tex_sys, target, *transform, *color);
                 }
             }
              None => { println!("Cannot render text without initialized frame!"); }

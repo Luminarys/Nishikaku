@@ -41,8 +41,10 @@ impl MainMenu {
 
 pub struct MainMenuBar {
     pg: PGComp,
+    text: TextComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
+    selected: bool,
 }
 
 impl MainMenuBar {
@@ -53,15 +55,18 @@ impl MainMenuBar {
         let p = PhysicsComp::new(w.id,
                                  0,
                                  Vector2::new(0.0, 0.0),
-                                 ShapeHandle2::new(Cuboid::new(Vector2::new(120.0, 40.0))),
+                                 ShapeHandle2::new(Cuboid::new(Vector2::new(120.0, 20.0))),
                                  PhysicsInteraction::SemiInteractive,
-                                 GeometricQueryType::Contacts(0.1),
+                                 GeometricQueryType::Proximity(0.1),
                                  &engine.scene);
         let pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
+        let text = TextCompBuilder::new_scaled(engine).with_font(1).with_pos((-20.0, -10.0)).with_text("Play").build();
         Object::MainMenuBar(MainMenuBar {
             ev: e,
             world: w,
             pg: pg,
+            text: text,
+            selected: false,
         })
     }
 
@@ -72,6 +77,10 @@ impl MainMenuBar {
             }
             Event::Render => {
                 self.pg.render();
+                self.text.render();
+            }
+            Event::Proximity(id, ref data) => {
+                println!("Proximity ev");
             }
             _ => {}
         };
