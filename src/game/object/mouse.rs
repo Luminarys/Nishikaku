@@ -48,6 +48,9 @@ impl Mouse {
                 self.ev.subscribe(Event::MouseMove((0.0, 0.0)));
                 self.ev.subscribe(Event::MouseInput(InputState::Released, MouseButton::Left));
             }
+            Event::Update(dt) => {
+                // self.phys.update(dt);
+            }
             Event::MouseMove(pos) => {
                 self.phys.set_pos(Isometry2::new(Vector2::new(pos.0, pos.1), nalgebra::Vector1::new(0.0)));
                 self.pos = pos;
@@ -71,12 +74,13 @@ impl Mouse {
             Event::Proximity(id, ref data) => {
                 match data.proximity {
                     Proximity::Intersecting => {
+                        println!("{:?} entered", id);
                         self.moused_over.push(id);
                         let e = Event::Custom(Box::new(CEvent::MouseOver));
                         self.ev.dispatch_to(id, e);
                     }
                     Proximity::Disjoint => {
-                        self.moused_over.pop();
+                        println!("{:?}", self.moused_over.pop());
                         // assert_eq!(Some(id), self.moused_over.pop());
                         let e = Event::Custom(Box::new(CEvent::MouseLeft));
                         self.ev.dispatch_to(id, e);

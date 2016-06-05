@@ -50,7 +50,7 @@ impl PGComp {
 
     pub fn translate(&mut self, delta: Vector2<f32>) {
         self.graphics.translate(delta.x / self.scaler, delta.y / self.scaler);
-        for comp in self.physics.iter() {
+        for comp in self.physics.iter_mut() {
             comp.translate(delta);
         }
     }
@@ -66,16 +66,13 @@ impl PGComp {
 
     pub fn set_pos(&mut self, pos: (f32, f32)) {
         let (new_x, new_y) = (pos.0 / self.scaler, pos.1 / self.scaler);
-        let (old_x, old_y) = self.get_pos();
+        let (old_x, old_y) = self.get_gfx_pos();
         let (delta_x, delta_y) = ((new_x - old_x) * self.scaler, (new_y - old_y) * self.scaler);
         let delta = Vector2::new(delta_x, delta_y);
-        self.graphics.set_pos(new_x, new_y);
-        for comp in self.physics.iter() {
-            comp.translate(delta);
-        }
+        self.translate(delta);
     }
 
-    pub fn set_gfx_pos(&mut self, pos: (f32, f32)) {
+    pub fn set_pos_gfx(&mut self, pos: (f32, f32)) {
         let converted_pos = (pos.0 * self.scaler, pos.1 * self.scaler);
         self.set_pos(converted_pos);
     }
@@ -99,7 +96,7 @@ impl PGComp {
             } else if new_pos.1 < -1.0 + self.half_widths.1 {
                 actual_pos.1 = -1.0 + self.half_widths.1;
             }
-            self.set_gfx_pos(actual_pos);
+            self.set_pos_gfx(actual_pos);
         }
     }
 }

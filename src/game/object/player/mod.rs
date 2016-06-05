@@ -143,6 +143,7 @@ impl Bullet {
                 self.pg.update(t);
             }
             Event::Proximity(id, ref data) => {
+                println!("Prox ev!");
                 if let Some(s) = self.world.find_aliased_entity_alias(&id) {
                     match (&s[..], data.proximity) {
                         ("screen_area", Proximity::Disjoint) => {

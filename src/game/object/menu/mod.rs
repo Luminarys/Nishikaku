@@ -5,6 +5,7 @@ use ncollide::world::GeometricQueryType;
 
 use game::object::Object;
 use game::object::player::Player;
+use game::object::level::Level;
 use game::event::Event as CEvent;
 use engine::Engine;
 use engine::scene::PhysicsInteraction;
@@ -96,7 +97,7 @@ impl MainMenuBar {
                 println!("Moused left menu bar!");
             }
             CEvent::MouseClickedOver => {
-                self.ev.create_entity(Box::new(|engine| Player::new(engine)));
+                self.ev.create_entity(Box::new(move |engine| Level::new(engine)));
                 self.ev.destroy_self();
                 println!("Mouse clicked menu bar!");
             }

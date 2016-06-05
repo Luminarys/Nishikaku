@@ -9,7 +9,6 @@ use ncollide::world::GeometricQueryType;
 use nalgebra::Vector2;
 
 use game::object::Object;
-use game::object::mouse::Mouse;
 use game::object::player::Player;
 
 /// Top level game controller
@@ -73,7 +72,6 @@ impl ScreenArea {
         match *e {
             Event::Spawn => {
                 println!("Spawned Level!");
-                self.ev.create_entity(Box::new(move |engine| Mouse::new(engine)));
             }
             _ => {}
         };

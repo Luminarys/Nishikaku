@@ -29,7 +29,6 @@ impl Controller {
             Event::Spawn => {
                 println!("Spawned controller!");
                 self.ev.create_entity(Box::new(|engine| Mouse::new(engine)));
-                // self.ev.create_entity(Box::new(move |engine| Level::new(engine)));
                 self.ev.create_entity(Box::new(|engine| MainMenu::new(engine)));
             }
             _ => {}
