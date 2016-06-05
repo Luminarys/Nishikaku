@@ -1,6 +1,6 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 use std::ops::DerefMut;
 use ncollide::world::{CollisionWorld2, CollisionGroups, GeometricQueryType, CollisionObject2};
@@ -257,6 +257,7 @@ pub struct Registry {
     reclaimable: bool,
     names: HashMap<String, usize>,
     rev_names: HashMap<usize, String>,
+    tags: HashMap<String, HashSet<usize>>,
 }
 
 impl Registry {
@@ -268,12 +269,31 @@ impl Registry {
             reclaimable: true,
             names: HashMap::new(),
             rev_names: HashMap::new(),
+            tags: HashMap::new(),
         }
     }
 
     pub fn no_reclaim(&mut self) {
         self.reclaim();
         self.reclaimable = false;
+    }
+
+    pub fn tag_id(&mut self, id: usize, tag: String) {
+        if self.tags.contains_key(&tag) {
+            self.tags.get_mut(&tag).unwrap().insert(id);
+        } else {
+            let mut set = HashSet::new();
+            set.insert(id);
+            self.tags.insert(tag, set);
+        }
+    }
+
+    pub fn get_tagged(&mut self, tag: &String)  -> Option<&mut HashSet<usize>> {
+        self.tags.get_mut(tag)
+    }
+
+    pub fn remove_tagged(&mut self, tag: &String)  -> Option<HashSet<usize>> {
+        self.tags.remove(tag)
     }
 
     pub fn create_alias(&mut self, name: String, id: usize) {

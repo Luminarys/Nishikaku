@@ -2,14 +2,14 @@ use std::rc::Rc;
 use nalgebra::Vector2;
 use ncollide::shape::{Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
-use ncollide::query::Proximity;
 
 use game::object::Object;
+use game::object::player::Player;
 use game::event::Event as CEvent;
 use engine::Engine;
 use engine::scene::PhysicsInteraction;
 use engine::entity::component::*;
-use engine::event::{Event, InputState};
+use engine::event::Event;
 
 pub struct MainMenu {
     ev: EventComp<Object>,
@@ -96,6 +96,8 @@ impl MainMenuBar {
                 println!("Moused left menu bar!");
             }
             CEvent::MouseClickedOver => {
+                self.ev.create_entity(Box::new(|engine| Player::new(engine)));
+                self.ev.destroy_self();
                 println!("Mouse clicked menu bar!");
             }
             _ => { }

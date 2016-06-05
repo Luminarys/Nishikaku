@@ -6,7 +6,6 @@ use engine::event::Event;
 
 use game::object::Object;
 use game::object::mouse::Mouse;
-use game::object::level::Level;
 use game::object::menu::MainMenu;
 
 /// Top level game controller

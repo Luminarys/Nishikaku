@@ -76,7 +76,8 @@ impl Mouse {
                         self.ev.dispatch_to(id, e);
                     }
                     Proximity::Disjoint => {
-                        assert_eq!(Some(id), self.moused_over.pop());
+                        self.moused_over.pop();
+                        // assert_eq!(Some(id), self.moused_over.pop());
                         let e = Event::Custom(Box::new(CEvent::MouseLeft));
                         self.ev.dispatch_to(id, e);
                     }
