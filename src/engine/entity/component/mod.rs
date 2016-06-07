@@ -16,5 +16,8 @@ pub use self::physics::*;
 mod graphics;
 pub use self::graphics::*;
 
+mod audio;
+pub use self::audio::*;
+
 mod pg;
 pub use self::pg::*;

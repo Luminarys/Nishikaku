@@ -84,11 +84,12 @@ pub struct FontAttrs {
 
 impl Default for FontAttrs {
     fn default() -> FontAttrs {
+        let scaler = 0.07;
         FontAttrs {
             transform: [
-                        [0.1, 0.0, 0.0, 0.0],
-                        [0.0, 0.1, 0.0, 0.0],
-                        [0.0, 0.0, 0.1, 0.0],
+                        [scaler, 0.0, 0.0, 0.0],
+                        [0.0, scaler, 0.0, 0.0],
+                        [0.0, 0.0, scaler, 0.0],
                         [0.0, 0.0, 0.0, 1.0]
                     ],
             color: (1.0, 1.0, 1.0, 1.0)

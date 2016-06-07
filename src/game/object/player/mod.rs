@@ -21,7 +21,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldComp::new(&engine.scene);
+        let w = WorldCompBuilder::new(engine).build();
         let g = GraphicsComp::new(engine.graphics.clone(), 1);
         let e = EventComp::new(w.id, engine.events.clone());
 
@@ -116,7 +116,7 @@ pub struct Bullet {
 impl Bullet {
     pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32)) -> Object {
         let mut g = GraphicsComp::new(engine.graphics.clone(), 2);
-        let w = WorldComp::new(&engine.scene);
+        let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
         let scaler = engine.scene.physics.scaler;
         let p = PhysicsComp::new(w.id,
@@ -143,7 +143,6 @@ impl Bullet {
                 self.pg.update(t);
             }
             Event::Proximity(id, ref data) => {
-                println!("Prox ev!");
                 if let Some(s) = self.world.find_aliased_entity_alias(&id) {
                     match (&s[..], data.proximity) {
                         ("screen_area", Proximity::Disjoint) => {

@@ -16,7 +16,7 @@ pub struct Controller {
 
 impl Controller {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldComp::new(&engine.scene);
+        let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
         Object::Controller(Controller {
             ev: e,

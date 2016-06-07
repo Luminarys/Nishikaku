@@ -23,7 +23,7 @@ pub struct Mouse {
 
 impl Mouse {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldComp::new(&engine.scene);
+        let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
         let p = PhysicsComp::new(w.id,
                                  0,
@@ -47,9 +47,6 @@ impl Mouse {
                 println!("Mouse spawned!");
                 self.ev.subscribe(Event::MouseMove((0.0, 0.0)));
                 self.ev.subscribe(Event::MouseInput(InputState::Released, MouseButton::Left));
-            }
-            Event::Update(dt) => {
-                // self.phys.update(dt);
             }
             Event::MouseMove(pos) => {
                 self.phys.set_pos(Isometry2::new(Vector2::new(pos.0, pos.1), nalgebra::Vector1::new(0.0)));

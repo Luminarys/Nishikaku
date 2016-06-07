@@ -19,7 +19,7 @@ pub struct Level {
 
 impl Level {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldComp::new(&engine.scene);
+        let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
         Object::Level(Level {
             ev: e,
@@ -51,7 +51,7 @@ pub struct ScreenArea {
 
 impl ScreenArea {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldComp::with_alias(&engine.scene, String::from("screen_area"));
+        let w = WorldCompBuilder::new(engine).with_alias(String::from("screen_area")).build();
         let e = EventComp::new(w.id, engine.events.clone());
         let scaler = engine.scene.physics.scaler;
         let p = PhysicsComp::new(w.id,

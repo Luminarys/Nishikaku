@@ -4,7 +4,6 @@ use ncollide::shape::{Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 
 use game::object::Object;
-use game::object::player::Player;
 use game::object::level::Level;
 use game::event::Event as CEvent;
 use engine::Engine;
@@ -19,7 +18,7 @@ pub struct MainMenu {
 
 impl MainMenu {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldComp::new(&engine.scene);
+        let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
         Object::MainMenu(MainMenu {
             ev: e,
@@ -30,6 +29,7 @@ impl MainMenu {
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Spawn => {
+                // TODO: More, fancier menu options.
                 self.ev.create_entity(Box::new(move |engine| MainMenuBar::new(engine)));
             }
             _ => {}
@@ -44,6 +44,7 @@ impl MainMenu {
 pub struct MainMenuBar {
     pg: PGComp,
     text: TextComp,
+    audio: AudioComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
     selected: bool,
@@ -51,7 +52,7 @@ pub struct MainMenuBar {
 
 impl MainMenuBar {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldComp::new(&engine.scene);
+        let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
         let g = GraphicsComp::new(engine.graphics.clone(), 3);
         let p = PhysicsComp::new(w.id,
@@ -68,6 +69,7 @@ impl MainMenuBar {
             world: w,
             pg: pg,
             text: text,
+            audio: AudioComp::new(engine),
             selected: false,
         })
     }
@@ -76,6 +78,7 @@ impl MainMenuBar {
         match *e {
             Event::Spawn => {
                 println!("Spawned menu bar!");
+                self.audio.play(&1);
             }
             Event::Render => {
                 self.pg.render();
@@ -91,15 +94,15 @@ impl MainMenuBar {
     fn handle_custom_event(&mut self, e: &CEvent) {
         match *e {
             CEvent::MouseOver => {
-                println!("Moused over menu bar!");
+                // TODO: Fancy animation/coloring
             }
             CEvent::MouseLeft => {
-                println!("Moused left menu bar!");
+                // TODO: Fancy animation/coloring
             }
             CEvent::MouseClickedOver => {
                 self.ev.create_entity(Box::new(move |engine| Level::new(engine)));
                 self.ev.destroy_self();
-                println!("Mouse clicked menu bar!");
+                self.audio.stop();
             }
             _ => { }
         }

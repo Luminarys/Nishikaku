@@ -288,6 +288,12 @@ impl Registry {
         }
     }
 
+    pub fn untag_id(&mut self, id: &usize, tag: &String) {
+        if self.tags.contains_key(tag) {
+            self.tags.get_mut(tag).unwrap().remove(id);
+        }
+    }
+
     pub fn get_tagged(&mut self, tag: &String)  -> Option<&mut HashSet<usize>> {
         self.tags.get_mut(tag)
     }

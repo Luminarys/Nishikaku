@@ -40,6 +40,10 @@ impl Audio {
             None => { println!("Tried to play invalid audio with id: {}", id); }
         }
     }
+
+    pub fn stop(&self) {
+        sdl2_mixer::Music::halt();
+    }
 }
 
 impl Drop for Audio {

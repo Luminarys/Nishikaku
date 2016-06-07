@@ -162,7 +162,7 @@ impl Graphics {
 
     pub fn load_font(&mut self, id: usize, path: &str) {
         let f = File::open(path).unwrap();
-        let font = FontTexture::new(&self.display, f, 24).unwrap();
+        let font = FontTexture::new(&self.display, f, 36).unwrap();
         self.fonts.insert(id, font);
     }
 
