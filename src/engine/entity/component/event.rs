@@ -92,6 +92,10 @@ impl<E: Entity> EventComp<E> {
         self.handler.borrow_mut().enqueue_sys(SysEvent::Destroy(self.id));
     }
 
+    pub fn destroy_other(&self, id: usize) {
+        self.handler.borrow_mut().enqueue_sys(SysEvent::Destroy(id));
+    }
+
     pub fn dispatch(&self, event: Event) {
         self.handler.borrow_mut().enqueue_all(event);
     }

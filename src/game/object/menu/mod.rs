@@ -18,7 +18,7 @@ pub struct MainMenu {
 
 impl MainMenu {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldCompBuilder::new(engine).build();
+        let w = WorldCompBuilder::new(engine).with_tag(String::from("main_menu")).build();
         let e = EventComp::new(w.id, engine.events.clone());
         Object::MainMenu(MainMenu {
             ev: e,
@@ -52,7 +52,7 @@ pub struct MainMenuBar {
 
 impl MainMenuBar {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldCompBuilder::new(engine).build();
+        let w = WorldCompBuilder::new(engine).with_tag(String::from("main_menu")).build();
         let e = EventComp::new(w.id, engine.events.clone());
         let g = GraphicsComp::new(engine.graphics.clone(), 3);
         let p = PhysicsComp::new(w.id,
@@ -101,7 +101,11 @@ impl MainMenuBar {
             }
             CEvent::MouseClickedOver => {
                 self.ev.create_entity(Box::new(move |engine| Level::new(engine)));
-                self.ev.destroy_self();
+                if let Some(tags) = self.world.get_tagged(&String::from("main_menu")) {
+                    for id in tags {
+                        self.ev.destroy_other(id);
+                    }
+                }
                 self.audio.stop();
             }
             _ => { }

@@ -1,4 +1,6 @@
 use std::path::Path;
+use std::fs::File;
+use toml;
 
 use engine::Engine;
 use engine::graphics::SpriteVertex;
@@ -6,11 +8,25 @@ use game::object::Object;
 
 pub fn load_assets(engine: &mut Engine<Object>) {
     println!("Loading assets!");
+    load_level();
     load_bullet(engine);
     load_char(engine);
     load_menu(engine);
     load_sound(engine);
     load_fonts(engine);
+}
+
+fn load_level() {
+    use std::io::Read;
+
+    let mut f = File::open("assets/level.toml").unwrap();
+    let mut s = String::new();
+    f.read_to_string(&mut s).unwrap();
+    let mut parser = toml::Parser::new(&s[..]);
+    match parser.parse() {
+        Some(v) => { println!("{:?}", v); }
+        None => { println!("{:?}", parser.errors); }
+    };
 }
 
 fn load_fonts(engine: &mut Engine<Object>) {

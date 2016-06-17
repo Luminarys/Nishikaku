@@ -1,0 +1,80 @@
+[enemies]
+
+[enemies.basic_cuve]
+sprite = 1
+health = 10
+
+[enemies.circle] sprite = 1
+health = 5
+
+[bullets]
+
+[bullets.basic_straight]
+sprite = 10
+radius = 5
+behavior = "straight"
+
+ [level]
+
+ [level.pstart]
+ time = {after = "start", amount = 0}
+ spawn = [{type = "player", init_pos = [0, -180]}]
+
+[level.wave1]
+time = {after = "pstart", amount = 5}
+
+[[level.wave1.spawn]]
+ type = 'enemy'
+id = "basic_curve"
+location = {type = "point", position = [-200, 180]}
+paths = [
+  { type = "curve", points = [[-200, 180], [-100, 140], [-200, 100]], speed = 40, action = {
+    type = "bullets",
+    time_start = 1.0,
+    pattern = {
+      type = "line",
+      bullet_id = "basic_straight",
+      angle = 270,
+      speed = 40,
+      amount = 5,
+      time_int = 0.5
+    }
+  }}
+  ]
+repeat = 5
+repeat_delay = 0.5
+dup = {amount = 5, time_diff = 0.5}
+contact_dmg = 6
+mirror_x = true
+
+[level.wave2]
+time = {after = "wave1", amount = 2}
+
+# Somewhat more complex wave, spawns 10 enemies in a circle, has them move clockwise in a half circle, then curve out, and shoot 25 bullet 60 degree arcs
+[[level.wave2.spawn]]
+type = "enemy"
+id = "circle"
+location = {type = "arc", center = [-50, 50], radius = 25, astart = 0, end = 360, amount = 10}
+paths = [
+  { type = "arc",  center = [-50, 50], radius = 25, start = "current", degrees: 180, speed = 40 },
+  { type = "curve", points = ["current", [75, 0], [200, 0]], speed = 60, action = {
+    type = "bullets",
+    time_start = 1.0,
+    pattern = {
+      type = "arc",
+      bullet_id = "basic_straight",
+      amount = 5,
+      astart = 240.0,
+      aend = 300.0,
+      speed = 40,
+      time_int = 0.0,
+      radius = 10.0,
+    }
+    repeat = 2,
+    repeat_delay = 2.0,
+  }}
+]
+repeat = 1
+repeat_delay = 2.0
+contact_dmg = 5
+mirror_x = true

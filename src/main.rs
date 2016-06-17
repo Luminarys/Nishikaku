@@ -9,6 +9,7 @@ extern crate clock_ticks;
 extern crate image;
 extern crate sdl2;
 extern crate sdl2_mixer;
+extern crate toml;
 
 #[macro_use]
 mod macros;

@@ -1,0 +1,140 @@
+use ncollide::procedural::Polyline;
+use nalgebra::{Norm, Vector2, Point2};
+
+//paths = [
+//  { type = "curve", points = [[-200, 180], [-100, 140], [-200, 100]], speed = 40, action = {
+//    type = "bullets",
+//    id = "basic_straight",
+//    time_start = 1.0,
+//  }}
+//  ]
+
+// paths = [
+//   { type = "arc",  center = [-50, 50], radius = 25, start = "current", degrees: 180, speed = 40 },
+//   { type = "curve", points = ["current", [75, 0], [200, 0]], speed = 60, action = {
+//     type = "bullets",
+//     id = "basic_straight",
+//     time_start = 1.0,
+//     repeat = 2,
+//     repeat_delay = 2.0,
+//   }}
+// ]
+
+pub enum Path {
+    Arc(Arc),
+    Curve(Curve),
+}
+
+impl Path {
+    pub fn travel(&mut self, dt: f32) -> Option<Vector2<f32>> {
+        match self {
+            &mut Path::Arc(ref mut a) => a.travel(dt),
+            &mut Path::Curve(ref mut c) => c.travel(dt),
+            }
+        }
+
+    pub fn finished(&self) -> bool {
+        match self {
+            &Path::Arc(ref a) => a.degrees <= 0.0,
+            &Path::Curve(ref c) => c.points.len() == 1,
+        }
+    }
+}
+
+pub enum RotationDirection {
+    Clockwise,
+    CounterClockwise
+}
+
+pub struct Arc {
+    center: Vector2<f32>,
+    current_pos: Vector2<f32>,
+    radius: f32,
+    degrees: f32,
+    speed: f32,
+    direction: RotationDirection,
+}
+
+impl Arc {
+    fn travel(&mut self, dt: f32) -> Option<Vector2<f32>> {
+        use std::f32::consts::PI;
+
+        if self.degrees > 0.0 {
+            let dist = self.speed * dt;
+            let circ = 2.0 * self.radius * PI;
+            let ang = 360.0 * dist/circ;
+            // Handle the case where the angle greatly surpasses degrees left?
+            let mut c_ang = self.current_pos.y.atan2(self.current_pos.x);
+            self.degrees -= ang;
+            match self.direction {
+                RotationDirection::Clockwise => {
+                    c_ang -= ang
+                }
+                RotationDirection::CounterClockwise => {
+                    c_ang += ang
+                }
+            };
+            self.current_pos = Vector2::new(self.radius * c_ang.to_radians().cos(), self.radius * c_ang.to_radians().sin());
+            Some(self.current_pos)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct Curve {
+    points: Vec<Point2<f32>>,
+    current_pos: Vector2<f32>,
+    dist_left: f32,
+    node_dist_left: f32,
+    speed: f32,
+}
+
+impl Curve {
+    fn travel(&mut self, dt: f32) -> Option<Vector2<f32>> {
+        if self.points.len() > 1 {
+            let mut dist = self.speed * dt;
+            if dist > self.node_dist_left && self.points.len() > 2 {
+                // Advance to the next point and then recall the method with reduced dt so that hopefully case 3 is used.
+                dist -= self.node_dist_left;
+                self.points.remove(0);
+
+                let dp = self.points[1] - self.points[0];
+                self.node_dist_left = dp.norm();
+                self.current_pos = *self.points[0].as_vector();
+                let time_left = dist/self.speed;
+                self.travel(time_left)
+            } else if dist > self.node_dist_left && self.points.len() == 2 {
+                // Return the final point if we finish up travelling to it
+                // Do we care that we may have exceeded the final point?
+                self.current_pos = self.points.remove(0).to_vector();
+                Some(self.current_pos)
+            } else {
+                // Reduce node dist left and extend the current pos vector proportional to distnace travelled across the vector between the prev point and next point
+                self.node_dist_left -= dist;
+                let dp = self.points[1] - self.points[0];
+                let dt = dp * dist/dp.norm();
+                self.current_pos += dt;
+                Some(self.current_pos)
+            }
+        } else {
+            None
+        }
+    }
+}
+
+pub enum Point {
+    Fixed(Vector2<f32>),
+    Player(Vector2<f32>),
+    Current(Vector2<f32>),
+}
+
+impl Point {
+    pub fn eval(&self, current: &Vector2<f32>, player: &Vector2<f32>) -> Vector2<f32> {
+        match self {
+            &Point::Fixed(ref p) => *p,
+            &Point::Player(ref p) => *p + *player,
+            &Point::Current(ref p) => *p + *current,
+        }
+    }
+}

@@ -1,3 +1,6 @@
+pub mod path;
+pub mod pattern;
+
 use std::rc::Rc;
 
 use engine::Engine;
@@ -6,7 +9,7 @@ use engine::event::Event;
 use engine::scene::PhysicsInteraction;
 use ncollide::shape::{Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Point2};
 
 use game::object::Object;
 use game::object::player::Player;
@@ -80,5 +83,4 @@ impl ScreenArea {
     pub fn id(&self) -> usize {
         self.world.id
     }
-
 }

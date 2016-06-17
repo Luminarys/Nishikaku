@@ -1,4 +1,5 @@
 use nalgebra::Vector2;
+use nalgebra::angle_between;
 use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 use ncollide::query::Proximity;
@@ -11,16 +12,26 @@ use engine::event::{Event, InputState};
 use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
+use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
 
 pub struct Player {
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
+    pat: Pattern,
     slowdown: f32,
 }
 
 impl Player {
     pub fn new(engine: &Engine<Object>) -> Object {
+        use ncollide::procedural::bezier_curve;
+        use nalgebra::Point2;
+        let c = bezier_curve(&[Point2::new(0.0, 0.0), Point2::new(0.5, 1.0), Point2::new(1.0, 0.0)], 10);
+        println!("BC coords: {:?}", c.coords());
+
+        let v1 = Vector2::new(1.0f32, 0.0);
+        let v2 = Vector2::new(0.0, -1.0);
+        let pat = PatternBuilder::new(Angle::Fixed(180.0), Angle::Fixed(360.0), 0.0, 0.5, 20, 1, 100.0).build(&v1, &v2);
         let w = WorldCompBuilder::new(engine).build();
         let g = GraphicsComp::new(engine.graphics.clone(), 1);
         let e = EventComp::new(w.id, engine.events.clone());
@@ -39,6 +50,7 @@ impl Player {
             ev: e,
             world: w,
             slowdown: 1.0,
+            pat: pat,
         })
     }
 
@@ -93,9 +105,13 @@ impl Player {
         };
     }
 
-    fn shoot_bullet(&self) {
+    fn shoot_bullet(&mut self) {
         let pos = self.pg.get_pos();
-        self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos)));
+        let np = match self.pat.next() {
+            Some((_, np)) => np,
+            None => Vector2::new(0.0, -200.0),
+        };
+        self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos, Some(np))));
     }
 
     pub fn render(&self) -> Option<RenderInfo> {
@@ -114,7 +130,7 @@ pub struct Bullet {
 }
 
 impl Bullet {
-    pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32)) -> Object {
+    pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32), vel: Option<Vector2<f32>>) -> Object {
         let mut g = GraphicsComp::new(engine.graphics.clone(), 2);
         let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
@@ -128,7 +144,10 @@ impl Bullet {
                                  &engine.scene);
         g.translate(pos.0 / scaler, pos.1 / scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
-        pg.velocity = Vector2::new(0.0, 200.0);
+        pg.velocity = match vel {
+            Some(v) => v,
+            None => Vector2::new(0.0, -200.0),
+        };
         Object::PlayerBullet(Bullet {
             pg: pg,
             ev: e,
