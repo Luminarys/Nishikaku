@@ -57,13 +57,14 @@ pub struct Arc {
 impl Arc {
     fn travel(&mut self, dt: f32) -> Option<Vector2<f32>> {
         use std::f32::consts::PI;
+        use nalgebra::angle_between;
 
         if self.degrees > 0.0 {
             let dist = self.speed * dt;
             let circ = 2.0 * self.radius * PI;
             let ang = 360.0 * dist/circ;
             // Handle the case where the angle greatly surpasses degrees left?
-            let mut c_ang = self.current_pos.y.atan2(self.current_pos.x);
+            let mut c_ang = angle_between(&Vector2::new(1.0, 0.0), &(self.current_pos - self.center)).to_degrees();
             self.degrees -= ang;
             match self.direction {
                 RotationDirection::Clockwise => {
@@ -73,7 +74,8 @@ impl Arc {
                     c_ang += ang
                 }
             };
-            self.current_pos = Vector2::new(self.radius * c_ang.to_radians().cos(), self.radius * c_ang.to_radians().sin());
+            let dp = Vector2::new(self.radius * c_ang.to_radians().cos(), self.radius * c_ang.to_radians().sin());
+            self.current_pos =  dp + self.center;
             Some(self.current_pos)
         } else {
             None
@@ -131,8 +133,8 @@ impl Point {
     pub fn eval(&self, current: &Vector2<f32>, player: &Vector2<f32>) -> Vector2<f32> {
         match self {
             &Point::Fixed(ref p) => *p,
-            &Point::Player(ref p) => *p + *player,
             &Point::Current(ref p) => *p + *current,
+            &Point::Player(ref p) => *p + *player,
         }
     }
 }
@@ -185,15 +187,16 @@ impl PathBuilder {
         self
     }
 
-    pub fn build_arc(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Arc {
-        Arc {
-            center: self.center.unwrap().eval(current_pos, player_pos),
+    pub fn build_arc(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
+        let center = self.center.unwrap().eval(current_pos, player_pos);
+        Path::Arc(Arc {
+            center: center,
             current_pos: *current_pos,
             radius: self.radius.unwrap(),
             degrees: self.degrees.unwrap(),
             speed: self.speed.unwrap(),
             direction: self.direction.unwrap(),
-        }
+        })
     }
 
     pub fn points(mut self, points: Vec<Point>) -> PathBuilder {
@@ -201,7 +204,7 @@ impl PathBuilder {
         self
     }
 
-    pub fn build_curve(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Curve {
+    pub fn build_curve(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
         use ncollide::procedural::bezier_curve;
 
         let points: Vec<_> = self.points.unwrap().iter().map(|point| {
@@ -209,11 +212,11 @@ impl PathBuilder {
         }).collect();
         let (points, _) = bezier_curve(&points[..], 100).unwrap();
 
-        Curve {
+        Path::Curve(Curve {
             points: points,
             current_pos: *current_pos,
             node_dist_left: 0.0,
             speed: self.speed.unwrap(),
-        }
+        })
     }
 }

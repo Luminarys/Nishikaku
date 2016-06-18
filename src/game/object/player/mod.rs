@@ -1,5 +1,4 @@
 use nalgebra::Vector2;
-use nalgebra::angle_between;
 use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 use ncollide::query::Proximity;
@@ -13,6 +12,7 @@ use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
 use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
+use game::object::level::path::{RotationDirection, Path, PathBuilder, Point};
 
 pub struct Player {
     pg: PGComp,
@@ -111,7 +111,7 @@ impl Player {
             Some((_, np)) => np,
             None => Vector2::new(0.0, -200.0),
         };
-        self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos, Some(np))));
+        self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos, np)));
     }
 
     pub fn render(&self) -> Option<RenderInfo> {
@@ -125,12 +125,21 @@ impl Player {
 
 pub struct Bullet {
     pg: PGComp,
+    path: Path,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
 }
 
 impl Bullet {
-    pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32), vel: Option<Vector2<f32>>) -> Object {
+    pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32), vel: Vector2<f32>) -> Object {
+
+        let path = PathBuilder::new()
+            .speed(50.0)
+            .center(Point::Current(Vector2::new(-50.0, 0.0)))
+            .degrees(180.0)
+            .direction(RotationDirection::Clockwise)
+            .radius(50.0)
+            .build_arc(&Vector2::new(pos.0, pos.1), &Vector2::new(0.0, 0.0));
         let mut g = GraphicsComp::new(engine.graphics.clone(), 2);
         let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
@@ -144,14 +153,12 @@ impl Bullet {
                                  &engine.scene);
         g.translate(pos.0 / scaler, pos.1 / scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
-        pg.velocity = match vel {
-            Some(v) => v,
-            None => Vector2::new(0.0, -200.0),
-        };
+        // pg.velocity = vel;
         Object::PlayerBullet(Bullet {
             pg: pg,
             ev: e,
             world: w,
+            path: path,
         })
     }
 
@@ -159,6 +166,10 @@ impl Bullet {
         match *e {
             Event::Spawn => {}
             Event::Update(t) => {
+                match self.path.travel(t) {
+                    Some(p) => self.pg.set_pos((p.x, p.y)),
+                    None => { },
+                };
                 self.pg.update(t);
             }
             Event::Proximity(id, ref data) => {
