@@ -9,7 +9,7 @@ use engine::event::Event;
 use engine::scene::PhysicsInteraction;
 use ncollide::shape::{Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
-use nalgebra::{Vector2, Point2};
+use nalgebra::Vector2;
 
 use game::object::Object;
 use game::object::player::Player;
