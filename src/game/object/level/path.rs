@@ -23,6 +23,14 @@ impl Path {
             &Path::Curve(ref c) => c.points.len() == 1,
         }
     }
+
+    pub fn actions(&mut self) -> Vec<Action> {
+        use std::mem;
+        match self {
+            &mut Path::Arc(ref mut a) => mem::replace(&mut a.actions, Vec::new()),
+            &mut Path::Curve(ref mut c) => mem::replace(&mut c.actions, Vec::new()),
+        }
+    }
 }
 
 pub enum RotationDirection {
