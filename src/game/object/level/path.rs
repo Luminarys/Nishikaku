@@ -1,23 +1,8 @@
 use nalgebra::{Norm, Vector2, Point2};
+use game::object::level::Point;
+use game::object::level::action::Action;
 
-//paths = [
-//  { type = "curve", points = [[-200, 180], [-100, 140], [-200, 100]], speed = 40, action = {
-//    type = "bullets",
-//    id = "basic_straight",
-//    time_start = 1.0,
-//  }}
-//  ]
-
-// paths = [
-//   { type = "arc",  center = [-50, 50], radius = 25, start = "current", degrees: 180, speed = 40 },
-//   { type = "curve", points = ["current", [75, 0], [200, 0]], speed = 60, action = {
-//     type = "bullets",
-//     id = "basic_straight",
-//     time_start = 1.0,
-//     repeat = 2,
-//     repeat_delay = 2.0,
-//   }}
-// ]
+// TODO: Write tests - this code is complicated and almost certaintly error prone
 
 pub enum Path {
     Arc(Arc),
@@ -52,6 +37,7 @@ pub struct Arc {
     degrees: f32,
     speed: f32,
     direction: RotationDirection,
+    actions: Vec<Action>,
 }
 
 impl Arc {
@@ -88,6 +74,7 @@ pub struct Curve {
     current_pos: Vector2<f32>,
     node_dist_left: f32,
     speed: f32,
+    actions: Vec<Action>,
 }
 
 impl Curve {
@@ -107,10 +94,11 @@ impl Curve {
             } else if dist > self.node_dist_left && self.points.len() == 2 {
                 // Return the final point if we finish up travelling to it
                 // Do we care that we may have exceeded the final point?
+                // Theoretically dt is always small enough that it'll never matter
                 self.current_pos = self.points.remove(0).to_vector();
                 Some(self.current_pos)
             } else {
-                // Reduce node dist left and extend the current pos vector proportional to distnace travelled across the vector between the prev point and next point
+                // Reduce node dist left and extend the current pos vector proportional to distance travelled across the vector between the prev point and next point
                 self.node_dist_left -= dist;
                 let dp = self.points[1] - self.points[0];
                 let dt = dp * dist/dp.norm();
@@ -119,22 +107,6 @@ impl Curve {
             }
         } else {
             None
-        }
-    }
-}
-
-pub enum Point {
-    Fixed(Vector2<f32>),
-    Player(Vector2<f32>),
-    Current(Vector2<f32>),
-}
-
-impl Point {
-    pub fn eval(&self, current: &Vector2<f32>, player: &Vector2<f32>) -> Vector2<f32> {
-        match self {
-            &Point::Fixed(ref p) => *p,
-            &Point::Current(ref p) => *p + *current,
-            &Point::Player(ref p) => *p + *player,
         }
     }
 }
@@ -148,6 +120,7 @@ pub struct PathBuilder {
     direction: Option<RotationDirection>,
     // Curve info
     points: Option<Vec<Point>>,
+    actions: Vec<Action>,
 }
 
 impl PathBuilder {
@@ -158,12 +131,18 @@ impl PathBuilder {
             radius: None,
             degrees: None,
             direction: None,
-            points: None
+            points: None,
+            actions: vec![]
         }
     }
 
     pub fn speed(mut self, speed: f32) -> PathBuilder {
         self.speed = Some(speed);
+        self
+    }
+
+    pub fn actions(mut self, mut actions: Vec<Action>) -> PathBuilder {
+        self.actions.append(&mut actions);
         self
     }
 
@@ -196,6 +175,7 @@ impl PathBuilder {
             degrees: self.degrees.unwrap(),
             speed: self.speed.unwrap(),
             direction: self.direction.unwrap(),
+            actions: self.actions,
         })
     }
 
@@ -217,6 +197,7 @@ impl PathBuilder {
             current_pos: *current_pos,
             node_dist_left: 0.0,
             speed: self.speed.unwrap(),
+            actions: self.actions,
         })
     }
 }

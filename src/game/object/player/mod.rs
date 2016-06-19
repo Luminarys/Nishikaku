@@ -12,7 +12,8 @@ use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
 use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
-use game::object::level::path::{RotationDirection, Path, PathBuilder, Point};
+use game::object::level::path::{RotationDirection, Path, PathBuilder};
+use game::object::level::Point;
 
 pub struct Player {
     pg: PGComp,
@@ -132,14 +133,10 @@ pub struct Bullet {
 
 impl Bullet {
     pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32), vel: Vector2<f32>) -> Object {
-
         let path = PathBuilder::new()
             .speed(50.0)
-            .center(Point::Current(Vector2::new(-50.0, 0.0)))
-            .degrees(180.0)
-            .direction(RotationDirection::Clockwise)
-            .radius(50.0)
-            .build_arc(&Vector2::new(pos.0, pos.1), &Vector2::new(0.0, 0.0));
+            .points(vec![Point::Current(Vector2::new(0.0, 0.0)), Point::Fixed(Vector2::new(0.0, -200.0)), Point::Fixed(Vector2::new(-200.0, 0.0))])
+            .build_curve(&Vector2::new(pos.0, pos.1), &Vector2::new(0.0, 0.0));
         let mut g = GraphicsComp::new(engine.graphics.clone(), 2);
         let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());

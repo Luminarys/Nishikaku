@@ -1,23 +1,5 @@
 use nalgebra::{angle_between, Vector2};
-//    pattern = {
-//      type = "line",
-//      bullet_id = blah
-//      angle = 270,
-//      speed = 40,
-//      amount = 5,
-//      time_int = 0.5
-//    }
-
-//     pattern = {
-//       type = "arc",
-//        bullet_id = blah
-//       amount = 5,
-//       astart = 240.0,
-//       aend = 300.0,
-//       speed = 40,
-//       time_int = 0.0,
-//       radius = 10.0,
-//     }
+// TODO: Write tests - this code is complicated and almost certaintly error prone
 
 pub struct Pattern {
     pub time_int: f32,
