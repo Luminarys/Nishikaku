@@ -1,5 +1,4 @@
 use nalgebra::Vector2;
-use ncollide::shape::{Ball, Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 use ncollide::query::Proximity;
 use glium::glutin::VirtualKeyCode;
@@ -12,7 +11,7 @@ use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
 use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
-use game::object::level::path::{RotationDirection, Path, PathBuilder};
+use game::object::level::path::{RotationDirection, Path, PathBuilder, PathType};
 use game::object::level::Point;
 
 pub struct Player {
@@ -32,7 +31,7 @@ impl Player {
 
         let v1 = Vector2::new(1.0f32, 0.0);
         let v2 = Vector2::new(0.0, -1.0);
-        let pat = PatternBuilder::new(Angle::Fixed(180.0), Angle::Fixed(360.0), 0.0, 0.5, 20, 1, 100.0).build(&v1, &v2);
+        let pat = PatternBuilder::new(Angle::Fixed(180.0), Angle::Fixed(360.0), 0.0, 0.5, 20, 100.0).build(&v1, &v2);
         let w = WorldCompBuilder::new(engine).build();
         let g = GraphicsComp::new(engine.graphics.clone(), 1);
         let e = EventComp::new(w.id, engine.events.clone());
@@ -40,7 +39,7 @@ impl Player {
         let p = PhysicsComp::new(w.id,
                                  0,
                                  Vector2::new(0.0, 0.0),
-                                 ShapeHandle2::new(Cuboid::new(Vector2::new(25.0, 50.0))),
+                                 engine.graphics.borrow().get_sprite_shape(&1).unwrap(),
                                  PhysicsInteraction::SemiInteractive,
                                  GeometricQueryType::Contacts(0.1),
                                  &engine.scene);
@@ -53,6 +52,11 @@ impl Player {
             slowdown: 1.0,
             pat: pat,
         })
+    }
+
+    pub fn get_pos(&self) -> Vector2<f32> {
+        let p = self.pg.get_pos();
+        Vector2::new(p.0, p.1)
     }
 
     pub fn handle_event(&mut self, e: Rc<Event>) {
@@ -133,10 +137,10 @@ pub struct Bullet {
 
 impl Bullet {
     pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32), vel: Vector2<f32>) -> Object {
-        let path = PathBuilder::new()
+        let path = PathBuilder::new(PathType::Curve)
             .speed(50.0)
             .points(vec![Point::Current(Vector2::new(0.0, 0.0)), Point::Fixed(Vector2::new(0.0, -200.0)), Point::Fixed(Vector2::new(-200.0, 0.0))])
-            .build_curve(&Vector2::new(pos.0, pos.1), &Vector2::new(0.0, 0.0));
+            .build(&Vector2::new(pos.0, pos.1), &Vector2::new(0.0, 0.0));
         let mut g = GraphicsComp::new(engine.graphics.clone(), 2);
         let w = WorldCompBuilder::new(engine).build();
         let e = EventComp::new(w.id, engine.events.clone());
@@ -144,7 +148,7 @@ impl Bullet {
         let p = PhysicsComp::new(w.id,
                                  0,
                                  Vector2::new(pos.0, pos.1),
-                                 ShapeHandle2::new(Ball::new(5.0)),
+                                 engine.graphics.borrow().get_sprite_shape(&2).unwrap(),
                                  PhysicsInteraction::SemiInteractive,
                                  GeometricQueryType::Contacts(0.0),
                                  &engine.scene);

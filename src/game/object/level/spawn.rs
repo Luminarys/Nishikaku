@@ -1,12 +1,15 @@
 use nalgebra::Vector2;
 
 use game::object::level::path::PathBuilder;
+use game::object::level::pattern::{Pattern, PatternBuilder};
 use game::object::level::Point;
+use game::object::level::enemy::Enemy;
 
 pub struct Spawn {
     pub spawn_type: SpawnType,
     pub location: Vector2<f32>,
     pub paths: Vec<PathBuilder>,
+    pub pattern: Pattern,
     pub repeat: usize,
     pub repeat_delay: f32,
     pub mirror_x: bool,
@@ -14,7 +17,7 @@ pub struct Spawn {
 }
 
 pub enum SpawnType {
-    Enemy(String),
+    Enemy(Enemy),
     Player,
 }
 
@@ -24,6 +27,7 @@ pub struct SpawnBuilder {
     paths: Vec<PathBuilder>,
     repeat: usize,
     repeat_delay: Option<f32>,
+    pattern: Option<PatternBuilder>,
     mirror_x: bool,
     mirror_y: bool,
 }
@@ -36,6 +40,7 @@ impl SpawnBuilder {
             paths: Vec::new(),
             repeat: 0,
             repeat_delay: None,
+            pattern: None,
             mirror_x: false,
             mirror_y: false,
         }
@@ -49,6 +54,11 @@ impl SpawnBuilder {
 
     pub fn location(mut self, location: Point) -> SpawnBuilder {
         self.location = Some(location);
+        self
+    }
+
+    pub fn pattern(mut self, pattern: PatternBuilder) -> SpawnBuilder {
+        self.pattern = Some(pattern);
         self
     }
 
@@ -81,6 +91,7 @@ impl SpawnBuilder {
         Spawn {
             spawn_type: self.spawn_type.unwrap(),
             location: self.location.unwrap().eval(current_pos, player_pos),
+            pattern: self.pattern.unwrap().build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0)),
             paths: self.paths,
             repeat: self.repeat,
             repeat_delay: self.repeat_delay.unwrap(),

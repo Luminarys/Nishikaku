@@ -3,4 +3,7 @@ pub enum Event {
     MouseUnclickedOver,
     MouseOver,
     MouseLeft,
+    Level(usize),
+    Action(usize),
+    Pattern(usize),
 }

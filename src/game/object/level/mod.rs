@@ -3,6 +3,11 @@ pub mod pattern;
 pub mod action;
 pub mod spawn;
 pub mod screen;
+pub mod enemy;
+pub mod bullet;
+pub mod point;
+
+pub use self::point::Point;
 
 use std::rc::Rc;
 use std::collections::HashMap;
@@ -15,12 +20,9 @@ use nalgebra::Vector2;
 
 use game::object::Object;
 use game::object::player::Player;
+use game::event::Event as CEvent;
 use self::screen::ScreenArea;
 use self::spawn::Spawn;
-
-const EVENT_LIM: usize = 1000;
-const ACTION_LIM: usize = 2000;
-const PATTERN_LIM: usize = 3000;
 
 /// Top level game controller
 pub struct Level {
@@ -37,22 +39,6 @@ pub struct LevelEvent {
     spawns: Vec<Spawn>,
 }
 
-pub enum Point {
-    Fixed(Vector2<f32>),
-    Player(Vector2<f32>),
-    Current(Vector2<f32>),
-}
-
-impl Point {
-    pub fn eval(&self, current: &Vector2<f32>, player: &Vector2<f32>) -> Vector2<f32> {
-        match self {
-            &Point::Fixed(ref p) => *p,
-            &Point::Current(ref p) => *p + *current,
-            &Point::Player(ref p) => *p + *player,
-        }
-    }
-}
-
 impl Level {
     pub fn new(engine: &Engine<Object>) -> Object {
         let w = WorldCompBuilder::new(engine).with_tag(String::from("level")).build();
@@ -66,12 +52,12 @@ impl Level {
         })
     }
 
-    pub fn event_finished(&mut self, id: String) {
+    fn event_finished(&mut self, id: String) {
         if let Some(events) =  self.events.remove(&id) {
             for e in events {
                 if e.delay > 0.001 {
                     let wid = self.ev_reg.get_id();
-                    self.ev.set_timer(wid + EVENT_LIM, e.delay);
+                    self.ev.set_timer_manual(wid, e.delay, false, Event::Custom(Box::new(CEvent::Level(wid))));
                     self.waiting_events.insert(wid, e);
                 } else {
                     self.handle_level_event(e);
@@ -80,26 +66,39 @@ impl Level {
         }
     }
 
-    pub fn handle_level_event(&mut self, evt: LevelEvent) {
+    fn handle_level_event(&mut self, evt: LevelEvent) {
+        println!("Level event {} triggered", evt.name);
+
     }
 
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Spawn => {
                 println!("Spawned Level!");
-                self.ev.create_entity(Box::new(move |engine| ScreenArea::new(engine)));
-                self.ev.create_entity(Box::new(move |engine| Player::new(engine)));
+                self.ev.create_entity(Box::new(|engine| ScreenArea::new(engine)));
+                self.ev.create_entity(Box::new(|engine| Player::new(engine)));
             }
-            Event::Timer(id) => {
-                if id >= EVENT_LIM && id < ACTION_LIM {
-                    self.ev_reg.return_id(id - EVENT_LIM);
-                    if let Some(event) = self.waiting_events.remove(&(id - EVENT_LIM)) {
-                        self.handle_level_event(event);
-                    }
-                }
+            Event::Update(dt) => {
+                self.ev.update(dt);
+            }
+            Event::Custom(ref cev) => {
+                self.handle_cevent(cev.downcast_ref::<CEvent>().unwrap());
             }
             _ => {}
         };
+
+    }
+
+    fn handle_cevent(&mut self, e: &CEvent) {
+        match *e {
+            CEvent::Level(id) => {
+                match self.waiting_events.remove(&id) {
+                    Some(e) => self.handle_level_event(e),
+                    None => println!("Nonexistent level event {:?}, referenced", id)
+                }
+            }
+            _ => { }
+        }
     }
 
     pub fn id(&self) -> usize {

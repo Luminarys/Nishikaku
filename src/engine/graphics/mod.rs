@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::mem;
 use std::fs::File;
+use ncollide::shape::ShapeHandle2;
 use glium::program::Program;
 use glium::VertexBuffer;
 use glium::index::IndexBuffer;
@@ -35,6 +36,7 @@ struct SpriteData {
     indices: IndexBuffer<u16>,
     texture: Option<CompressedSrgbTexture2d>,
     last_amount: usize,
+    shape: Option<ShapeHandle2<f32>>,
     pub registry: Registry,
 }
 
@@ -42,18 +44,19 @@ struct CustomSpriteData {
     program: Program,
     vbo: VertexBuffer<SpriteVertex>,
     indices: IndexBuffer<u16>,
+    shape: Option<ShapeHandle2<f32>>,
 }
 
 impl Graphics {
     pub fn new(x_res: u32, y_res: u32) -> Graphics {
         let display = glium::glutin::WindowBuilder::new()
-                         .with_dimensions(x_res, y_res)
-                         .with_title(String::from("Nishikaku"))
-                         .with_max_dimensions(x_res, y_res)
-                         .with_min_dimensions(x_res, y_res)
-                         .with_vsync()
-                         .build_glium()
-                         .unwrap();
+                          .with_dimensions(x_res, y_res)
+                          .with_title(String::from("Nishikaku"))
+                          .with_max_dimensions(x_res, y_res)
+                          .with_min_dimensions(x_res, y_res)
+                          .with_vsync()
+                          .build_glium()
+                          .unwrap();
         let tex_sys = TextSystem::new(&display);
         Graphics {
             sprites: HashMap::new(),
@@ -72,7 +75,8 @@ impl Graphics {
                       fragment_shader: &str,
                       vbo: VertexBuffer<SpriteVertex>,
                       texture: Option<CompressedSrgbTexture2d>,
-                      max_amount: usize) {
+                      max_amount: usize,
+                      shape: Option<ShapeHandle2<f32>>) {
         let prog = Program::from_source(&self.display, vertex_shader, fragment_shader, None)
                        .unwrap();
         let vertex_attrs = VertexBuffer::empty_dynamic(&self.display, max_amount).unwrap();
@@ -90,16 +94,17 @@ impl Graphics {
             texture: texture,
             last_amount: 0,
             registry: reg,
+            shape: shape,
         };
         self.sprites.insert(id, data);
     }
 
     pub fn new_custom_sprite(&mut self,
-                      id: usize,
-                      vertex_shader: &str,
-                      fragment_shader: &str,
-                      vbo: VertexBuffer<SpriteVertex>,
-                      ) {
+                             id: usize,
+                             vertex_shader: &str,
+                             fragment_shader: &str,
+                             vbo: VertexBuffer<SpriteVertex>,
+                             shape: Option<ShapeHandle2<f32>>) {
         let prog = Program::from_source(&self.display, vertex_shader, fragment_shader, None)
                        .unwrap();
         let indices = IndexBuffer::new(&self.display,
@@ -110,25 +115,29 @@ impl Graphics {
             program: prog,
             vbo: vbo,
             indices: indices,
+            shape: shape,
         };
         self.custom_sprites.insert(id, data);
     }
 
     pub fn get_id(&mut self, sprite: &usize) -> Option<usize> {
         match self.sprites.get_mut(sprite) {
-            Some(s) => {
-                Some(s.registry.get_id())
-            }
+            Some(s) => Some(s.registry.get_id()),
             None => None,
         }
     }
 
     pub fn return_id(&mut self, sprite: &usize, id: usize) {
         match self.sprites.get_mut(sprite) {
-            Some(s) => {
-                s.registry.return_id(id)
-            }
-            None => { }
+            Some(s) => s.registry.return_id(id),
+            None => {}
+        }
+    }
+
+    pub fn get_sprite_shape(&self, sprite: &usize) -> Option<ShapeHandle2<f32>> {
+        match self.sprites.get(sprite) {
+            Some(s) => s.shape.clone(),
+            None => None
         }
     }
 
@@ -136,7 +145,7 @@ impl Graphics {
         match self.sprites.get_mut(sprite) {
             Some(s) => {
                 // Starts at 1 in registry
-                s.vertex_attrs.slice_mut((pos-1)..(pos)).unwrap().write(&[*attrs]);
+                s.vertex_attrs.slice_mut((pos - 1)..(pos)).unwrap().write(&[*attrs]);
             }
             None => {}
         }
@@ -172,21 +181,33 @@ impl Graphics {
         self.current_frame = Some(target);
     }
 
-    pub fn render_custom<U: Uniforms>(&mut self,  sprite: &usize, uniforms: &U, params: &DrawParameters) {
+    pub fn render_custom<U: Uniforms>(&mut self,
+                                      sprite: &usize,
+                                      uniforms: &U,
+                                      params: &DrawParameters) {
         match (&mut self.current_frame, self.custom_sprites.get(sprite)) {
             (&mut Some(ref mut target), Some(sprite_data)) => {
                 target.draw(&sprite_data.vbo,
                             &sprite_data.indices,
                             &sprite_data.program,
                             uniforms,
-                            &params).unwrap();
+                            &params)
+                      .unwrap();
             }
-            (&mut None, _) => { println!("Cannot render custom sprite without initialized frame!"); }
-            (_, None) => { println!("Invalid custom sprite identifier passed!"); }
+            (&mut None, _) => {
+                println!("Cannot render custom sprite without initialized frame!");
+            }
+            (_, None) => {
+                println!("Invalid custom sprite identifier passed!");
+            }
         }
     }
 
-    pub fn render_text (&mut self,  id: &usize, msg: &str, transform: &[[f32; 4]; 4], color: &(f32, f32, f32, f32)) {
+    pub fn render_text(&mut self,
+                       id: &usize,
+                       msg: &str,
+                       transform: &[[f32; 4]; 4],
+                       color: &(f32, f32, f32, f32)) {
         match self.current_frame {
             Some(ref mut target) => {
                 if let Some(font) = self.fonts.get(id) {
@@ -194,7 +215,9 @@ impl Graphics {
                     glium_text::draw(&text, &self.tex_sys, target, *transform, *color);
                 }
             }
-             None => { println!("Cannot render text without initialized frame!"); }
+            None => {
+                println!("Cannot render text without initialized frame!");
+            }
         }
     }
 
@@ -214,7 +237,7 @@ impl Graphics {
                                     &Default::default())
                               .unwrap();
                     } else {
-                        let uniforms = uniform!{ };
+                        let uniforms = uniform![];
                         target.draw((&sprite_data.vbo,
                                      sprite_data.vertex_attrs.per_instance().unwrap()),
                                     &sprite_data.indices,

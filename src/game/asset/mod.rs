@@ -2,6 +2,9 @@ use std::path::Path;
 use std::fs::File;
 use toml;
 
+use nalgebra::Vector2;
+use ncollide::shape::{ShapeHandle2, Ball, Cuboid};
+
 use engine::Engine;
 use engine::graphics::SpriteVertex;
 use game::object::Object;
@@ -69,6 +72,7 @@ fn load_char(engine: &mut Engine<Object>) {
     "#;
 
     let mut gfx = engine.graphics.borrow_mut();
+    let shape = ShapeHandle2::new(Cuboid::new(Vector2::new(25.0, 50.0)));
     let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
                                                   position: [-0.125, -0.25],
                                                   tex_coords: [0.0, 0.0],
@@ -92,7 +96,8 @@ fn load_char(engine: &mut Engine<Object>) {
                    fragment_shader_src,
                    vertex_buffer,
                    Some(texture),
-                   1);
+                   1,
+                   Some(shape));
 }
 
 fn load_bullet(engine: &mut Engine<Object>) {
@@ -125,6 +130,7 @@ fn load_bullet(engine: &mut Engine<Object>) {
 
     let mut gfx = engine.graphics.borrow_mut();
     let size_dec = 10.0;
+    let shape = ShapeHandle2::new(Ball::new(5.0));
     let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
                                                   position: [-0.125 / size_dec, -0.125 / size_dec],
                                                   tex_coords: [0.0, 0.0],
@@ -148,7 +154,8 @@ fn load_bullet(engine: &mut Engine<Object>) {
                    fragment_shader_src,
                    vertex_buffer,
                    Some(texture),
-                   300);
+                   300,
+                   Some(shape));
 }
 
 fn load_menu(engine: &mut Engine<Object>) {
@@ -196,5 +203,6 @@ fn load_menu(engine: &mut Engine<Object>) {
                    fragment_shader_src,
                    vertex_buffer,
                    None,
-                   10);
+                   10,
+                   None);
 }

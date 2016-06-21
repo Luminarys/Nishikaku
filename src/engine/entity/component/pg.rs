@@ -60,6 +60,11 @@ impl PGComp {
         (x * self.scaler, y * self.scaler)
     }
 
+    pub fn get_vpos(&self) -> Vector2<f32> {
+        let (x, y) = self.graphics.get_pos();
+        Vector2::new(x * self.scaler, y * self.scaler)
+    }
+
     pub fn get_gfx_pos(&self) -> (f32, f32) {
         self.graphics.get_pos()
     }

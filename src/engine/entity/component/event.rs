@@ -5,20 +5,22 @@ use engine::Engine;
 use engine::entity::Entity;
 use engine::event::{Event, Handler, SysEvent};
 
-pub struct Timer {
-    pub id: usize,
-    pub repeat: bool,
+struct Timer {
+    id: usize,
+    repeat: bool,
     amount: f32,
     left: f32,
+    event: Rc<Event>
 }
 
 impl Timer {
-    pub fn new(id: usize, amount: f32, repeat: bool) -> Timer {
+    pub fn new(id: usize, amount: f32, repeat: bool, event: Event) -> Timer {
         Timer {
             id: id,
             repeat: repeat,
             left: amount,
             amount: amount,
+            event: Rc::new(event),
         }
     }
 
@@ -52,7 +54,7 @@ impl<E: Entity> EventComp<E> {
         let mut expired = vec![];
         for (i, timer) in self.timers.iter_mut().enumerate() {
             if timer.update(time) {
-                self.handler.borrow_mut().enqueue_specific(self.id, Event::Timer(timer.id));
+                self.handler.borrow_mut().enqueue_specific_rc(self.id, timer.event.clone());
                 if !timer.repeat {
                     expired.push(i);
                 }
@@ -64,11 +66,15 @@ impl<E: Entity> EventComp<E> {
     }
 
     pub fn set_timer(&mut self, id: usize, amount: f32) {
-        self.timers.push(Timer::new(id, amount, false));
+        self.set_timer_manual(id, amount, false, Event::Timer(id));
     }
 
     pub fn set_repeating_timer(&mut self, id: usize, amount: f32) {
-        self.timers.push(Timer::new(id, amount, true));
+        self.set_timer_manual(id, amount, true, Event::Timer(id));
+    }
+
+    pub fn set_timer_manual(&mut self, id: usize, amount: f32, repeat: bool, event: Event) {
+        self.timers.push(Timer::new(id, amount, repeat, event));
     }
 
     pub fn remove_timer(&mut self, id: usize) {

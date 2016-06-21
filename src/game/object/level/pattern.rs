@@ -3,7 +3,6 @@ use nalgebra::{angle_between, Vector2};
 
 pub struct Pattern {
     pub time_int: f32,
-    pub bullet: usize,
     amount: usize,
     cur_angle: f32,
     stop_angle: f32,
@@ -12,17 +11,14 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    /// Consumes a portion of the arc and emits translation and velocity vectors of the bullet
+    /// Consumes a portion of the arc and emits translation and velocity vectors of the object
     pub fn next(&mut self) -> Option<(Vector2<f32>, Vector2<f32>)> {
         if self.amount > 0 {
             let angle = self.cur_angle;
-            self.cur_angle += (self.stop_angle - self.cur_angle)/self.amount as f32;
+            self.cur_angle += (self.stop_angle - self.cur_angle) / self.amount as f32;
             self.amount -= 1;
             let base = Vector2::new(angle.to_radians().cos(), angle.to_radians().sin());
-            Some((
-                base * self.radius,
-                base * self.speed,
-            ))
+            Some((base * self.radius, base * self.speed))
         } else {
             None
         }
@@ -43,19 +39,19 @@ impl Angle {
         match self {
             &Angle::Fixed(ref angle) => *angle,
             &Angle::Player(ref angle_mod) => {
-                let mut ab = angle_between(&Vector2::new(1.0, 0.0), &(*player - *cur_pos)).to_degrees();
+                let mut ab = angle_between(&Vector2::new(1.0, 0.0), &(*player - *cur_pos))
+                                 .to_degrees();
                 if ab < 0.0 {
                     ab += 360.0;
                 }
                 ab + angle_mod
-            },
+            }
         }
     }
 }
 
 pub struct PatternBuilder {
     time_int: f32,
-    bullet: usize,
     amount: usize,
     cur_angle: Angle,
     stop_angle: Angle,
@@ -64,13 +60,18 @@ pub struct PatternBuilder {
 }
 
 impl PatternBuilder {
-    pub fn new(start_angle: Angle, stop_angle: Angle, radius: f32, time_int: f32, amount: usize, bullet: usize, speed: f32) -> PatternBuilder {
+    pub fn new(start_angle: Angle,
+               stop_angle: Angle,
+               radius: f32,
+               time_int: f32,
+               amount: usize,
+               speed: f32)
+               -> PatternBuilder {
         PatternBuilder {
             cur_angle: start_angle,
             stop_angle: stop_angle,
             amount: amount,
             time_int: time_int,
-            bullet: bullet,
             speed: speed,
             radius: radius,
         }
@@ -82,7 +83,6 @@ impl PatternBuilder {
             stop_angle: self.stop_angle.eval(cur_pos, player),
             amount: self.amount,
             time_int: self.time_int,
-            bullet: self.bullet,
             speed: self.speed,
             radius: self.radius,
         }

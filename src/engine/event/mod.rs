@@ -159,6 +159,10 @@ impl<E: Entity> Handler<E> {
         self.queue.borrow_mut().push((id, Rc::new(event)));
     }
 
+    pub fn enqueue_specific_rc(&mut self, id: usize, event: Rc<Event>) {
+        self.queue.borrow_mut().push((id, event));
+    }
+
     pub fn enqueue_sys(&mut self, event: SysEvent<E>) {
         self.sysqueue.push(event);
     }

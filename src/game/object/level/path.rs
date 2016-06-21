@@ -7,35 +7,52 @@ use game::object::level::action::Action;
 pub enum Path {
     Arc(Arc),
     Curve(Curve),
+    Fixed(Fixed),
 }
 
 impl Path {
     pub fn travel(&mut self, dt: f32) -> Option<Vector2<f32>> {
-        match self {
-            &mut Path::Arc(ref mut a) => a.travel(dt),
-            &mut Path::Curve(ref mut c) => c.travel(dt),
-            }
+        match *self {
+            Path::Arc(ref mut a) => a.travel(dt),
+            Path::Curve(ref mut c) => c.travel(dt),
+            Path::Fixed(ref mut f) => {
+                if f.time >= 0.0 {
+                    f.time -= dt;
+                    Some(f.pos.clone())
+                } else {
+                    None
+                }
+            },
         }
+    }
 
     pub fn finished(&self) -> bool {
-        match self {
-            &Path::Arc(ref a) => a.degrees <= 0.0,
-            &Path::Curve(ref c) => c.points.len() == 1,
+        match *self {
+            Path::Arc(ref a) => a.degrees <= 0.0,
+            Path::Curve(ref c) => c.points.len() == 1,
+            Path::Fixed(ref f) => f.time <= 0.0,
         }
     }
 
     pub fn actions(&mut self) -> Vec<Action> {
         use std::mem;
-        match self {
-            &mut Path::Arc(ref mut a) => mem::replace(&mut a.actions, Vec::new()),
-            &mut Path::Curve(ref mut c) => mem::replace(&mut c.actions, Vec::new()),
+        match *self {
+            Path::Arc(ref mut a) => mem::replace(&mut a.actions, Vec::new()),
+            Path::Curve(ref mut c) => mem::replace(&mut c.actions, Vec::new()),
+            Path::Fixed(ref mut f) => mem::replace(&mut f.actions, Vec::new()),
         }
     }
 }
 
 pub enum RotationDirection {
     Clockwise,
-    CounterClockwise
+    CounterClockwise,
+}
+
+pub struct Fixed {
+    time: f32,
+    pos: Vector2<f32>,
+    actions: Vec<Action>,
 }
 
 pub struct Arc {
@@ -56,20 +73,19 @@ impl Arc {
         if self.degrees > 0.0 {
             let dist = self.speed * dt;
             let circ = 2.0 * self.radius * PI;
-            let ang = 360.0 * dist/circ;
+            let ang = 360.0 * dist / circ;
             // Handle the case where the angle greatly surpasses degrees left?
-            let mut c_ang = angle_between(&Vector2::new(1.0, 0.0), &(self.current_pos - self.center)).to_degrees();
+            let mut c_ang = angle_between(&Vector2::new(1.0, 0.0),
+                                          &(self.current_pos - self.center))
+                                .to_degrees();
             self.degrees -= ang;
             match self.direction {
-                RotationDirection::Clockwise => {
-                    c_ang -= ang
-                }
-                RotationDirection::CounterClockwise => {
-                    c_ang += ang
-                }
+                RotationDirection::Clockwise => c_ang -= ang,
+                RotationDirection::CounterClockwise => c_ang += ang,
             };
-            let dp = Vector2::new(self.radius * c_ang.to_radians().cos(), self.radius * c_ang.to_radians().sin());
-            self.current_pos =  dp + self.center;
+            let dp = Vector2::new(self.radius * c_ang.to_radians().cos(),
+                                  self.radius * c_ang.to_radians().sin());
+            self.current_pos = dp + self.center;
             Some(self.current_pos)
         } else {
             None
@@ -97,7 +113,7 @@ impl Curve {
                 let dp = self.points[1] - self.points[0];
                 self.node_dist_left = dp.norm();
                 self.current_pos = *self.points[0].as_vector();
-                let time_left = dist/self.speed;
+                let time_left = dist / self.speed;
                 self.travel(time_left)
             } else if dist > self.node_dist_left && self.points.len() == 2 {
                 // Return the final point if we finish up travelling to it
@@ -109,7 +125,7 @@ impl Curve {
                 // Reduce node dist left and extend the current pos vector proportional to distance travelled across the vector between the prev point and next point
                 self.node_dist_left -= dist;
                 let dp = self.points[1] - self.points[0];
-                let dt = dp * dist/dp.norm();
+                let dt = dp * dist / dp.norm();
                 self.current_pos += dt;
                 Some(self.current_pos)
             }
@@ -119,7 +135,14 @@ impl Curve {
     }
 }
 
+pub enum PathType {
+    Arc,
+    Curve,
+    Fixed,
+}
+
 pub struct PathBuilder {
+    pub path_type: PathType,
     speed: Option<f32>,
     // Arc info
     center: Option<Point>,
@@ -129,18 +152,22 @@ pub struct PathBuilder {
     // Curve info
     points: Option<Vec<Point>>,
     actions: Vec<Action>,
+    // Fixed info
+    time: Option<f32>,
 }
 
 impl PathBuilder {
-    pub fn new() -> PathBuilder {
+    pub fn new(pt: PathType) -> PathBuilder {
         PathBuilder {
             speed: None,
+            path_type: pt,
             center: None,
             radius: None,
             degrees: None,
             direction: None,
             points: None,
-            actions: vec![]
+            time: None,
+            actions: vec![],
         }
     }
 
@@ -174,7 +201,29 @@ impl PathBuilder {
         self
     }
 
-    pub fn build_arc(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
+    pub fn time(mut self, time: f32) -> PathBuilder {
+        self.time = Some(time);
+        self
+    }
+
+    pub fn points(mut self, points: Vec<Point>) -> PathBuilder {
+        self.points = Some(points);
+        self
+    }
+
+    pub fn build(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
+        match self.path_type {
+            PathType::Arc => self.build_arc(current_pos, player_pos),
+            PathType::Curve => self.build_curve(current_pos, player_pos),
+            PathType::Fixed => self.build_fixed(current_pos),
+        }
+    }
+
+    fn build_fixed(self, current_pos: &Vector2<f32>) -> Path {
+        Path::Fixed(Fixed {time: self.time.unwrap(), pos: current_pos.clone(), actions: self.actions})
+    }
+
+    fn build_arc(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
         let center = self.center.unwrap().eval(current_pos, player_pos);
         Path::Arc(Arc {
             center: center,
@@ -187,17 +236,14 @@ impl PathBuilder {
         })
     }
 
-    pub fn points(mut self, points: Vec<Point>) -> PathBuilder {
-        self.points = Some(points);
-        self
-    }
-
-    pub fn build_curve(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
+    fn build_curve(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
         use ncollide::procedural::bezier_curve;
 
-        let points: Vec<_> = self.points.unwrap().iter().map(|point| {
-            point.eval(current_pos, player_pos).to_point()
-        }).collect();
+        let points: Vec<_> = self.points
+                                 .unwrap()
+                                 .iter()
+                                 .map(|point| point.eval(current_pos, player_pos).to_point())
+                                 .collect();
         let (points, _) = bezier_curve(&points[..], 100).unwrap();
 
         Path::Curve(Curve {
