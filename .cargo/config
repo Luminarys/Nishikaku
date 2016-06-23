@@ -1,0 +1,23 @@
+[target.i686-pc-windows-msvc.freetype]
+rustc-link-search = ["target\\Nishikaku-Bin-0.1.0\\i686\\lib"]
+rustc-link-lib = ["freetype"]
+
+[target.x86_64-pc-windows-msvc.freetype]
+rustc-link-search = ["target\\Nishikaku-Bin-0.1.0\\x86_64\\lib"]
+rustc-link-lib = ["freetype"]
+
+[target.i686-pc-windows-msvc.sdl2]
+rustc-link-search = ["target\\Nishikaku-Bin-0.1.0\\i686\\lib"]
+rustc-link-lib = ["SDL2", "SDL2_Main"]
+
+[target.x86_64-pc-windows-msvc.sdl2]
+rustc-link-search = ["target\\Nishikaku-Bin-0.1.0\\x86_64\\lib"]
+rustc-link-lib = ["SDL2", "SDL2_Main"]
+
+[target.i686-pc-windows-msvc.sdl2_mixer]
+rustc-link-search = ["target\\Nishikaku-Bin-0.1.0\\i686\\lib"]
+rustc-link-lib = ["SDL2_Mixer"]
+
+[target.x86_64-pc-windows-msvc.sdl2_mixer]
+rustc-link-search = ["target\\Nishikaku-Bin-0.1.0\\x86_64\\lib"]
+rustc-link-lib = ["SDL2_Mixer"]

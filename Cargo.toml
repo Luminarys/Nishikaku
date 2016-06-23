@@ -2,7 +2,11 @@
 name = "nishikaku"
 version = "0.1.0"
 authors = ["Luminarys <postmaster@gensok.io>"]
-build = "build/main.rs"
+build = "build.rs"
+
+[build-dependencies]
+flate2 = "0.2"
+tar = "0.4.6"
 
 [dependencies]
 glium = "0.14.0"
