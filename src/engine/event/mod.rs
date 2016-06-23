@@ -179,8 +179,6 @@ impl<E: Entity> Handler<E> {
 #[test]
 fn test_eventmap() {
     let mut evs = HashMap::new();
-    evs.insert(Event::Update(0), 0);
-    evs.insert(Event::Collision(0), 1);
-    assert_eq!(evs.get(&Event::Update(1)).unwrap(), &0);
-    assert_eq!(evs.get(&Event::Collision(1)).unwrap(), &1);
+    evs.insert(Event::Update(0.0), 0);
+    assert_eq!(evs.get(&Event::Update(1.0)).unwrap(), &0);
 }

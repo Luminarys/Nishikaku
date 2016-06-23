@@ -22,3 +22,9 @@ toml = "0.1.30"
 [profile.dev]
 opt-level = 1
 debug = true
+
+[profile.test]
+opt-level = 0
+debug = true
+rpath = false
+lto = false
