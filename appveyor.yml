@@ -55,21 +55,17 @@ before_deploy:
   - cargo build --release
   # TODO update this part to copy the artifacts that make sense for your project
   - copy target\release\nishikaku.exe target\win_rel
+  - mkdir target\win_rel\assets
   - copy assets target\win_rel\assets
-  - cd target\win_rel
-    # release zipfile will look like 'rust-everywhere-v1.2.3-x86_64-pc-windows-msvc'
-  - 7z a ../%PROJECT_NAME%-%APPVEYOR_REPO_TAG_NAME%-%TARGET%.zip *
+  - cd target
+    # release zipfile will look like 'nishikaku-v1.2.3-target-triple'
+  - 7z a ../%PROJECT_NAME%-%APPVEYOR_REPO_TAG_NAME%-%TARGET%.zip win_rel
   - appveyor PushArtifact ../%PROJECT_NAME%-%APPVEYOR_REPO_TAG_NAME%-%TARGET%.zip
 
 deploy:
   description: 'Windows release'
   # All the zipped artifacts will be deployed
   artifact: /.*\.zip/
-  # TODO Regenerate this auth_token for your project, this one won't work for you. Here's how:
-  # - Go to 'https://github.com/settings/tokens/new' and generate a Token with only the
-  # `public_repo` scope enabled
-  # - Then go to 'https://ci.appveyor.com/tools/encrypt' and enter the newly generated token.
-  # - Enter the "encrypted value" below
   auth_token:
     secure: EW7FLNMTVL0oq47Mt5RZtgeLt3mCmBVGxv1fXlPqLAHhnS/ne9g6IBeOihCT3Ljv
   provider: GitHub
