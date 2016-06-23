@@ -67,7 +67,7 @@ deploy:
   # - Enter the "encrypted value" below
   auth_token:
     secure: EW7FLNMTVL0oq47Mt5RZtgeLt3mCmBVGxv1fXlPqLAHhnS/ne9g6IBeOihCT3Ljv
-    provider: GitHub
+  provider: GitHub
   # deploy when a new tag is pushed and only on the stable channel
   on:
     # channel to use to produce the release artifacts
