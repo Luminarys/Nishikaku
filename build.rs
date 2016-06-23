@@ -4,15 +4,21 @@ extern crate tar;
 use std::process::Command;
 use std::env;
 use std::fs::rename;
+use std::fs::remove_dir_all;
 use flate2::read::GzDecoder;
 use tar::Archive;
 
 fn main() {
     let target = env::var("TARGET").unwrap(); 
     if target == "x86_64-pc-windows-msvc"{
+        match remove_dir_all("target\\win_rel") {
+            Ok(()) => { },
+            _ => { },
+        };
         download_files();
         rename("target\\Nishikaku-Bin-0.1.0\\x86_64\\dll", "target\\win_rel").unwrap();
     } else if target == "i686-pc-windows-msvc" {
+        remove_dir_all("target\\win_rel").unwrap();
         download_files();
         rename("target\\Nishikaku-Bin-0.1.0\\i686\\dll", "target\\win_rel").unwrap();
     }

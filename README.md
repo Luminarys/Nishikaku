@@ -1,5 +1,6 @@
 # Nishikaku
 [![Build status](https://ci.appveyor.com/api/projects/status/ro7cfyb5e77b0a49/branch/master?svg=true)](https://ci.appveyor.com/project/Luminarys/nishikaku/branch/master)
+
 Simple danmaku game and engine. WIP.
 
 [Info] (https://titanpad.com/l0Vjfgw4UH)

@@ -10,16 +10,16 @@ environment:
       CHANNEL: stable
     - TARGET: x86_64-pc-windows-msvc
       CHANNEL: stable
-    # Beta channel
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: beta
-    - TARGET: x86_64-pc-windows-msvc
-      CHANNEL: beta
-    # Nightly channel
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: nightly
-    - TARGET: x86_64-pc-windows-msvc
-      CHANNEL: nightly
+#    # Beta channel
+#    - TARGET: i686-pc-windows-msvc
+#      CHANNEL: beta
+#    - TARGET: x86_64-pc-windows-msvc
+#      CHANNEL: beta
+#    # Nightly channel
+#    - TARGET: i686-pc-windows-msvc
+#      CHANNEL: nightly
+#    - TARGET: x86_64-pc-windows-msvc
+#      CHANNEL: nightly
 
 # Install Rust and Cargo
 # (Based on from https://github.com/rust-lang/libc/blob/master/appveyor.yml)
@@ -34,6 +34,11 @@ install:
   - if "%TARGET%" == "x86_64-pc-windows-gnu" set PATH=%PATH%;C:\msys64\mingw64\bin
   - rustc -V
   - cargo -V
+
+cache:
+  - target\debug\build -> Cargo.toml
+  - target\debug\deps -> Cargo.toml
+  - C:\Users\appveyor\.cargo\registry -> Cargo.toml
 
 # ???
 build: false
@@ -75,5 +80,4 @@ deploy:
     # TODO you may want to pick a different channel
     CHANNEL: stable
     appveyor_repo_tag: true
-
 
