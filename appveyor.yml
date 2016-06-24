@@ -36,8 +36,8 @@ install:
   - cargo -V
 
 cache:
-  - target\debug\build -> Cargo.toml
-  - target\debug\deps -> Cargo.toml
+  - target\i686-pc-windows-msvc -> Cargo.toml
+  - target\x86_64-pc-windows-msvc -> Cargo.toml
   - C:\Users\appveyor\.cargo\registry -> Cargo.toml
 
 # ???
@@ -48,7 +48,10 @@ build: false
 test_script:
 #  - cargo build --verbose
 #  - cargo run
+  - if not exist target\%TARGET% mkdir target\%TARGET%
+  - mv target\%TARGET% target\debug
   - cargo test
+  - mv target\debug target\%TARGET%
 
 before_deploy:
   # Generate artifacts for release
