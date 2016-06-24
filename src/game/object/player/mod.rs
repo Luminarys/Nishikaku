@@ -190,10 +190,6 @@ impl Bullet {
         };
     }
 
-    pub fn render(&self) -> Option<RenderInfo> {
-        Some(self.pg.get_render_info())
-    }
-
     pub fn id(&self) -> usize {
         self.world.id
     }

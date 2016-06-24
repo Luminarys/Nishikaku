@@ -30,8 +30,22 @@ pub enum Event {
     MouseInput(InputState, MouseButton),
     Spawn,
     Timer(usize),
+    CTimer(u8, usize),
     Render,
     Custom(Box<Any>),
+}
+
+pub enum EventType {
+    Update,
+    Collision,
+    Proximity,
+    KeyInput,
+    MouseMove,
+    MouseInput,
+    Spawn,
+    Timer,
+    Render,
+    Custom,
 }
 
 pub type KeyCode = VirtualKeyCode;
@@ -68,6 +82,7 @@ impl Hash for Event {
             Event::Timer(_) => state.write_u8(7),
             Event::Render => state.write_u8(8),
             Event::Custom(_) => state.write_u8(9),
+            Event::CTimer(_, _) => state.write_u8(10),
         }
     }
 }
@@ -87,6 +102,7 @@ impl PartialEq for Event {
             (&Event::Timer(_), &Event::Timer(_)) => true,
             (&Event::Render, &Event::Render) => true,
             (&Event::Custom(_), &Event::Custom(_)) => true,
+            (&Event::CTimer(_, _), &Event::CTimer(_, _)) => true,
             _ => false,
         }
     }

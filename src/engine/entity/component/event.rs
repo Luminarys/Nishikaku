@@ -10,6 +10,7 @@ struct Timer {
     repeat: bool,
     amount: f32,
     left: f32,
+    class: u8,
     event: Rc<Event>
 }
 
@@ -20,6 +21,18 @@ impl Timer {
             repeat: repeat,
             left: amount,
             amount: amount,
+            class: 0,
+            event: Rc::new(event),
+        }
+    }
+
+    pub fn with_class(id: usize, amount: f32, repeat: bool, event: Event, class: u8) -> Timer {
+        Timer {
+            id: id,
+            repeat: repeat,
+            left: amount,
+            amount: amount,
+            class: class,
             event: Rc::new(event),
         }
     }
@@ -66,19 +79,36 @@ impl<E: Entity> EventComp<E> {
     }
 
     pub fn set_timer(&mut self, id: usize, amount: f32) {
-        self.set_timer_manual(id, amount, false, Event::Timer(id));
+        self.set_timer_manual(id, amount, false, Event::Timer(id), 0);
+    }
+
+    pub fn set_timer_with_class(&mut self, id: usize, amount: f32, class: u8) {
+        self.set_timer_manual(id, amount, false, Event::CTimer(class, id), class);
     }
 
     pub fn set_repeating_timer(&mut self, id: usize, amount: f32) {
-        self.set_timer_manual(id, amount, true, Event::Timer(id));
+        self.set_timer_manual(id, amount, true, Event::Timer(id), 0);
     }
 
-    pub fn set_timer_manual(&mut self, id: usize, amount: f32, repeat: bool, event: Event) {
-        self.timers.push(Timer::new(id, amount, repeat, event));
+    pub fn set_repeating_timer_with_class(&mut self, id: usize, amount: f32, class: u8) {
+        self.set_timer_manual(id, amount, true, Event::CTimer(class, id), class);
+    }
+
+    pub fn set_timer_manual(&mut self, id: usize, amount: f32, repeat: bool, event: Event, class: u8) {
+        self.timers.push(Timer::with_class(id, amount, repeat, event, class));
     }
 
     pub fn remove_timer(&mut self, id: usize) {
         match self.timers.iter().position(|timer| timer.id == id) {
+            Some(pos) => {
+                self.timers.remove(pos);
+            }
+            None => {}
+        }
+    }
+
+    pub fn remove_timer_with_class(&mut self, id: usize, class: u8) {
+        match self.timers.iter().position(|timer| timer.id == id && timer.class == class) {
             Some(pos) => {
                 self.timers.remove(pos);
             }

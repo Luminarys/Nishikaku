@@ -57,7 +57,7 @@ impl Level {
             for e in events {
                 if e.delay > 0.001 {
                     let wid = self.ev_reg.get_id();
-                    self.ev.set_timer_manual(wid, e.delay, false, Event::Custom(Box::new(CEvent::Level(wid))));
+                    self.ev.set_timer_with_class(wid, e.delay, 1);
                     self.waiting_events.insert(wid, e);
                 } else {
                     self.handle_level_event(e);
@@ -81,6 +81,12 @@ impl Level {
             Event::Update(dt) => {
                 self.ev.update(dt);
             }
+            Event::CTimer(1, id) => {
+                match self.waiting_events.remove(&id) {
+                    Some(e) => self.handle_level_event(e),
+                    None => println!("Nonexistent level event {:?}, referenced", id)
+                }
+            }
             Event::Custom(ref cev) => {
                 self.handle_cevent(cev.downcast_ref::<CEvent>().unwrap());
             }
@@ -91,12 +97,6 @@ impl Level {
 
     fn handle_cevent(&mut self, e: &CEvent) {
         match *e {
-            CEvent::Level(id) => {
-                match self.waiting_events.remove(&id) {
-                    Some(e) => self.handle_level_event(e),
-                    None => println!("Nonexistent level event {:?}, referenced", id)
-                }
-            }
             _ => { }
         }
     }
