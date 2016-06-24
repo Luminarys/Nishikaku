@@ -1,6 +1,7 @@
 use nalgebra::{angle_between, Vector2};
 // TODO: Write tests - this code is complicated and almost certaintly error prone
 
+#[derive(Copy, Clone)]
 pub struct Pattern {
     pub time_int: f32,
     amount: usize,

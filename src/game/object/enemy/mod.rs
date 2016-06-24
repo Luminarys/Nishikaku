@@ -8,10 +8,14 @@ use engine::entity::component::*;
 use engine::event::Event;
 use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
+use game::event::Event as CEvent;
 use game::object::Object;
 use game::object::level::path::{Path, PathBuilder};
+use game::object::level::pattern::Pattern;
 use game::object::level::enemy::Enemy as EnemyInfo;
 use game::object::level::action::ActionType;
+use game::object::level::bullet::Bullet as BulletInfo;
+use game::object::bullet::Bullet;
 
 pub struct Enemy {
     health: usize,
@@ -19,6 +23,7 @@ pub struct Enemy {
     paths: Vec<PathBuilder>,
     cpath: Path,
     actions: Vec<ActionType>,
+    patterns: Vec<(BulletInfo, Pattern)>,
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
@@ -66,6 +71,7 @@ impl Enemy {
             cpath: path,
             damage: info.damage,
             actions: actions,
+            patterns: Vec::new(),
             pg: pg,
             ev: e,
             world: w,
@@ -83,8 +89,12 @@ impl Enemy {
                             self.cpath = pb.build(&self.pg.get_vpos(), &ppos);
                             let len = self.actions.len();
                             for (id, action) in self.cpath.actions().iter_mut().enumerate() {
-                                self.actions.push(mem::replace(&mut action.action_type, ActionType::None));
-                                self.ev.set_timer(id + len, action.delay);
+                                if action.delay > 0.00001 {
+                                    self.actions.push(mem::replace(&mut action.action_type, ActionType::None));
+                                    self.ev.set_timer_with_class(id + len, action.delay, 1);
+                                } else {
+                                    self.handle_action(mem::replace(&mut action.action_type, ActionType::None));
+                                }
                             }
                         } else {
                             self.ev.destroy_self();
@@ -93,14 +103,17 @@ impl Enemy {
                 };
                 self.pg.update(t);
             }
-            Event::Timer(i) => {
-                match mem::replace(&mut self.actions[i], ActionType::None) {
-                    ActionType::Bullets(bullet, pb) => {
-                        let ppos = self.get_player_pos();
-                        let pattern = pb.build(&self.pg.get_vpos(), &ppos);
-                        // TODO: Spawn the bullets
-                    }
-                    ActionType::None => {}
+            Event::CTimer(1, i) => {
+                let action = mem::replace(&mut self.actions[i], ActionType::None);
+                self.handle_action(action);
+            }
+            Event::CTimer(2, i) => {
+                let (ref bullet, ref mut pat) = self.patterns[i];
+                if let Some((pos, vel)) = pat.next() {
+                    let b = bullet.clone();
+                    self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, b, pos, vel)));
+                } else {
+                    self.ev.remove_timer_with_class(i, 2);
                 }
             }
             Event::Collision(id, ref _data) => {
@@ -114,13 +127,42 @@ impl Enemy {
             Event::Render => {
                 self.pg.render();
             }
+            Event::Custom(ref cev) => {
+                self.handle_cevent(cev.downcast_ref::<CEvent>().unwrap());
+            }
             _ => {}
         };
     }
 
-    pub fn render(&self) -> Option<RenderInfo> {
-        Some(self.pg.get_render_info())
+    fn handle_action(&mut self, a: ActionType) {
+        match a {
+            ActionType::Bullets(mut bullet, mut pb) => {
+                let ppos = self.get_player_pos();
+                let mut pattern = pb.build(&self.pg.get_vpos(), &ppos);
+                // :')
+                let (pos, vel) = pattern.next().unwrap();
+                let bc = bullet.clone();
+                if pattern.time_int > 0.0001 {
+                    self.patterns.push((bullet.clone(), pattern));
+                    let len = self.patterns.len();
+                    self.ev.set_repeating_timer_with_class(len, pattern.time_int, 2);
+                    self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, bc, pos, vel)));
+                } else {
+                    while let Some((pos, vel)) = pattern.next() {
+                        self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, bc.clone(), pos, vel)));
+                    }
+                }
+            }
+            ActionType::None => {}
+        }
     }
+
+    fn handle_cevent(&mut self, e: &CEvent) {
+        match *e {
+            _ => { }
+        }
+    }
+
 
     pub fn id(&self) -> usize {
         self.world.id
