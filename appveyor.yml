@@ -36,8 +36,8 @@ install:
   - cargo -V
 
 cache:
-  - target\i686-pc-windows-msvc -> Cargo.toml
-  - target\x86_64-pc-windows-msvc -> Cargo.toml
+  - target\i686-pc-windows-msvc
+  - target\x86_64-pc-windows-msvc
   - C:\Users\appveyor\.cargo\registry -> Cargo.toml
 
 # ???
@@ -51,6 +51,9 @@ test_script:
   - if not exist target\%TARGET% mkdir target\%TARGET%
   - mv target\%TARGET% target\debug
   - cargo test
+# These things take up WAYY too much space
+  - rm target\debug\deps\libwinapi*
+  - rm target\debug\deps\libglium*
   - mv target\debug target\%TARGET%
 
 before_deploy:
