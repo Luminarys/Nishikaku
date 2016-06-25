@@ -3,6 +3,7 @@ pub mod scene;
 pub mod entity;
 pub mod graphics;
 pub mod audio;
+pub mod util;
 
 use std::cell::RefCell;
 use std::rc::Rc;

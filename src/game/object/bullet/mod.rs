@@ -1,17 +1,14 @@
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use engine::Engine;
 use engine::entity::component::*;
 use engine::event::Event;
-use engine::scene::Registry;
 use engine::scene::PhysicsInteraction;
 use ncollide::query::Proximity;
 use ncollide::world::GeometricQueryType;
 use nalgebra::Vector2;
 
 use game::object::Object;
-use game::event::Event as CEvent;
 use game::object::level::bullet::Bullet as BulletInfo;
 
 pub struct Bullet {

@@ -7,7 +7,6 @@ use engine::Engine;
 use engine::entity::component::*;
 use engine::event::Event;
 use engine::scene::PhysicsInteraction;
-use engine::entity::RenderInfo;
 use game::event::Event as CEvent;
 use game::object::Object;
 use game::object::level::path::{Path, PathBuilder};
@@ -27,6 +26,7 @@ pub struct Enemy {
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
+    event_id: usize,
 }
 
 impl Enemy {
@@ -75,6 +75,7 @@ impl Enemy {
             pg: pg,
             ev: e,
             world: w,
+            event_id: info.event_id,
         })
     }
 
@@ -104,10 +105,12 @@ impl Enemy {
                 self.pg.update(t);
             }
             Event::CTimer(1, i) => {
+                // Action timer trigger
                 let action = mem::replace(&mut self.actions[i], ActionType::None);
                 self.handle_action(action);
             }
             Event::CTimer(2, i) => {
+                // Bullet pattern timer trigger
                 let (ref bullet, ref mut pat) = self.patterns[i];
                 if let Some((pos, vel)) = pat.next() {
                     let b = bullet.clone();
@@ -118,7 +121,7 @@ impl Enemy {
             }
             Event::Collision(id, ref _data) => {
                 if let Some(s) = self.world.find_aliased_entity_alias(&id) {
-                    if &s[..] == &String::from("player") {
+                    if &s[..] == "player" {
                         // What do we do when we hit the player?
                         self.ev.destroy_self();
                     }
@@ -136,7 +139,7 @@ impl Enemy {
 
     fn handle_action(&mut self, a: ActionType) {
         match a {
-            ActionType::Bullets(mut bullet, mut pb) => {
+            ActionType::Bullets(bullet, pb) => {
                 let ppos = self.get_player_pos();
                 let mut pattern = pb.build(&self.pg.get_vpos(), &ppos);
                 // :')
@@ -176,5 +179,12 @@ impl Enemy {
             _ => panic!("Non player object aliased to player!"),
         };
         p
+    }
+}
+
+impl Drop for Enemy {
+    fn drop(&mut self) {
+        let id = self.world.find_aliased_entity_id(&String::from("level")).unwrap();
+        self.ev.dispatch_to(id, Event::Custom(Box::new(CEvent::Despawn(self.event_id))));
     }
 }

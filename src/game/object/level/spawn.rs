@@ -5,6 +5,7 @@ use game::object::level::pattern::{Pattern, PatternBuilder};
 use game::object::level::Point;
 use game::object::level::enemy::Enemy;
 
+#[derive(Clone)]
 pub struct Spawn {
     pub spawn_type: SpawnType,
     pub location: Vector2<f32>,
@@ -16,6 +17,7 @@ pub struct Spawn {
     pub mirror_y: bool,
 }
 
+#[derive(Clone)]
 pub enum SpawnType {
     Enemy(Enemy),
     Player,

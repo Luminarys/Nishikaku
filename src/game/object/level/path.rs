@@ -44,6 +44,7 @@ impl Path {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum RotationDirection {
     Clockwise,
     CounterClockwise,
@@ -135,15 +136,18 @@ impl Curve {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum PathType {
     Arc,
     Curve,
     Fixed,
 }
 
+#[derive(Clone)]
 pub struct PathBuilder {
     pub path_type: PathType,
     speed: Option<f32>,
+    actions: Vec<Action>,
     // Arc info
     center: Option<Point>,
     radius: Option<f32>,
@@ -151,7 +155,6 @@ pub struct PathBuilder {
     direction: Option<RotationDirection>,
     // Curve info
     points: Option<Vec<Point>>,
-    actions: Vec<Action>,
     // Fixed info
     time: Option<f32>,
 }

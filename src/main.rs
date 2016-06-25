@@ -10,6 +10,7 @@ extern crate image;
 extern crate sdl2;
 extern crate sdl2_mixer;
 extern crate toml;
+extern crate fnv;
 
 #[macro_use]
 mod macros;

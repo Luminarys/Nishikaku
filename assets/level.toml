@@ -1,28 +1,42 @@
+[sprites]
+
+[sprites.sanae]
+texture = "sanae.png"
+size = [10, 20]
+hitbox = "points"
+hitbox = [[5, 10], [-5, 10], [5, -10], [-5, -10]]
+
+[sprites.red_bullet]
+texture = "bullet.png"
+size = [5, 5]
+hitbox = "sphere"
+radius = 5
+
 [enemies]
 
 [enemies.basic_cuve]
-sprite = 1
+sprite = "sanae"
 health = 10
 
 [enemies.circle]
-sprite = 1
+sprite = "sanae"
 health = 5
 
 [bullets]
 
 [bullets.basic_straight]
-sprite = 10
+sprite = "red_bullet"
 radius = 5
 behavior = "straight"
 
- [level]
+[level]
 
- [level.pstart]
- time = {after = "start", amount = 0}
- spawn = [{type = "player", init_pos = [0, -180]}]
+[level.pstart]
+time = {after = "start", delay = 0.0}
+spawn = [{type = "player", init_pos = [0, -180]}]
 
 [level.wave1]
-time = {after = "pstart", amount = 5}
+time = {after = "pstart", delay = 5.0}
 
 [level.wave1.spawn]
 type = 'enemy'
@@ -44,12 +58,12 @@ paths = [
 ]
 repeat = 5
 repeat_delay = 0.5
-dup = {amount = 5, time_diff = 0.5}
+dup = {amount = 5, time_diff = 0.5.0}
 contact_dmg = 6
 mirror_x = true
 
 [level.wave2]
-time = {after = "wave1", amount = 2}
+time = {after = "wave1", delay = 2.0}
 
 # Somewhat more complex wave, spawns 10 enemies in a circle, has them move clockwise in a half circle, then curve out, and shoot 25 bullet 60 degree arcs
 [level.wave2.spawn]

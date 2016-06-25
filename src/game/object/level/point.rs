@@ -1,5 +1,6 @@
 use nalgebra::Vector2;
 
+#[derive(Copy, Clone)]
 pub enum Point {
     Fixed(Vector2<f32>),
     Player(Vector2<f32>),

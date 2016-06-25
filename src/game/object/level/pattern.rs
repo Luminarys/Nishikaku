@@ -30,6 +30,7 @@ impl Pattern {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum Angle {
     Fixed(f32),
     Player(f32),
@@ -51,6 +52,7 @@ impl Angle {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct PatternBuilder {
     time_int: f32,
     amount: usize,
