@@ -4,10 +4,38 @@ use toml;
 
 use nalgebra::Vector2;
 use ncollide::shape::{ShapeHandle2, Ball, Cuboid};
+use glium::VertexBuffer;
 
 use engine::Engine;
 use engine::graphics::SpriteVertex;
 use game::object::Object;
+
+const SPRITE_VERT_SHADER: &'static str = r#"
+    #version 140
+
+    in vec2 position;
+    in mat4 transform;
+    in vec2 tex_coords;
+
+    out vec2 v_tex_coords;
+
+    void main() {
+        gl_Position = vec4(position, 0.0, 1.0) * transform;
+        v_tex_coords = tex_coords;
+    }
+"#;
+
+const SPRITE_FRAG_SHADER: &'static str = r#"
+    #version 140
+
+    uniform sampler2D tex;
+    in vec2 v_tex_coords;
+    out vec4 color;
+
+    void main() {
+        color = texture(tex, v_tex_coords);
+    }
+"#;
 
 pub fn load_assets(engine: &mut Engine<Object>) {
     println!("Loading assets!");
@@ -27,8 +55,12 @@ fn load_level() {
     f.read_to_string(&mut s).unwrap();
     let mut parser = toml::Parser::new(&s[..]);
     match parser.parse() {
-        Some(v) => { println!("{:?}", v); }
-        None => { println!("{:?}", parser.errors); }
+        Some(v) => {
+            println!("{:?}", v);
+        }
+        None => {
+            println!("{:?}", parser.errors);
+        }
     };
 }
 
@@ -43,132 +75,56 @@ fn load_sound(engine: &mut Engine<Object>) {
     engine.audio.borrow_mut().load(1, path);
 }
 
-fn load_char(engine: &mut Engine<Object>) {
-    let vertex_shader_src = r#"
-        #version 140
-
-        in vec2 position;
-        in mat4 transform;
-        in vec2 tex_coords;
-
-        out vec2 v_tex_coords;
-
-        void main() {
-            gl_Position = vec4(position, 0.0, 1.0) * transform;
-            v_tex_coords = tex_coords;
-        }
-    "#;
-
-    let fragment_shader_src = r#"
-        #version 140
-
-        uniform sampler2D tex;
-        in vec2 v_tex_coords;
-        out vec4 color;
-
-        void main() {
-            color = texture(tex, v_tex_coords);
-        }
-    "#;
-
+fn make_sprite(engine: &mut Engine<Object>,
+               texture: &str,
+               half_extents: Vector2<f32>,
+               amount: usize,
+               shape: ShapeHandle2<f32>)
+               -> usize {
+    let vert_shader = SPRITE_VERT_SHADER;
+    let frag_shader = SPRITE_FRAG_SHADER;
+    let vbo = make_vbo(engine, half_extents);
     let mut gfx = engine.graphics.borrow_mut();
-    let shape = ShapeHandle2::new(Cuboid::new(Vector2::new(25.0, 50.0)));
-    let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
-                                                  position: [-0.125, -0.25],
-                                                  tex_coords: [0.0, 0.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [-0.125, 0.25],
-                                                  tex_coords: [0.0, 1.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [0.125, 0.25],
-                                                  tex_coords: [1.0, 1.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [0.125, -0.25],
-                                                  tex_coords: [1.0, 0.0],
-                                              }]);
+    let texture = gfx.load_texture(&texture[..]);
+    let id = gfx.sprite_amount() + 1;
+    gfx.new_sprite(id, vert_shader, frag_shader, vbo, Some(texture), amount, Some(shape));
+    id
+}
 
-    let texture = gfx.load_asset("assets/sakuya.png");
-    gfx.new_sprite(1,
-                   vertex_shader_src,
-                   fragment_shader_src,
-                   vertex_buffer,
-                   Some(texture),
-                   1,
-                   Some(shape));
+fn make_vbo(engine: &mut Engine<Object>, half_extents: Vector2<f32>) -> VertexBuffer<SpriteVertex> {
+    let half_extents = half_extents / engine.scene.physics.scaler;
+    let vertices = &[SpriteVertex {
+                         position: [-1.0 * half_extents.x, -1.0 * half_extents.y],
+                         tex_coords: [0.0, 0.0],
+                     },
+                     SpriteVertex {
+                         position: [-1.0 * half_extents.x, half_extents.y],
+                         tex_coords: [0.0, 1.0],
+                     },
+                     SpriteVertex {
+                         position: [half_extents.x, half_extents.y],
+                         tex_coords: [1.0, 1.0],
+                     },
+                     SpriteVertex {
+                         position: [half_extents.x, -1.0 * half_extents.y],
+                         tex_coords: [1.0, 0.0],
+                     }];
+    let gfx = engine.graphics.borrow();
+    gfx.make_sprite_vbo(vertices)
+}
+
+fn load_char(engine: &mut Engine<Object>) {
+    let shape = ShapeHandle2::new(Cuboid::new(Vector2::new(25.0, 50.0)));
+    make_sprite(engine, "assets/sakuya.png", Vector2::new(25.0, 50.0), 1, shape);
 }
 
 fn load_bullet(engine: &mut Engine<Object>) {
-    let vertex_shader_src = r#"
-        #version 140
-
-        in vec2 position;
-        in mat4 transform;
-        in vec2 tex_coords;
-
-        out vec2 v_tex_coords;
-
-        void main() {
-            gl_Position = vec4(position, 0.0, 1.0) * transform;
-            v_tex_coords = tex_coords;
-        }
-    "#;
-
-    let fragment_shader_src = r#"
-        #version 140
-
-        uniform sampler2D tex;
-        in vec2 v_tex_coords;
-        out vec4 color;
-
-        void main() {
-            color = texture(tex, v_tex_coords);
-        }
-    "#;
-
-    let mut gfx = engine.graphics.borrow_mut();
-    let size_dec = 10.0;
     let shape = ShapeHandle2::new(Ball::new(5.0));
-    let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
-                                                  position: [-0.125 / size_dec, -0.125 / size_dec],
-                                                  tex_coords: [0.0, 0.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [-0.125 / size_dec, 0.125 / size_dec],
-                                                  tex_coords: [0.0, 1.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [0.125 / size_dec, 0.125 / size_dec],
-                                                  tex_coords: [1.0, 1.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [0.125 / size_dec, -0.125 / size_dec],
-                                                  tex_coords: [1.0, 0.0],
-                                              }]);
-
-    let texture = gfx.load_asset("assets/bullet.png");
-    gfx.new_sprite(2,
-                   vertex_shader_src,
-                   fragment_shader_src,
-                   vertex_buffer,
-                   Some(texture),
-                   300,
-                   Some(shape));
+    make_sprite(engine, "assets/bullet.png", Vector2::new(2.5, 2.5), 300, shape);
 }
 
 fn load_menu(engine: &mut Engine<Object>) {
-    let vertex_shader_src = r#"
-        #version 140
-
-        in vec2 position;
-        in mat4 transform;
-
-        void main() {
-            gl_Position = vec4(position, 0.0, 1.0) * transform;
-        }
-    "#;
+    let vertex_shader_src = SPRITE_VERT_SHADER;
 
     let fragment_shader_src = r#"
         #version 140
@@ -180,24 +136,8 @@ fn load_menu(engine: &mut Engine<Object>) {
         }
     "#;
 
+    let vertex_buffer = make_vbo(engine, Vector2::new(120.0, 20.0));
     let mut gfx = engine.graphics.borrow_mut();
-    let vertex_buffer = gfx.make_sprite_vbo(&[SpriteVertex {
-                                                  position: [-0.6, -0.1],
-                                                  tex_coords: [0.0, 0.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [-0.6, 0.1],
-                                                  tex_coords: [0.0, 1.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [0.6, 0.1],
-                                                  tex_coords: [1.0, 1.0],
-                                              },
-                                              SpriteVertex {
-                                                  position: [0.6, -0.1],
-                                                  tex_coords: [1.0, 0.0],
-                                              }]);
-
     gfx.new_sprite(3,
                    vertex_shader_src,
                    fragment_shader_src,

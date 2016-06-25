@@ -99,6 +99,10 @@ impl Graphics {
         self.sprites.insert(id, data);
     }
 
+    pub fn sprite_amount(&self) -> usize {
+        self.sprites.len()
+    }
+
     pub fn new_custom_sprite(&mut self,
                              id: usize,
                              vertex_shader: &str,
@@ -155,7 +159,7 @@ impl Graphics {
         VertexBuffer::new(&self.display, vertices).unwrap()
     }
 
-    pub fn load_asset(&self, path: &str) -> CompressedSrgbTexture2d {
+    pub fn load_texture(&self, path: &str) -> CompressedSrgbTexture2d {
         use std::fs::File;
         use image;
 
