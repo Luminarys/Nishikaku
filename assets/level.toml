@@ -1,95 +1,96 @@
 [sprites]
 
-[sprites.sanae]
-texture = "sanae.png"
+[sprites.cirno]
+texture = "cirno.png"
 size = [10, 20]
 hitbox = "points"
-hitbox = [[5, 10], [-5, 10], [5, -10], [-5, -10]]
+hitbox_bounds = [[5, 10], [-5, 10], [5, -10], [-5, -10]]
+max_amount = 100
 
 [sprites.red_bullet]
 texture = "bullet.png"
 size = [5, 5]
 hitbox = "sphere"
 radius = 5
+max_amount = 1000
 
 [enemies]
 
 [enemies.basic_cuve]
-sprite = "sanae"
+sprite = "cirno"
 health = 10
+damage = 5
 
 [enemies.circle]
-sprite = "sanae"
+sprite = "cirno"
 health = 5
+damage = 5
 
 [bullets]
 
 [bullets.basic_straight]
 sprite = "red_bullet"
 radius = 5
+damage = 10
 behavior = "straight"
 
 [level]
 
 [level.pstart]
-time = {after = "start", delay = 0.0}
-spawn = [{type = "player", init_pos = [0, -180]}]
+time = { after = "start", delay = 0.0 }
+spawn = { type = "player", init_pos = [0, -180] }
 
 [level.wave1]
-time = {after = "pstart", delay = 5.0}
+time = {after = "start", delay = 5.0}
 
 [level.wave1.spawn]
-type = 'enemy'
+type = "enemy"
 enemy_id = "basic_curve"
-pattern = {type = "point", position = [-200, 180]}
-paths = [
-  { type = "curve", points = [[-200, 180], [-100, 140], [-200, 100]], speed = 40, action = {
-    type = "bullets",
-    time_start = 1.0,
-    pattern = {
-      type = "point",
-      bullet_id = "basic_straight",
-      angle = 270,
-      speed = 40,
-      amount = 5,
-      time_int = 0.5
-    }
-  }}
-]
-repeat = 5
-repeat_delay = 0.5
-dup = {amount = 5, time_diff = 0.5.0}
+pattern = { type = "point", position = [-200, 180], amount = 5, time_int = 0.5 }
+repeat = 1
+repeat_delay = 1.0
 contact_dmg = 6
 mirror_x = true
 
+[[level.wave1.spawn.paths]]
+type = "curve"
+points = [[-200, 180], [-100, 140], [-200, 100]]
+speed = 40
+
+[[level.wave1.spawn.paths.action]]
+type = "bullets"
+time_start = 1.0
+pattern = { type = "point", bullet_id = "basic_straight", angle = 270, speed = 40, amount = 5, time_int = 0.5 }
+
 [level.wave2]
-time = {after = "wave1", delay = 2.0}
+time = { after = "start", delay = 8.0 }
 
 # Somewhat more complex wave, spawns 10 enemies in a circle, has them move clockwise in a half circle, then curve out, and shoot 25 bullet 60 degree arcs
 [level.wave2.spawn]
 type = "enemy"
 enemy_id = "circle"
-pattern = {type = "arc", center = [-50, 50], radius = 25, astart = 0, end = 360, amount = 10}
-paths = [
-  { type = "arc",  center = [-50, 50], radius = 25, start = "current", degrees: 180, speed = 40 },
-  { type = "curve", points = ["current", [75, 0], [200, 0]], speed = 60, action = {
-    type = "bullets",
-    time_start = 1.0,
-    bullet_id = "basic_straight",
-    pattern = {
-      type = "arc",
-      amount = 5,
-      astart = 240.0,
-      aend = 300.0,
-      speed = 40,
-      time_int = 0.0,
-      radius = 10.0,
-    }
-    repeat = 2,
-    repeat_delay = 2.0,
-  }}
-]
+pattern = { type = "arc", center = [-50, 50], radius = 25, astart = 0, end = 360, amount = 10, time_int: 0 }
 repeat = 1
 repeat_delay = 2.0
 contact_dmg = 5
 mirror_x = true
+
+[[level.wave2.spawn.paths]]
+type = "arc"
+center = [-50, 50]
+radius = 25
+start = "current"
+degrees = 180
+direction = "clockwise"
+speed = 40
+
+[[level.wave2.spawn.paths]]
+type = "curve"
+points = [["current"], [75, 0], [200, 0]]
+speed = 60
+
+[[level.wave2.spawn.paths.action]]
+type = "bullets"
+time_start = 1.0
+bullet_id = "basic_straight"
+pattern = { type = "arc", amount = 5, astart = 240.0, aend = 300.0, speed = 40, time_int = 0.0, radius = 10.0 }

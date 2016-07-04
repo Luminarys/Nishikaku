@@ -10,6 +10,36 @@ pub enum Path {
     Fixed(Fixed),
 }
 
+#[derive(Copy, Clone)]
+pub enum RotationDirection {
+    Clockwise,
+    CounterClockwise,
+}
+
+pub struct Fixed {
+    time: f32,
+    pos: Vector2<f32>,
+    actions: Vec<Action>,
+}
+
+pub struct Arc {
+    center: Vector2<f32>,
+    current_pos: Vector2<f32>,
+    radius: f32,
+    degrees: f32,
+    speed: f32,
+    direction: RotationDirection,
+    actions: Vec<Action>,
+}
+
+pub struct Curve {
+    points: Vec<Point2<f32>>,
+    current_pos: Vector2<f32>,
+    node_dist_left: f32,
+    speed: f32,
+    actions: Vec<Action>,
+}
+
 impl Path {
     pub fn travel(&mut self, dt: f32) -> Option<Vector2<f32>> {
         match *self {
@@ -44,28 +74,6 @@ impl Path {
     }
 }
 
-#[derive(Copy, Clone)]
-pub enum RotationDirection {
-    Clockwise,
-    CounterClockwise,
-}
-
-pub struct Fixed {
-    time: f32,
-    pos: Vector2<f32>,
-    actions: Vec<Action>,
-}
-
-pub struct Arc {
-    center: Vector2<f32>,
-    current_pos: Vector2<f32>,
-    radius: f32,
-    degrees: f32,
-    speed: f32,
-    direction: RotationDirection,
-    actions: Vec<Action>,
-}
-
 impl Arc {
     fn travel(&mut self, dt: f32) -> Option<Vector2<f32>> {
         use std::f32::consts::PI;
@@ -92,14 +100,6 @@ impl Arc {
             None
         }
     }
-}
-
-pub struct Curve {
-    points: Vec<Point2<f32>>,
-    current_pos: Vector2<f32>,
-    node_dist_left: f32,
-    speed: f32,
-    actions: Vec<Action>,
 }
 
 impl Curve {

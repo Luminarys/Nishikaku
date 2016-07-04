@@ -26,7 +26,6 @@ pub struct Enemy {
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
-    event_id: usize,
 }
 
 impl Enemy {
@@ -75,7 +74,6 @@ impl Enemy {
             pg: pg,
             ev: e,
             world: w,
-            event_id: info.event_id,
         })
     }
 
@@ -114,6 +112,7 @@ impl Enemy {
                 let (ref bullet, ref mut pat) = self.patterns[i];
                 if let Some((pos, vel)) = pat.next() {
                     let b = bullet.clone();
+                    let pos = pos + self.pg.get_vpos();
                     self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, b, pos, vel)));
                 } else {
                     self.ev.remove_timer_with_class(i, 2);
@@ -144,14 +143,17 @@ impl Enemy {
                 let mut pattern = pb.build(&self.pg.get_vpos(), &ppos);
                 // :')
                 let (pos, vel) = pattern.next().unwrap();
+                let pos = pos + self.pg.get_vpos();
                 let bc = bullet.clone();
+                self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, bc, pos, vel)));
+
                 if pattern.time_int > 0.0001 {
                     self.patterns.push((bullet.clone(), pattern));
                     let len = self.patterns.len();
                     self.ev.set_repeating_timer_with_class(len, pattern.time_int, 2);
-                    self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, bc, pos, vel)));
                 } else {
                     while let Some((pos, vel)) = pattern.next() {
+                        let pos = pos + self.pg.get_vpos();
                         self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, bc.clone(), pos, vel)));
                     }
                 }
@@ -179,12 +181,5 @@ impl Enemy {
             _ => panic!("Non player object aliased to player!"),
         };
         p
-    }
-}
-
-impl Drop for Enemy {
-    fn drop(&mut self) {
-        let id = self.world.find_aliased_entity_id(&String::from("level")).unwrap();
-        self.ev.dispatch_to(id, Event::Custom(Box::new(CEvent::Despawn(self.event_id))));
     }
 }

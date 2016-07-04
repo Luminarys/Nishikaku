@@ -76,8 +76,9 @@ impl Level {
         for spawn in evt.spawns {
             let id = self.ev_reg.get_id();
             if spawn.repeat > 0 {
-                self.ev.set_repeating_timer_with_class(id, spawn.repeat_delay, 2);
-                self.waiting_spawns.insert(id, spawn.clone());
+                let wid = self.ev_reg.get_id();
+                self.ev.set_repeating_timer_with_class(wid, spawn.repeat_delay, 2);
+                self.waiting_spawns.insert(wid, spawn.clone());
             }
             self.ev.set_repeating_timer_with_class(id, spawn.pattern.time_int, 3);
             self.active_spawns.insert(id, spawn.clone());
@@ -109,8 +110,8 @@ impl Level {
                 Event::CTimer(1, id) => {
                     // Event timer delay
                     match self.waiting_events.remove(&id) {
-                        Some(events) => {
-                            self.handle_level_event(events);
+                        Some(event) => {
+                            self.handle_level_event(event);
                         }
                         None => println!("Nonexistent level event {:?}, referenced", id)
                     }
@@ -137,11 +138,13 @@ impl Level {
                             match spawn.spawn_type {
                                 SpawnType::Enemy(ref info) => {
                                     let i = info.clone();
+                                    let pos = pos + spawn.pattern.center;
                                     let paths = spawn.paths.clone();
                                     self.ev.create_entity(Box::new(move |engine| Enemy::new(engine, i, pos, paths.clone())));
                                 }
                                 SpawnType::Player => {
                                     // Spawn the palyer
+                                    self.ev.create_entity(Box::new(|engine| Player::new(engine)));
                                 }
                             }
                         } else {
@@ -158,7 +161,6 @@ impl Level {
                 }
                 _ => {}
             };
-
         }
 
         fn handle_cevent(&mut self, e: &CEvent) {

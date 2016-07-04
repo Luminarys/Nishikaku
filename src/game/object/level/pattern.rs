@@ -4,6 +4,7 @@ use nalgebra::{angle_between, Vector2};
 #[derive(Copy, Clone)]
 pub struct Pattern {
     pub time_int: f32,
+    pub center: Vector2<f32>,
     amount: usize,
     cur_angle: f32,
     stop_angle: f32,
@@ -56,34 +57,63 @@ impl Angle {
 pub struct PatternBuilder {
     time_int: f32,
     amount: usize,
-    cur_angle: Angle,
-    stop_angle: Angle,
+    cur_angle: Option<Angle>,
+    stop_angle: Option<Angle>,
     speed: f32,
     radius: f32,
 }
 
 impl PatternBuilder {
-    pub fn new(start_angle: Angle,
-               stop_angle: Angle,
-               radius: f32,
-               time_int: f32,
-               amount: usize,
-               speed: f32)
-               -> PatternBuilder {
+    pub fn new() -> PatternBuilder {
         PatternBuilder {
-            cur_angle: start_angle,
-            stop_angle: stop_angle,
-            amount: amount,
-            time_int: time_int,
-            speed: speed,
-            radius: radius,
+            cur_angle: None,
+            stop_angle: None,
+            amount: 1,
+            time_int: 0.0,
+            speed: 0.0,
+            radius: 0.0,
         }
+    }
+
+    pub fn start_angle(mut self, angle: Angle) -> PatternBuilder {
+        self.cur_angle = Some(angle);
+        self
+    }
+
+    pub fn stop_angle(mut self, angle: Angle) -> PatternBuilder {
+        self.stop_angle = Some(angle);
+        self
+    }
+
+    pub fn fixed_angle(mut self, angle: Angle) -> PatternBuilder {
+        self.start_angle(angle).stop_angle(angle)
+    }
+
+    pub fn radius(mut self, radius: f32) -> PatternBuilder {
+        self.radius = radius;
+        self
+    }
+
+    pub fn time_int(mut self, time_int: f32) -> PatternBuilder {
+        self.time_int = time_int;
+        self
+    }
+
+    pub fn amount(mut self, amount: usize) -> PatternBuilder {
+        self.amount = amount;
+        self
+    }
+
+    pub fn speed(mut self, speed: f32) -> PatternBuilder {
+        self.speed = speed;
+        self
     }
 
     pub fn build(self, cur_pos: &Vector2<f32>, player: &Vector2<f32>) -> Pattern {
         Pattern {
-            cur_angle: self.cur_angle.eval(cur_pos, player),
-            stop_angle: self.stop_angle.eval(cur_pos, player),
+            center: *cur_pos,
+            cur_angle: self.cur_angle.unwrap().eval(cur_pos, player),
+            stop_angle: self.stop_angle.unwrap().eval(cur_pos, player),
             amount: self.amount,
             time_int: self.time_int,
             speed: self.speed,

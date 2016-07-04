@@ -10,7 +10,6 @@ use engine::event::{Event, InputState};
 use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
-use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
 use game::object::level::path::{RotationDirection, Path, PathBuilder, PathType};
 use game::object::level::Point;
 
@@ -18,7 +17,6 @@ pub struct Player {
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
-    pat: Pattern,
     slowdown: f32,
 }
 
@@ -31,7 +29,6 @@ impl Player {
 
         let v1 = Vector2::new(1.0f32, 0.0);
         let v2 = Vector2::new(0.0, -1.0);
-        let pat = PatternBuilder::new(Angle::Fixed(180.0), Angle::Fixed(360.0), 0.0, 0.5, 20, 100.0).build(&v1, &v2);
         let w = WorldCompBuilder::new(engine).build();
         let g = GraphicsComp::new(engine.graphics.clone(), 1);
         let e = EventComp::new(w.id, engine.events.clone());
@@ -50,7 +47,6 @@ impl Player {
             ev: e,
             world: w,
             slowdown: 1.0,
-            pat: pat,
         })
     }
 
@@ -112,11 +108,7 @@ impl Player {
 
     fn shoot_bullet(&mut self) {
         let pos = self.pg.get_pos();
-        let np = match self.pat.next() {
-            Some((_, np)) => np,
-            None => Vector2::new(0.0, -200.0),
-        };
-        self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos, np)));
+        self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos)));
     }
 
     pub fn render(&self) -> Option<RenderInfo> {
@@ -136,7 +128,7 @@ pub struct Bullet {
 }
 
 impl Bullet {
-    pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32), vel: Vector2<f32>) -> Object {
+    pub fn new_at_pos(engine: &Engine<Object>, pos: (f32, f32)) -> Object {
         let path = PathBuilder::new(PathType::Curve)
             .speed(50.0)
             .points(vec![Point::Current(Vector2::new(0.0, 0.0)), Point::Fixed(Vector2::new(0.0, -200.0)), Point::Fixed(Vector2::new(-200.0, 0.0))])

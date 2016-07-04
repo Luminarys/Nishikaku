@@ -1,20 +1,29 @@
 use nalgebra::Vector2;
 
 use game::object::level::path::PathBuilder;
-use game::object::level::pattern::{Pattern, PatternBuilder};
+use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
 use game::object::level::Point;
 use game::object::level::enemy::Enemy;
 
 #[derive(Clone)]
 pub struct Spawn {
     pub spawn_type: SpawnType,
-    pub location: Vector2<f32>,
     pub paths: Vec<PathBuilder>,
     pub pattern: Pattern,
     pub repeat: usize,
     pub repeat_delay: f32,
     pub mirror_x: bool,
     pub mirror_y: bool,
+}
+
+impl Spawn {
+    pub fn player(location: Vector2<f32>) -> Spawn {
+        let pattern = PatternBuilder::new().fixed_angle(Angle::Fixed(270.0));
+        SpawnBuilder::new()
+            .spawn_type(SpawnType::Player)
+            .pattern(pattern)
+            .build(&location, &Vector2::new(0.0, 0.0))
+    }
 }
 
 #[derive(Clone)]
@@ -25,7 +34,6 @@ pub enum SpawnType {
 
 pub struct SpawnBuilder {
     spawn_type: Option<SpawnType>,
-    location: Option<Point>,
     paths: Vec<PathBuilder>,
     repeat: usize,
     repeat_delay: Option<f32>,
@@ -38,7 +46,6 @@ impl SpawnBuilder {
     pub fn new() -> SpawnBuilder {
         SpawnBuilder {
             spawn_type: None,
-            location: None,
             paths: Vec::new(),
             repeat: 0,
             repeat_delay: None,
@@ -51,11 +58,6 @@ impl SpawnBuilder {
     pub fn spawn_type(mut self, spawn_type: SpawnType) -> SpawnBuilder {
         // Perhaps validate the type? might not be known now
         self.spawn_type = Some(spawn_type);
-        self
-    }
-
-    pub fn location(mut self, location: Point) -> SpawnBuilder {
-        self.location = Some(location);
         self
     }
 
@@ -92,11 +94,10 @@ impl SpawnBuilder {
     pub fn build(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Spawn {
         Spawn {
             spawn_type: self.spawn_type.unwrap(),
-            location: self.location.unwrap().eval(current_pos, player_pos),
-            pattern: self.pattern.unwrap().build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0)),
+            pattern: self.pattern.unwrap().build(current_pos, player_pos),
             paths: self.paths,
             repeat: self.repeat,
-            repeat_delay: self.repeat_delay.unwrap(),
+            repeat_delay: self.repeat_delay.unwrap_or(0.0),
             mirror_x: self.mirror_x,
             mirror_y: self.mirror_y,
         }
