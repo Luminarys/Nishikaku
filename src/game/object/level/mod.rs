@@ -36,6 +36,7 @@ pub struct Level {
     ev_reg: Registry,
 }
 
+#[derive(Debug)]
 pub struct LevelEvent {
     pub name: String,
     pub id: usize,

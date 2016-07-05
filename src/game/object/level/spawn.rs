@@ -5,7 +5,7 @@ use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
 use game::object::level::Point;
 use game::object::level::enemy::Enemy;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Spawn {
     pub spawn_type: SpawnType,
     pub paths: Vec<PathBuilder>,
@@ -26,7 +26,7 @@ impl Spawn {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum SpawnType {
     Enemy(Enemy),
     Player,

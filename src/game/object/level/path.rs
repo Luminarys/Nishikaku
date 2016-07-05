@@ -10,7 +10,7 @@ pub enum Path {
     Fixed(Fixed),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum RotationDirection {
     Clockwise,
     CounterClockwise,
@@ -136,14 +136,14 @@ impl Curve {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum PathType {
     Arc,
     Curve,
     Fixed,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PathBuilder {
     pub path_type: PathType,
     speed: Option<f32>,

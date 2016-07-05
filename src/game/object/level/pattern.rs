@@ -1,7 +1,7 @@
 use nalgebra::{angle_between, Vector2};
 // TODO: Write tests - this code is complicated and almost certaintly error prone
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Pattern {
     pub time_int: f32,
     pub center: Vector2<f32>,
@@ -31,7 +31,7 @@ impl Pattern {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Angle {
     Fixed(f32),
     Player(f32),
@@ -53,7 +53,7 @@ impl Angle {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct PatternBuilder {
     time_int: f32,
     amount: usize,
