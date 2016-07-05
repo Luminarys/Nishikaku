@@ -396,6 +396,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
 
                         PatternBuilder::new()
                             .amount(amount)
+                            .center(location)
                             .fixed_angle(Angle::Fixed(270.0))
                             .time_int(time_int)
                     }
@@ -413,6 +414,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
 
                         PatternBuilder::new()
                             .amount(amount)
+                            .center(location)
                             .start_angle(Angle::Fixed(astart))
                             .stop_angle(Angle::Fixed(aend))
                             .radius(radius)

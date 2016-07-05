@@ -59,6 +59,7 @@ pub struct PatternBuilder {
     amount: usize,
     cur_angle: Option<Angle>,
     stop_angle: Option<Angle>,
+    center: Option<Vector2<f32>>,
     speed: f32,
     radius: f32,
 }
@@ -68,6 +69,7 @@ impl PatternBuilder {
         PatternBuilder {
             cur_angle: None,
             stop_angle: None,
+            center: None,
             amount: 1,
             time_int: 0.0,
             speed: 0.0,
@@ -87,6 +89,11 @@ impl PatternBuilder {
 
     pub fn fixed_angle(mut self, angle: Angle) -> PatternBuilder {
         self.start_angle(angle).stop_angle(angle)
+    }
+
+    pub fn center(mut self, center: Vector2<f32>) -> PatternBuilder {
+        self.center = Some(center);
+        self
     }
 
     pub fn radius(mut self, radius: f32) -> PatternBuilder {
@@ -111,7 +118,7 @@ impl PatternBuilder {
 
     pub fn build(self, cur_pos: &Vector2<f32>, player: &Vector2<f32>) -> Pattern {
         Pattern {
-            center: *cur_pos,
+            center: if self.center.is_none() { *cur_pos } else { self.center.unwrap() },
             cur_angle: self.cur_angle.unwrap().eval(cur_pos, player),
             stop_angle: self.stop_angle.unwrap().eval(cur_pos, player),
             amount: self.amount,
