@@ -37,10 +37,10 @@ pub struct Level {
 }
 
 pub struct LevelEvent {
-    name: String,
-    id: usize,
-    delay: f32,
-    spawns: Vec<Spawn>,
+    pub name: String,
+    pub id: usize,
+    pub delay: f32,
+    pub spawns: Vec<Spawn>,
 }
 
 impl Level {

@@ -81,13 +81,13 @@ impl SpawnBuilder {
         self
     }
 
-    pub fn mirror_x(mut self) -> SpawnBuilder {
-        self.mirror_x = true;
+    pub fn mirror_x(mut self, mirror: &bool) -> SpawnBuilder {
+        self.mirror_x = *mirror;
         self
     }
 
-    pub fn mirror_y(mut self) -> SpawnBuilder {
-        self.mirror_y = true;
+    pub fn mirror_y(mut self, mirror: &bool) -> SpawnBuilder {
+        self.mirror_y = *mirror;
         self
     }
 

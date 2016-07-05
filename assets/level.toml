@@ -38,7 +38,7 @@ behavior = "straight"
 
 [level.pstart]
 time = { after = "start", delay = 0.0 }
-spawn = { type = "player", init_pos = [0, -180] }
+spawn = { type = "player", position = [0, -180] }
 
 [level.wave1]
 time = {after = "start", delay = 5.0}
@@ -69,7 +69,7 @@ time = { after = "start", delay = 8.0 }
 [level.wave2.spawn]
 type = "enemy"
 enemy_id = "circle"
-pattern = { type = "arc", center = [-50, 50], radius = 25, astart = 0, end = 360, amount = 10, time_int: 0 }
+pattern = { type = "arc", center = [-50, 50], radius = 25, astart = 0, end = 360, amount = 10, time_int = 0 }
 repeat = 1
 repeat_delay = 2.0
 contact_dmg = 5

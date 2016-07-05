@@ -74,7 +74,13 @@ macro_rules! tget {
 
     ($t:expr, $k:expr, point, $s:expr) => {
         match $t.get($k) {
-            Some(toml::Value::Array(v)) => tpoint!(v.clone(), $s),
+            Some(ref v) => {
+                if !v.as_slice().is_none() {
+                    tpoint!(v.clone(), $s)
+                } else {
+                    return Err(format!("Expected array, got {:?}!", v))
+                }
+            }
             _ => return Err(format!("Could find key {:?} in {:?}!", $k, $s))
         }
     };
@@ -131,8 +137,8 @@ macro_rules! tpoint {
     ($v:expr, $s:expr) => {
         match $v.clone() {
             toml::Value::Array(a) => {
-                match a[0] {
-                    toml::Value::String(s) => {
+                match &a[0] {
+                    &toml::Value::String(ref s) => {
                         let x = if a.len() > 1 {
                             tint!(a[1], $s)
                         } else {
@@ -144,14 +150,14 @@ macro_rules! tpoint {
                             0.0
                         };
                         if s == "current" {
-                            Point::Current(x, y)
+                            Point::Current(Vector2::new(x, y))
                         } else if s == "player" {
-                            Point::Player(x, y)
+                            Point::Player(Vector2::new(x, y))
                         } else {
                             return Err(format!("{:?} was expected to be current or player, found as {:?}", $s, s))
                         }
                     }
-                    toml::Value::Integer(_) | toml::Value::Float(_) => {
+                    &toml::Value::Integer(_) | &toml::Value::Float(_) => {
                         let x = tint!(a[0], $s);
                         let y = tint!(a[1], $s);
                         Point::Fixed(Vector2::new(x, y))
@@ -167,13 +173,21 @@ macro_rules! tpoint {
 macro_rules! tangle {
     ($v:expr, $s:expr) => {
         match $v.clone() {
-            toml::Value::String("player") => {
-                Angle::Player(0.0)
+            toml::Value::String(s) => {
+                if s == String::from("player") {
+                    Angle::Player(0.0)
+                } else {
+                    return Err(format!("Angles currently only support player for custom values"))
+                }
             }
             toml::Value::Array(a) => {
-                match a[0] {
-                    toml::Value::String("player") => {
-                        Angle::Player(tint!(a[1], $s))
+                match &a[0] {
+                    &toml::Value::String(ref s) => {
+                        if *s == String::from("player") {
+                            Angle::Player(tint!(a[1], $s))
+                        } else {
+                            return Err(format!("Angles currently only support player for custom values"))
+                        }
                     }
                     t => {
                         return Err(format!("{:?} was expected to be a string, number, or array of string/number, found as {:?}", $s, t))
@@ -181,7 +195,7 @@ macro_rules! tangle {
                 }
             }
             toml::Value::Integer(_) | toml::Value::Float(_) => {
-                Angle::new(tint!($v, $s))
+                Angle::Fixed(tint!($v, $s))
             }
             t => return Err(format!("{:?} was expected to be a point(must use array brackets), found as {:?}", $s, t))
         }
@@ -199,7 +213,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
         let texture = tget!(sprite, "texture", Value::String, sprite_name);
         let size = tget!(sprite, "size", Value::Array, sprite_name);
         let half_extents = Vector2::new(tint!(size[0], "Sprite x extant") / 2.0,
-                                        tint!(size[0], "Sprite y extant") / 2.0);
+        tint!(size[0], "Sprite y extant") / 2.0);
         let max_amount = *tget!(sprite, "max_amount", Value::Integer, sprite_name) as usize;
         let shape = match &tget!(sprite, "hitbox", Value::String, sprite_name)[..] {
             "sphere" => {
@@ -212,7 +226,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                 for point in points {
                     let point = point.as_slice().unwrap();
                     let point = Point2::new(tint!(point[0], "Sprite hitbox point"),
-                                            tint!(point[1], "Sprite hitbox point"));
+                    tint!(point[1], "Sprite hitbox point"));
                     conv_points.push(point);
                 }
                 ShapeHandle2::new(ConvexHull::new(conv_points))
@@ -220,7 +234,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
             _ => {
                 return Err(format!("Only sphere/points are supported as hitboxes right now. \
                                     Please change the hitbox in {:?}",
-                                   sprite_name))
+                                    sprite_name))
             }
         };
         let id = make_sprite(engine,
@@ -334,7 +348,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
         let parse_pos = format!("{:?} spawn", event_name);
         let point = tget!(spawn, "position", Value::Array, parse_pos);
         let location = Vector2::new(tint!(point[0], "spawn location X"),
-                                    tint!(point[1], "spawn location Y"));
+        tint!(point[1], "spawn location Y"));
         match &tget!(spawn, "type", Value::String, parse_pos)[..] {
             "player" => {
                 events.insert(ev_after,
@@ -363,10 +377,11 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                            parse_pos))
                     }
                 };
+                static zero: i64 = 0;
                 let enemy_dmg = tget!(spawn, "contact_dmg", num, parse_pos);
                 let mirror_x = tget!(spawn, "mirror_x", Value::Boolean, parse_pos);
                 let mirror_y = tget!(spawn, "mirror_y", Value::Boolean, parse_pos);
-                let repeat = tget!(spawn, "repeat", Value::Integer, parse_pos, 0) as usize;
+                let repeat = *tget!(spawn, "repeat", Value::Integer, parse_pos, &zero) as usize;
                 let repeat_delay = tget!(spawn, "repeat_delay", num, parse_pos, 0.0);
 
                 let pattern = tget!(spawn, "pattern", Value::Table, parse_pos);
@@ -376,23 +391,22 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                         // pattern = { type = "point", position = [-200, 180], amount = 5, delay = 0.5 }
                         let point = tget!(pattern, "position", Value::Array, parse_pos);
                         let location = Vector2::new(tint!(point[0], "Enemy spawn X"),
-                                                    tint!(point[1], "Enemy spawn Y"));
-                        let amount = tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
+                        tint!(point[1], "Enemy spawn Y"));
+                        let amount = *tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
                         let time_int = tget!(pattern, "time_int", num, parse_pos);
 
                         PatternBuilder::new()
                             .amount(amount)
                             .fixed_angle(Angle::Fixed(270.0))
                             .time_int(time_int)
-                            .build(&location, &Vector2::new(0.0, 0.0))
                     }
                     "arc" => {
                         let parse_pos = format!("{:?} spawn pattern", event_name);
                         // pattern = { type = "arc", center = [-50, 50], radius = 25, astart = 0, end = 360, amount = 10, time_int: 0 }
                         let point = tget!(pattern, "center", Value::Array, parse_pos);
                         let location = Vector2::new(tint!(point[0], "Enemy spawn X"),
-                                                    tint!(point[1], "Enemy spawn Y"));
-                        let amount = tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
+                        tint!(point[1], "Enemy spawn Y"));
+                        let amount = *tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
                         let radius = tget!(pattern, "radius", num, parse_pos);
                         let astart = tget!(pattern, "astart", num, parse_pos);
                         let aend = tget!(pattern, "aend", num, parse_pos);
@@ -404,9 +418,10 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                             .stop_angle(Angle::Fixed(aend))
                             .radius(radius)
                             .time_int(time_int)
-                            .build(&location, &Vector2::new(0.0, 0.0))
                     }
-                    _ => {}
+                    s => {
+                        return Err(format!("You cannot use pattern type {:?}! Please use 'arc' or 'point'", s));
+                    }
                 };
 
                 // [[level.wave1.spawn.paths]]
@@ -414,7 +429,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                 // points = [[-200, 180], [-100, 140], [-200, 100]]
                 // speed = 40
                 let path_ar = tget!(spawn, "paths", Value::Array, parse_pos);
-                let paths = Vec::new();
+                let mut paths = Vec::new();
                 let mut pn = 1;
                 for path in path_ar {
                     let parse_pos = format!("{:?} spawn path {:?}", event_name, pn);
@@ -442,6 +457,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                 }
                             };
                             let speed = tget!(pattern, "speed", num, parse_pos);
+                            let delay = tget!(pattern, "delay", num, parse_pos);
                             let pattern =
                                 match &tget!(pattern, "type", Value::String, parse_pos)[..] {
                                     "point" => {
@@ -449,7 +465,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                         let parse_pos = format!("{:?} bullet pattern", event_name);
                                         // pattern = { type = "point", position = [-200, 180], amount = 5, delay = 0.5 }
                                         let angle = tget!(pattern, "angle", angle, parse_pos);
-                                        let amount = tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
+                                        let amount = *tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
                                         let time_int = tget!(pattern, "time_int", num, parse_pos);
 
                                         PatternBuilder::new()
@@ -462,7 +478,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                         let parse_pos = format!("{:?} spawn pattern", event_name);
                                         // pattern = { type = "arc", amount = 5, astart = 240.0, aend = 300.0, speed = 40, time_int = 0.0, radius = 10.0 }
 
-                                        let amount = tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
+                                        let amount = *tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
                                         let radius = tget!(pattern, "radius", num, parse_pos);
                                         let astart = tget!(pattern, "astart", angle, parse_pos);
                                         let aend = tget!(pattern, "aend", angle, parse_pos);
@@ -476,11 +492,14 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                             .radius(radius)
                                             .time_int(time_int)
                                     }
-                                    _ => {}
+                                    _ => { return Err(format!("Pattern must be 'point' or 'arc', {:?} is invalid", pattern)) }
                                 };
-                            Action::Bullets(bullet, pattern);
+                            Action {
+                                action_type: ActionType::Bullets(bullet, pattern),
+                                delay: delay,
+                            }
                         }
-                        _ => {}
+                        a => { return Err(format!("Action must be 'bullets', {:?} is invalid", a)) }
                     };
 
                     let path = match &tget!(path, "type", Value::String, parse_pos)[..] {
@@ -496,13 +515,11 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                         // points: Option<Vec<Point>>,
                         "curve" => {
                             let point_arr = tget!(path, "points", Value::Array, parse_pos);
-                            let points = Vec::new();
+                            let mut points = Vec::new();
                             for point in point_arr {
-                                let point = point.as_array().unwrap();
                                 points.push(tpoint!(point, format!("{:?} points", parse_pos)));
                             }
-                            PathBuilder::new()
-                                .path_type(PathType::Curve)
+                            PathBuilder::new(PathType::Curve)
                                 .speed(speed)
                                 .points(points)
                                 .actions(vec![action])
@@ -520,8 +537,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                     }
                                 };
                             let degrees = tget!(path, "degrees", num, parse_pos);
-                            PathBuilder::new()
-                                .path_type(PathType::Arc)
+                            PathBuilder::new(PathType::Arc)
                                 .speed(speed)
                                 .center(center)
                                 .radius(radius)
@@ -529,18 +545,19 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                 .direction(direction)
                                 .actions(vec![action])
                         }
+                        p => { return Err(format!("Pattern must be 'curve' or 'arc', {:?} is invalid", p)) }
                     };
                     paths.push(path);
                     pn += 1;
                 }
                 let spawn = SpawnBuilder::new()
-                                .paths(paths)
-                                .repeat(repeat)
-                                .repeat_delay(repeat_delay)
-                                .pattern(pattern)
-                                .mirror_x(mirror_x)
-                                .mirror_y(mirror_y)
-                                .build(&location, &Vector2::new(0.0, 0.0));
+                    .paths(paths)
+                    .repeat(repeat)
+                    .repeat_delay(repeat_delay)
+                    .pattern(pattern)
+                    .mirror_x(mirror_x)
+                    .mirror_y(mirror_y)
+                    .build(&location, &Vector2::new(0.0, 0.0));
                 events.insert(ev_after,
                               LevelEvent {
                                   name: event_name.clone(),
@@ -549,6 +566,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                   spawns: vec![spawn],
                               });
             }
+            s => { return Err(format!("Spawn must be 'player' or 'enemy', {:?} is invalid", s)) }
         };
     }
 
@@ -573,41 +591,41 @@ fn make_sprite(engine: &mut Engine<Object>,
                half_extents: Vector2<f32>,
                amount: usize,
                shape: ShapeHandle2<f32>)
-               -> usize {
-    let vert_shader = SPRITE_VERT_SHADER;
-    let frag_shader = SPRITE_FRAG_SHADER;
-    let vbo = make_vbo(engine, half_extents);
-    let mut gfx = engine.graphics.borrow_mut();
-    let texture = gfx.load_texture(&texture[..]);
-    let id = gfx.sprite_amount() + 1;
-    gfx.new_sprite(id,
-                   vert_shader,
-                   frag_shader,
-                   vbo,
-                   Some(texture),
-                   amount,
-                   Some(shape));
-    id
-}
+    -> usize {
+        let vert_shader = SPRITE_VERT_SHADER;
+        let frag_shader = SPRITE_FRAG_SHADER;
+        let vbo = make_vbo(engine, half_extents);
+        let mut gfx = engine.graphics.borrow_mut();
+        let texture = gfx.load_texture(&texture[..]);
+        let id = gfx.sprite_amount() + 1;
+        gfx.new_sprite(id,
+                       vert_shader,
+                       frag_shader,
+                       vbo,
+                       Some(texture),
+                       amount,
+                       Some(shape));
+        id
+    }
 
 fn make_vbo(engine: &mut Engine<Object>, half_extents: Vector2<f32>) -> VertexBuffer<SpriteVertex> {
     let half_extents = half_extents / engine.scene.physics.scaler;
     let vertices = &[SpriteVertex {
-                         position: [-1.0 * half_extents.x, -1.0 * half_extents.y],
-                         tex_coords: [0.0, 0.0],
-                     },
-                     SpriteVertex {
-                         position: [-1.0 * half_extents.x, half_extents.y],
-                         tex_coords: [0.0, 1.0],
-                     },
-                     SpriteVertex {
-                         position: [half_extents.x, half_extents.y],
-                         tex_coords: [1.0, 1.0],
-                     },
-                     SpriteVertex {
-                         position: [half_extents.x, -1.0 * half_extents.y],
-                         tex_coords: [1.0, 0.0],
-                     }];
+        position: [-1.0 * half_extents.x, -1.0 * half_extents.y],
+        tex_coords: [0.0, 0.0],
+    },
+    SpriteVertex {
+        position: [-1.0 * half_extents.x, half_extents.y],
+        tex_coords: [0.0, 1.0],
+    },
+    SpriteVertex {
+        position: [half_extents.x, half_extents.y],
+        tex_coords: [1.0, 1.0],
+    },
+    SpriteVertex {
+        position: [half_extents.x, -1.0 * half_extents.y],
+        tex_coords: [1.0, 0.0],
+    }];
     let gfx = engine.graphics.borrow();
     gfx.make_sprite_vbo(vertices)
 }
