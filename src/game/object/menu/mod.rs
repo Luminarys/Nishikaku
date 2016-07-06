@@ -100,7 +100,11 @@ impl MainMenuBar {
                 // TODO: Fancy animation/coloring
             }
             CEvent::MouseClickedOver => {
-                self.ev.create_entity(Box::new(move |engine| Level::new(engine)));
+                let cid = self.world.find_aliased_entity_id("controller").unwrap();
+                self.ev.dispatch_to(cid, Event::Custom(Box::new(CEvent::LevelStart)));
+                // pub fn dispatch_to(&self, id: usize, event: Event) {
+                //     self.handler.borrow_mut().enqueue_specific(id, event);
+                // }
                 if let Some(tags) = self.world.get_tagged(&String::from("main_menu")) {
                     for id in tags {
                         self.ev.destroy_other(id);

@@ -3,6 +3,7 @@ pub mod component;
 use std::rc::Rc;
 use nalgebra::Vector2;
 
+use engine::Engine;
 use engine::event::Event;
 use engine::graphics::SpriteAttrs;
 
@@ -27,4 +28,8 @@ pub struct RenderInfo {
 pub trait Entity {
     fn handle_event(&mut self, e: Rc<Event>);
     fn id(&self) -> usize;
+}
+
+pub trait EntityBuilder<E: Entity> {
+    fn build(self, engine: &Engine<E>) -> E;
 }

@@ -22,9 +22,7 @@ use engine::Engine;
 
 fn main() {
     let mut engine: Engine<Object> = Engine::new(200.0, 700);
-    game::asset::load_assets(&mut engine);
-    engine.spawn(Box::new(|e| {
-        game::object::controller::Controller::new(e)
-    }));
+    let assets = game::asset::load_assets(&mut engine);
+    engine.spawn_entity(game::object::controller::Controller::new(&engine, assets));
     engine.run();
 }

@@ -7,9 +7,11 @@ use ncollide::shape::{ShapeHandle2, Ball, Cuboid, ConvexHull};
 use glium::VertexBuffer;
 
 use engine::Engine;
+use engine::util::{HashMap};
 use engine::util;
 use engine::graphics::SpriteVertex;
 use game::object::Object;
+use game::object::level::LevelEvent;
 
 const SPRITE_VERT_SHADER: &'static str = r#"
     #version 140
@@ -38,17 +40,24 @@ const SPRITE_FRAG_SHADER: &'static str = r#"
     }
 "#;
 
-pub fn load_assets(engine: &mut Engine<Object>) {
+pub struct Assets {
+    pub levels: Vec<HashMap<String, LevelEvent>>
+}
+
+pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
     println!("Loading assets!");
     load_char(engine);
     load_bullet(engine);
-    load_level(engine);
+    let level = load_level(engine);
     load_menu(engine);
     load_sound(engine);
     load_fonts(engine);
+    Assets {
+        levels: vec![level],
+    }
 }
 
-fn load_level(engine: &mut Engine<Object>) {
+fn load_level(engine: &mut Engine<Object>) -> HashMap<String, LevelEvent> {
     use std::io::Read;
     let mut f = File::open("assets/level.toml").unwrap();
     let mut s = String::new();
@@ -56,12 +65,15 @@ fn load_level(engine: &mut Engine<Object>) {
     let mut parser = toml::Parser::new(&s[..]);
     match parser.parse() {
         Some(level) => {
-            println!("{:?}", parse_level(engine, level).unwrap());
+            let level = parse_level(engine, level).unwrap();
+            println!("{:?}", level);
+            level
         }
         None => {
             println!("{:?}", parser.errors);
+            panic!();
         }
-    };
+    }
 }
 
 macro_rules! tget {
@@ -202,7 +214,7 @@ macro_rules! tangle {
     }
 }
 
-fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), String> {
+fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMap<String, LevelEvent>, String> {
     use toml::Value;
 
     // Load sprites
@@ -329,7 +341,6 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
     // type = "bullets"
     // time_start = 1.0
     // pattern = { type = "point", bullet_id = "basic_straight", angle = 270, speed = 40, amount = 5, time_int = 0.5 }
-    use game::object::level::LevelEvent;
     use game::object::level::spawn::{SpawnBuilder, SpawnType, Spawn};
     use game::object::level::path::{PathBuilder, PathType, RotationDirection};
     use game::object::level::action::{Action, ActionType};
@@ -351,7 +362,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                 let point = tget!(spawn, "position", Value::Array, parse_pos);
                 let location = Vector2::new(tint!(point[0], "spawn location X"),
                                             tint!(point[1], "spawn location Y"));
-                events.insert(ev_after,
+                events.insert(ev_after.clone(),
                               LevelEvent {
                                   name: event_name.clone(),
                                   id: ev_counter,
@@ -575,7 +586,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
                                 .mirror_x(mirror_x)
                                 .mirror_y(mirror_y)
                                 .build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0));
-                events.insert(ev_after,
+                events.insert(ev_after.clone(),
                               LevelEvent {
                                   name: event_name.clone(),
                                   id: ev_counter,
@@ -590,7 +601,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(), St
     println!("{:?}", enemies);
     println!("{:?}", bullets);
     println!("{:?}", events);
-    Ok(())
+    Ok(events)
 }
 
 fn load_fonts(engine: &mut Engine<Object>) {

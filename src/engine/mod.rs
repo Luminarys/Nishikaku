@@ -36,6 +36,14 @@ impl<E: entity::Entity> Engine<E> {
         }
     }
 
+    pub fn spawn_entity(&self, mut e: E) {
+        let id = e.id();
+        self.events.deref().borrow_mut().subscribe(id.clone(), event::Event::Update(0.0));
+        self.events.deref().borrow_mut().subscribe(id.clone(), event::Event::Render);
+        e.handle_event(Rc::new(event::Event::Spawn));
+        self.scene.world.deref().insert(id, e);
+    }
+
     pub fn spawn(&self, spawner: Box<Fn(&Engine<E>) -> E>) {
         let mut e = spawner(&self);
         let id = e.id();

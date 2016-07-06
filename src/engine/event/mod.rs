@@ -12,7 +12,7 @@ use glium::glutin::VirtualKeyCode;
 use glium::glutin::MouseButton;
 
 use engine::Engine;
-use engine::entity::Entity;
+use engine::entity::{Entity, EntityBuilder};
 use engine::entity::component::PhysicsData;
 
 #[derive(Clone)]

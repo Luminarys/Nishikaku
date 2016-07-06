@@ -36,7 +36,7 @@ pub struct Level {
     ev_reg: Registry,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct LevelEvent {
     pub name: String,
     pub id: usize,
@@ -45,13 +45,13 @@ pub struct LevelEvent {
 }
 
 impl Level {
-    pub fn new(engine: &Engine<Object>) -> Object {
+    pub fn new(engine: &Engine<Object>, level: HashMap<String, LevelEvent>) -> Object {
         let w = WorldCompBuilder::new(engine).with_tag(String::from("level")).build();
         let e = EventComp::new(w.id, engine.events.clone());
         Object::Level(Level {
             ev: e,
             ev_reg: Registry::new(),
-            events: util::hashmap(),
+            events: level,
             waiting_events: util::hashmap(),
             waiting_spawns: util::hashmap(),
             active_spawns: util::hashmap(),
