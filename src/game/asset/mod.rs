@@ -41,7 +41,7 @@ const SPRITE_FRAG_SHADER: &'static str = r#"
 "#;
 
 pub struct Assets {
-    pub levels: Vec<HashMap<String, LevelEvent>>
+    pub levels: Vec<HashMap<String, Vec<LevelEvent>>>
 }
 
 pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
@@ -57,7 +57,7 @@ pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
     }
 }
 
-fn load_level(engine: &mut Engine<Object>) -> HashMap<String, LevelEvent> {
+fn load_level(engine: &mut Engine<Object>) -> HashMap<String, Vec<LevelEvent>> {
     use std::io::Read;
     let mut f = File::open("assets/level.toml").unwrap();
     let mut s = String::new();
@@ -214,7 +214,7 @@ macro_rules! tangle {
     }
 }
 
-fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMap<String, LevelEvent>, String> {
+fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMap<String, Vec<LevelEvent>>, String> {
     use toml::Value;
 
     // Load sprites
@@ -347,9 +347,18 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
     use game::object::level::pattern::{Angle, PatternBuilder};
     use game::object::level::point::Point;
 
-    let mut events = util::hashmap();
+    let insert_or_app = |map: &mut HashMap<String, Vec<LevelEvent>>, key: String, val: LevelEvent| {
+        if map.contains_key(&key) {
+            map.get_mut(&key).unwrap().push(val);
+        } else {
+            map.insert(key, vec![val]);
+        }
+    };
+
+    let mut events: HashMap<String, Vec<LevelEvent>> = util::hashmap();
     let mut ev_counter = 0;
     let event_tab = tget!(level, "level", Value::Table, "level config");
+
     for (event_name, event) in event_tab {
         let event = event.as_table().unwrap();
         let ev_timing = tget!(event, "time", Value::Table, event_name);
@@ -362,13 +371,20 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
                 let point = tget!(spawn, "position", Value::Array, parse_pos);
                 let location = Vector2::new(tint!(point[0], "spawn location X"),
                                             tint!(point[1], "spawn location Y"));
-                events.insert(ev_after.clone(),
-                              LevelEvent {
-                                  name: event_name.clone(),
-                                  id: ev_counter,
-                                  delay: delay,
-                                  spawns: vec![Spawn::player(location)],
-                              });
+                insert_or_app(&mut events, ev_after.clone(),
+                               LevelEvent {
+                                   name: event_name.clone(),
+                                   id: ev_counter,
+                                   delay: delay,
+                                   spawns: vec![Spawn::player(location)],
+                               });
+                // events.insert(ev_after.clone(),
+                //               LevelEvent {
+                //                   name: event_name.clone(),
+                //                   id: ev_counter,
+                //                   delay: delay,
+                //                   spawns: vec![Spawn::player(location)],
+                //               });
                 ev_counter += 1;
             }
             "enemy" => {
@@ -586,13 +602,13 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
                                 .mirror_x(mirror_x)
                                 .mirror_y(mirror_y)
                                 .build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0));
-                events.insert(ev_after.clone(),
-                              LevelEvent {
-                                  name: event_name.clone(),
-                                  id: ev_counter,
-                                  delay: delay,
-                                  spawns: vec![spawn],
-                              });
+                insert_or_app(&mut events, ev_after.clone(),
+                               LevelEvent {
+                                   name: event_name.clone(),
+                                   id: ev_counter,
+                                   delay: delay,
+                                   spawns: vec![spawn],
+                               });
             }
             s => return Err(format!("Spawn must be 'player' or 'enemy', {:?} is invalid", s)),
         };

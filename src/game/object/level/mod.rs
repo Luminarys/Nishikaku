@@ -45,7 +45,7 @@ pub struct LevelEvent {
 }
 
 impl Level {
-    pub fn new(engine: &Engine<Object>, level: HashMap<String, LevelEvent>) -> Object {
+    pub fn new(engine: &Engine<Object>, level: HashMap<String, Vec<LevelEvent>>) -> Object {
         let w = WorldCompBuilder::new(engine).with_tag(String::from("level")).build();
         let e = EventComp::new(w.id, engine.events.clone());
         Object::Level(Level {

@@ -46,7 +46,7 @@ impl Controller {
 
    fn handle_cevent(&mut self, e: &CEvent) {
        match *e {
-           LevelStart => {
+           CEvent::LevelStart => {
                let level = self.assets.levels.pop().unwrap();
                 self.ev.create_entity(Box::new(move |engine| Level::new(engine, level.clone())));
            }

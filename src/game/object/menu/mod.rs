@@ -100,7 +100,7 @@ impl MainMenuBar {
                 // TODO: Fancy animation/coloring
             }
             CEvent::MouseClickedOver => {
-                let cid = self.world.find_aliased_entity_id("controller").unwrap();
+                let cid = self.world.find_aliased_entity_id(&String::from("controller")).unwrap();
                 self.ev.dispatch_to(cid, Event::Custom(Box::new(CEvent::LevelStart)));
                 // pub fn dispatch_to(&self, id: usize, event: Event) {
                 //     self.handler.borrow_mut().enqueue_specific(id, event);

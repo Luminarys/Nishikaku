@@ -7,5 +7,5 @@ pub enum Event {
     Despawn(usize),
     Action(usize),
     Pattern(usize),
-    StartGame,
+    LevelStart,
 }
