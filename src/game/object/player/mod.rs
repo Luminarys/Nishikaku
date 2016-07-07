@@ -29,7 +29,7 @@ impl Player {
 
         let v1 = Vector2::new(1.0f32, 0.0);
         let v2 = Vector2::new(0.0, -1.0);
-        let w = WorldCompBuilder::new(engine).build();
+        let w = WorldCompBuilder::new(engine).with_alias(String::from("player")).build();
         let g = GraphicsComp::new(engine.graphics.clone(), 1);
         let e = EventComp::new(w.id, engine.events.clone());
 

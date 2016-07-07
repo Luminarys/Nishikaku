@@ -57,11 +57,13 @@ impl Enemy {
             };
             p
         };
+        // Makes it easy to pop from the back
+        paths.reverse();
         let mut path = paths.pop().unwrap().build(&pos, &ppos);
         let mut actions = Vec::new();
         for (id, action) in path.actions().iter_mut().enumerate() {
             actions.push(mem::replace(&mut action.action_type, ActionType::None));
-            e.set_timer(id, action.delay);
+            e.set_timer_with_class(id, action.delay, 1);
         }
         // pg.velocity = vel;
         Object::Enemy(Enemy {
@@ -100,6 +102,7 @@ impl Enemy {
                         }
                     }
                 };
+                self.ev.update(t);
                 self.pg.update(t);
             }
             Event::CTimer(1, i) => {
@@ -150,7 +153,7 @@ impl Enemy {
                 if pattern.time_int > 0.0001 {
                     self.patterns.push((bullet.clone(), pattern));
                     let len = self.patterns.len();
-                    self.ev.set_repeating_timer_with_class(len, pattern.time_int, 2);
+                    self.ev.set_repeating_timer_with_class(len-1, pattern.time_int, 2);
                 } else {
                     while let Some((pos, vel)) = pattern.next() {
                         let pos = pos + self.pg.get_vpos();

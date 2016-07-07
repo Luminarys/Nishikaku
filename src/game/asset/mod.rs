@@ -48,10 +48,10 @@ pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
     println!("Loading assets!");
     load_char(engine);
     load_bullet(engine);
-    let level = load_level(engine);
     load_menu(engine);
     load_sound(engine);
     load_fonts(engine);
+    let level = load_level(engine);
     Assets {
         levels: vec![level],
     }
@@ -254,6 +254,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
                              half_extents,
                              max_amount,
                              shape);
+        println!("Making sprite with id {:?}", id);
         sprites.insert(sprite_name, id);
     }
 
@@ -378,13 +379,6 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
                                    delay: delay,
                                    spawns: vec![Spawn::player(location)],
                                });
-                // events.insert(ev_after.clone(),
-                //               LevelEvent {
-                //                   name: event_name.clone(),
-                //                   id: ev_counter,
-                //                   delay: delay,
-                //                   spawns: vec![Spawn::player(location)],
-                //               });
                 ev_counter += 1;
             }
             "enemy" => {
@@ -609,6 +603,7 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
                                    delay: delay,
                                    spawns: vec![spawn],
                                });
+                ev_counter += 1;
             }
             s => return Err(format!("Spawn must be 'player' or 'enemy', {:?} is invalid", s)),
         };

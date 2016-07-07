@@ -2,9 +2,9 @@
 
 [sprites.cirno]
 texture = "cirno.png"
-size = [10, 20]
+size = [20, 40]
 hitbox = "points"
-hitbox_bounds = [[5, 10], [-5, 10], [5, -10], [-5, -10]]
+hitbox_bounds = [[10, 20], [10, 20], [10, -20], [-10, -20]]
 max_amount = 100
 
 [sprites.red_bullet]
@@ -60,7 +60,7 @@ speed = 40
 type = "bullets"
 time_start = 1.0
 bullet_id = "basic_straight" 
-pattern = { type = "point", angle = 270, speed = 40, amount = 5, time_int = 0.5 }
+pattern = { type = "point", angle = "player", speed = 40, amount = 5, time_int = 0.5 }
 
 [level.wave2]
 time = { after = "start", delay = 8.0 }

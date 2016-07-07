@@ -47,6 +47,13 @@ struct CustomSpriteData {
     shape: Option<ShapeHandle2<f32>>,
 }
 
+use std::fmt;
+impl fmt::Debug for SpriteData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Sprite has shape? {:?}", !self.shape.is_none())
+    }
+}
+
 impl Graphics {
     pub fn new(x_res: u32, y_res: u32) -> Graphics {
         let display = glium::glutin::WindowBuilder::new()
@@ -96,6 +103,7 @@ impl Graphics {
             registry: reg,
             shape: shape,
         };
+        println!("Registring new sprite: {:?} id {:?}", data, id);
         self.sprites.insert(id, data);
     }
 
@@ -149,7 +157,10 @@ impl Graphics {
         match self.sprites.get_mut(sprite) {
             Some(s) => {
                 // Starts at 1 in registry
-                s.vertex_attrs.slice_mut((pos - 1)..(pos)).unwrap().write(&[*attrs]);
+                match s.vertex_attrs.slice_mut((pos - 1)..(pos)) {
+                    Some(slice) => slice.write(&[*attrs]),
+                    None => panic!(format!("Failed to write to sprite {:?} at pos {:?}", sprite, pos))
+                }
             }
             None => {}
         }

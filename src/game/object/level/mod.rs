@@ -61,6 +61,7 @@ impl Level {
 
     fn event_finished(&mut self, id: String) {
         if let Some(events) = self.events.remove(&id) {
+            println!("Queing events: {:?}", events);
             for e in events {
                 if e.delay > 0.001 {
                     self.ev.set_repeating_timer_with_class(e.id, e.delay, 1);
@@ -103,7 +104,7 @@ impl Level {
                 Event::Spawn => {
                     println!("Spawned Level!");
                     self.ev.create_entity(Box::new(|engine| ScreenArea::new(engine)));
-                    self.ev.create_entity(Box::new(|engine| Player::new(engine)));
+                    self.event_finished(String::from("start"));
                 }
                 Event::Update(dt) => {
                     self.ev.update(dt);
