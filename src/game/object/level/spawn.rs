@@ -2,7 +2,6 @@ use nalgebra::Vector2;
 
 use game::object::level::path::PathBuilder;
 use game::object::level::pattern::{Angle, Pattern, PatternBuilder};
-use game::object::level::Point;
 use game::object::level::enemy::Enemy;
 
 #[derive(Clone, Debug)]

@@ -103,7 +103,6 @@ impl Graphics {
             registry: reg,
             shape: shape,
         };
-        println!("Registring new sprite: {:?} id {:?}", data, id);
         self.sprites.insert(id, data);
     }
 
@@ -237,6 +236,12 @@ impl Graphics {
     }
 
     pub fn render(&mut self) {
+        use glium::Blend;
+
+        let params = DrawParameters {
+            blend: Blend::alpha_blending(),
+            ..Default::default()
+        };
         match self.current_frame {
             Some(ref mut target) => {
                 for (_, sprite_data) in &self.sprites {
@@ -249,7 +254,7 @@ impl Graphics {
                                     &sprite_data.indices,
                                     &sprite_data.program,
                                     &uniforms,
-                                    &Default::default())
+                                    &params)
                               .unwrap();
                     } else {
                         let uniforms = uniform![];
@@ -258,7 +263,7 @@ impl Graphics {
                                     &sprite_data.indices,
                                     &sprite_data.program,
                                     &uniforms,
-                                    &Default::default())
+                                    &params)
                               .unwrap();
                     }
                 }
