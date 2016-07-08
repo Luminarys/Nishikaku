@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::mem;
 use std::fs::File;
 use ncollide::shape::ShapeHandle2;
@@ -15,6 +14,8 @@ use glium;
 use glium_text::{FontTexture, TextSystem, TextDisplay};
 use glium_text;
 
+use engine::util;
+use engine::util::HashMap;
 use engine::scene::Registry;
 
 // TODO: Using reversed matrices is probably a bad practice, invert everything
@@ -32,6 +33,7 @@ pub struct Graphics {
 struct SpriteData {
     program: Program,
     vbo: VertexBuffer<SpriteVertex>,
+    pre_render: Vec<SpriteAttrs>,
     vertex_attrs: VertexBuffer<SpriteAttrs>,
     indices: IndexBuffer<u16>,
     texture: Option<CompressedSrgbTexture2d>,
@@ -66,10 +68,10 @@ impl Graphics {
                           .unwrap();
         let tex_sys = TextSystem::new(&display);
         Graphics {
-            sprites: HashMap::new(),
-            custom_sprites: HashMap::new(),
+            sprites: util::hashmap(),
+            custom_sprites: util::hashmap(),
             display: display,
-            fonts: HashMap::new(),
+            fonts: util::hashmap(),
             current_frame: None,
             tex_sys: tex_sys,
             dimensions: (x_res, y_res),
@@ -102,6 +104,7 @@ impl Graphics {
             last_amount: 0,
             registry: reg,
             shape: shape,
+            pre_render: vec![SpriteAttrs::hidden(); max_amount],
         };
         self.sprites.insert(id, data);
     }
@@ -156,10 +159,11 @@ impl Graphics {
         match self.sprites.get_mut(sprite) {
             Some(s) => {
                 // Starts at 1 in registry
-                match s.vertex_attrs.slice_mut((pos - 1)..(pos)) {
-                    Some(slice) => slice.write(&[*attrs]),
-                    None => panic!(format!("Failed to write to sprite {:?} at pos {:?}", sprite, pos))
-                }
+                s.pre_render[pos-1] = *attrs;
+                // match s.vertex_attrs.slice_mut((pos - 1)..(pos)) {
+                //     Some(slice) => slice.write(&[*attrs]),
+                //     None => panic!(format!("Failed to write to sprite {:?} at pos {:?}", sprite, pos))
+                // }
             }
             None => {}
         }
@@ -244,7 +248,8 @@ impl Graphics {
         };
         match self.current_frame {
             Some(ref mut target) => {
-                for (_, sprite_data) in &self.sprites {
+                for (&_, ref mut sprite_data) in self.sprites.iter_mut() {
+                    sprite_data.vertex_attrs.write(&sprite_data.pre_render[..]);
                     if let Some(ref tex) = sprite_data.texture {
                         let uniforms = uniform! {
                             tex: tex,
@@ -302,6 +307,11 @@ pub struct SpriteAttrs {
 }
 
 impl SpriteAttrs {
+    pub fn hidden() -> SpriteAttrs {
+        let mut sa = SpriteAttrs::default();
+        sa.set_pos(10f32, 10f32);
+        sa
+    }
     pub fn translate(&mut self, dx: f32, dy: f32) {
         self.transform[0][3] += dx;
         self.transform[1][3] += dy;

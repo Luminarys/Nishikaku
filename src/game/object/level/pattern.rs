@@ -1,33 +1,98 @@
 use nalgebra::{angle_between, Vector2};
+use game::object::enemy::PosFetcher;
 // TODO: Write tests - this code is complicated and almost certaintly error prone
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Pattern {
     pub time_int: f32,
     pub center: Vector2<f32>,
+    pos_fetcher: Option<PosFetcher>,
+    repeat: usize,
+    repeat_delay: f32,
     amount: usize,
-    cur_angle: f32,
+    actual_start: Angle,
+    actual_stop: Angle,
+    start_angle: f32,
     stop_angle: f32,
     speed: f32,
     radius: f32,
+    rep_time: f32,
+    active_patterns: Vec<PatternState>,
+}
+
+// use std::clone::Clone;
+// 
+// impl Clone for Pattern {
+//     fn clone(&self) -> Pattern {
+//         Pattern {
+//             time_int: self.time_int,
+//             center: self.center,
+//             pos_fetcher: None,
+//             repeat: self.repeat,
+//             repeat_delay: self.repeat_delay,
+//             amount: self.amount,
+//             actual_start: self.actual_start,
+//             actual_stop: self.actual_stop,
+//             start_angle: self.start_angle,
+//             stop_angle: self.stop_angle,
+//             speed: self.speed,
+//             radius: self.radius,
+//             rep_time: self.rep_time,
+//             active_patterns: Vec::new(),
+//         }
+//     }
+// }
+
+#[derive(Clone, Debug)]
+struct PatternState {
+    cur_angle: f32,
+    amount_left: usize,
+    int_time: f32,
 }
 
 impl Pattern {
-    /// Consumes a portion of the arc and emits translation and velocity vectors of the object
-    pub fn next(&mut self) -> Option<(Vector2<f32>, Vector2<f32>)> {
-        if self.amount > 0 {
-            let angle = self.cur_angle;
-            self.cur_angle += (self.stop_angle - self.cur_angle) / self.amount as f32;
-            self.amount -= 1;
-            let base = Vector2::new(angle.to_radians().cos(), angle.to_radians().sin());
-            Some((base * self.radius, base * self.speed))
-        } else {
-            None
+    fn update(&mut self, dt: f32) {
+        self.rep_time += dt;
+        if self.rep_time >= self.repeat_delay && self.repeat > 0 {
+            self.repeat -= 1;
+            self.rep_time= 0.0;
+            if let Some(ref fetcher) = self.pos_fetcher {
+                let pos_info = fetcher.fetch();
+                self.start_angle = self.actual_start.eval(&pos_info.0, &pos_info.1);
+                self.stop_angle = self.actual_stop.eval(&pos_info.0, &pos_info.1);
+            }
+            self.active_patterns.push(PatternState { cur_angle: self.start_angle, amount_left: self.amount, int_time: 0.0 })
+        }
+        for pattern in self.active_patterns.iter_mut() {
+            pattern.int_time += dt;
         }
     }
 
+    pub fn set_pos_fetcher(&mut self, fetcher: PosFetcher) {
+        self.pos_fetcher = Some(fetcher);
+    }
+
+    /// Consumes a portion of the arc and emits translation and velocity vectors of the object
+    pub fn next(&mut self, dt: f32) -> Vec<(Vector2<f32>, Vector2<f32>)> {
+        self.update(dt);
+        let mut res = Vec::new();
+        for pattern in self.active_patterns.iter_mut() {
+            while pattern.int_time >= self.time_int && pattern.amount_left > 0 {
+                pattern.int_time -= self.time_int;
+                pattern.amount_left -= 1;
+                let angle = pattern.cur_angle;
+                pattern.cur_angle += (self.stop_angle - pattern.cur_angle) / self.amount as f32;
+                let base = Vector2::new(angle.to_radians().cos(), angle.to_radians().sin());
+                res.push((base * self.radius, base * self.speed))
+            }
+        }
+        res
+    }
+
     pub fn finished(&self) -> bool {
-        self.amount == 0
+        self.repeat == 0 && self.active_patterns.iter().all(|p| {
+            p.amount_left == 0
+        })
     }
 }
 
@@ -43,7 +108,7 @@ impl Angle {
             &Angle::Fixed(ref angle) => *angle,
             &Angle::Player(ref angle_mod) => {
                 let mut ab = angle_between(&Vector2::new(1.0, 0.0), &(*player - *cur_pos))
-                                 .to_degrees();
+                    .to_degrees();
                 if ab < 0.0 {
                     ab += 360.0;
                 }
@@ -62,6 +127,8 @@ pub struct PatternBuilder {
     center: Option<Vector2<f32>>,
     speed: f32,
     radius: f32,
+    repeat: usize,
+    repeat_delay: f32,
 }
 
 impl PatternBuilder {
@@ -74,6 +141,8 @@ impl PatternBuilder {
             time_int: 0.0,
             speed: 0.0,
             radius: 0.0,
+            repeat: 0,
+            repeat_delay: 0.0,
         }
     }
 
@@ -116,15 +185,33 @@ impl PatternBuilder {
         self
     }
 
+    pub fn repeat(mut self, repeat: usize) -> PatternBuilder {
+        self.repeat = repeat;
+        self
+    }
+
+    pub fn repeat_delay(mut self, delay: f32) -> PatternBuilder {
+        self.repeat_delay = delay;
+        self
+    }
+
     pub fn build(self, cur_pos: &Vector2<f32>, player: &Vector2<f32>) -> Pattern {
+        let sa = self.cur_angle.unwrap().eval(cur_pos, player);
         Pattern {
             center: if self.center.is_none() { *cur_pos } else { self.center.unwrap() },
-            cur_angle: self.cur_angle.unwrap().eval(cur_pos, player),
+            start_angle: sa,
+            actual_start: self.cur_angle.unwrap(),
             stop_angle: self.stop_angle.unwrap().eval(cur_pos, player),
+            actual_stop: self.stop_angle.unwrap(),
             amount: self.amount,
             time_int: self.time_int,
             speed: self.speed,
             radius: self.radius,
+            repeat: self.repeat,
+            repeat_delay: self.repeat_delay,
+            active_patterns: vec![PatternState { amount_left: self.amount, cur_angle: sa, int_time: 0.0 }],
+            rep_time: 0.0,
+            pos_fetcher: None,
         }
     }
 }

@@ -12,7 +12,7 @@ texture = "bullet.png"
 size = [5, 5]
 hitbox = "sphere"
 radius = 5
-max_amount = 1000
+max_amount = 10000
 
 [enemies]
 
@@ -39,6 +39,28 @@ behavior = "straight"
 [level.pstart]
 time = { after = "start", delay = 0.0 }
 spawn = { type = "player", position = [0, -180] }
+
+[level.wave0]
+time = {after = "start", delay = 1.0}
+
+[level.wave0.spawn]
+type = "enemy"
+enemy_id = "basic_curve"
+pattern = { type = "point", position = [-200, 150], amount = 5, time_int = 0.2 }
+repeat = 2
+repeat_delay = 4.0
+mirror_x = true
+
+[[level.wave0.spawn.paths]]
+type = "curve"
+points = [["current"], [200, 150]]
+speed = 100
+
+[level.wave0.spawn.paths.action]
+type = "bullets"
+time_start = 1.0
+bullet_id = "basic_straight"
+pattern = { type = "arc", amount = 20, astart = 0.0, aend = -360.0, speed = 100, time_int = 0.0, radius = 10.0, repeat = 10, repeat_delay = 0.05 }
 
 [level.wave1]
 time = {after = "start", delay = 5.0}

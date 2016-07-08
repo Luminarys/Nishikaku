@@ -1,6 +1,7 @@
 use nalgebra::Vector2;
 use ncollide::world::GeometricQueryType;
 use std::rc::Rc;
+use std::cell::Cell;
 use std::mem;
 
 use engine::Engine;
@@ -16,6 +17,39 @@ use game::object::level::action::ActionType;
 use game::object::level::bullet::Bullet as BulletInfo;
 use game::object::bullet::Bullet;
 
+#[derive(Clone)]
+pub struct PosFetcher {
+    pos: Cell<Vector2<f32>>,
+    world: WorldComp<Object>,
+}
+
+use std::fmt;
+
+impl fmt::Debug for PosFetcher {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "PosFetcher Object, derived from world comp with id: {}", self.world.id)
+    }
+}
+
+impl PosFetcher {
+    pub fn new(pos: Cell<Vector2<f32>>, world: WorldComp<Object>) -> PosFetcher {
+        PosFetcher { pos: pos, world: world }
+    }
+
+    pub fn fetch(&self) -> (Vector2<f32>, Vector2<f32>) {
+        let ppos = {
+            let pid = self.world.find_aliased_entity_id(&String::from("player")).unwrap();
+            let ea = self.world.get_entity(&pid);
+            let p = match *ea.access().unwrap() {
+                Object::Player(ref p) => p.get_pos(),
+                _ => panic!("Non player object aliased to player!"),
+            };
+            p
+        };
+        (self.pos.get(), ppos)
+    }
+}
+
 pub struct Enemy {
     health: usize,
     pub damage: usize,
@@ -26,6 +60,7 @@ pub struct Enemy {
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
+    pos: Cell<Vector2<f32>>,
 }
 
 impl Enemy {
@@ -66,6 +101,7 @@ impl Enemy {
             e.set_timer_with_class(id, action.delay, 1);
         }
         // pg.velocity = vel;
+        let cpos = pg.get_vpos();
         Object::Enemy(Enemy {
             health: info.health,
             paths: paths,
@@ -76,12 +112,19 @@ impl Enemy {
             pg: pg,
             ev: e,
             world: w,
+            pos: Cell::new(cpos),
         })
+    }
+
+    pub fn get_pos(&self) -> Vector2<f32> {
+        self.pg.get_vpos()
     }
 
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Update(t) => {
+                self.ev.update(t);
+                self.pg.update(t);
                 match self.cpath.travel(t) {
                     Some(p) => self.pg.set_pos((p.x, p.y)),
                     None => {
@@ -102,29 +145,34 @@ impl Enemy {
                         }
                     }
                 };
-                self.ev.update(t);
-                self.pg.update(t);
+                let mut done_pats = Vec::new();
+                for (i, &mut (ref bullet, ref mut pat)) in self.patterns.iter_mut().enumerate() {
+                    let spawns = pat.next(t);
+                    if spawns.len() == 0 && pat.finished() {
+                        done_pats.push(i);
+                        continue;
+                    }
+                    for (pos, vel) in spawns {
+                        let b = bullet.clone();
+                        let pos = pos + self.pg.get_vpos();
+                        self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, b, pos, vel)));
+                    }
+                }
+                for i in done_pats {
+                    self.patterns.remove(i);
+                }
+                self.pos.set(self.pg.get_vpos());
             }
             Event::CTimer(1, i) => {
                 // Action timer trigger
                 let action = mem::replace(&mut self.actions[i], ActionType::None);
                 self.handle_action(action);
             }
-            Event::CTimer(2, i) => {
-                // Bullet pattern timer trigger
-                let (ref bullet, ref mut pat) = self.patterns[i];
-                if let Some((pos, vel)) = pat.next() {
-                    let b = bullet.clone();
-                    let pos = pos + self.pg.get_vpos();
-                    self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, b, pos, vel)));
-                } else {
-                    self.ev.remove_timer_with_class(i, 2);
-                }
-            }
             Event::Collision(id, ref _data) => {
                 if let Some(s) = self.world.find_aliased_entity_alias(&id) {
                     if &s[..] == "player" {
                         // What do we do when we hit the player?
+                        println!("Player coliision!");
                         self.ev.destroy_self();
                     }
                 }
@@ -144,22 +192,8 @@ impl Enemy {
             ActionType::Bullets(bullet, pb) => {
                 let ppos = self.get_player_pos();
                 let mut pattern = pb.build(&self.pg.get_vpos(), &ppos);
-                // :')
-                let (pos, vel) = pattern.next().unwrap();
-                let pos = pos + self.pg.get_vpos();
-                let bc = bullet.clone();
-                self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, bc, pos, vel)));
-
-                if pattern.time_int > 0.0001 {
-                    self.patterns.push((bullet.clone(), pattern));
-                    let len = self.patterns.len();
-                    self.ev.set_repeating_timer_with_class(len-1, pattern.time_int, 2);
-                } else {
-                    while let Some((pos, vel)) = pattern.next() {
-                        let pos = pos + self.pg.get_vpos();
-                        self.ev.create_entity(Box::new(move |engine| Bullet::new(engine, bc.clone(), pos, vel)));
-                    }
-                }
+                pattern.set_pos_fetcher(PosFetcher::new(self.pos.clone(), self.world.clone()));
+                self.patterns.push((bullet.clone(), pattern.clone()));
             }
             ActionType::None => {}
         }

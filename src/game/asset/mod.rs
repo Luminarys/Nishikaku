@@ -503,6 +503,8 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
                                         // pattern = { type = "arc", amount = 5, astart = 240.0, aend = 300.0, speed = 40, time_int = 0.0, radius = 10.0 }
 
                                         let amount = *tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
+                                        let repeat = *tget!(pattern, "repeat", Value::Integer, parse_pos, &zero) as usize;
+                                        let repeat_delay = tget!(pattern, "repeat_delay", num, parse_pos, 0.0);
                                         let radius = tget!(pattern, "radius", num, parse_pos);
                                         let astart = tget!(pattern, "astart", angle, parse_pos);
                                         let aend = tget!(pattern, "aend", angle, parse_pos);
@@ -514,6 +516,8 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
                                             .start_angle(astart)
                                             .stop_angle(aend)
                                             .radius(radius)
+                                            .repeat(repeat)
+                                            .repeat_delay(repeat_delay)
                                             .time_int(time_int)
                                     }
                                     _ => {
@@ -609,9 +613,9 @@ fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMa
         };
     }
 
-    println!("{:?}", enemies);
-    println!("{:?}", bullets);
-    println!("{:?}", events);
+    // println!("{:?}", enemies);
+    // println!("{:?}", bullets);
+    // println!("{:?}", events);
     Ok(events)
 }
 

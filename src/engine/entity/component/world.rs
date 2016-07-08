@@ -1,9 +1,9 @@
 use std::rc::Rc;
-use std::collections::HashSet;
 
 use engine::Engine;
 use engine::entity::Entity;
 use engine::scene::{EntityAccessor, World};
+use engine::util::HashSet;
 
 pub struct WorldCompBuilder<E: Entity> {
     world : Rc<World<E>>,
@@ -15,6 +15,16 @@ pub struct WorldCompBuilder<E: Entity> {
 impl<E: Entity> WorldCompBuilder<E> {
     pub fn new(engine: &Engine<E>) -> WorldCompBuilder<E> {
         let id = engine.scene.world.registry.borrow_mut().get_id();
+        let world = engine.scene.world.clone();
+        WorldCompBuilder {
+            world: world,
+            id: id,
+            tags: Vec::new(),
+            alias: None,
+        }
+    }
+
+    pub fn with_id(engine: &Engine<E>, id: usize) -> WorldCompBuilder<E> {
         let world = engine.scene.world.clone();
         WorldCompBuilder {
             world: world,
@@ -63,6 +73,21 @@ pub struct WorldComp<E: Entity> {
     alias: Option<String>,
     tags: Vec<String>,
 }
+
+use std::clone::Clone;
+
+impl<E: Entity> Clone for WorldComp<E> {
+    fn clone(&self) -> WorldComp<E> {
+        let id = self.world.registry.borrow_mut().get_id();
+        WorldComp {
+            world: self.world.clone(),
+            alias: self.alias.clone(),
+            tags: self.tags.clone(),
+            id: id
+        }
+    }
+}
+
 
 impl<E: Entity> WorldComp<E> {
     pub fn find_aliased_entity_id(&self, alias: &String) -> Option<usize> {

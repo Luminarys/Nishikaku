@@ -1,6 +1,5 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
-use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 use std::ops::DerefMut;
 use ncollide::world::{CollisionWorld2, CollisionGroups, GeometricQueryType, CollisionObject2};
@@ -13,6 +12,8 @@ use nalgebra;
 use engine::event::{Event, CollisionData, ProximityData, Dispatcher};
 use engine::entity::Entity;
 use engine::entity::component::PhysicsData;
+use engine::util;
+use engine::util::{HashMap, HashSet};
 
 pub struct World<E: Entity> {
     pub entities: RefCell<HashMap<usize, RefCell<E>>>,
@@ -28,7 +29,7 @@ impl<E: Entity> World<E> {
 impl<E: Entity> Default for World<E> {
     fn default() -> World<E> {
         World {
-            entities: RefCell::new(HashMap::new()),
+            entities: RefCell::new(util::hashmap()),
             registry: RefCell::new(Registry::new()),
         }
     }
@@ -267,9 +268,9 @@ impl Registry {
             free: vec![],
             reclaimed: vec![],
             reclaimable: true,
-            names: HashMap::new(),
-            rev_names: HashMap::new(),
-            tags: HashMap::new(),
+            names: util::hashmap(),
+            rev_names: util::hashmap(),
+            tags: util::hashmap(),
         }
     }
 
@@ -282,7 +283,7 @@ impl Registry {
         if self.tags.contains_key(&tag) {
             self.tags.get_mut(&tag).unwrap().insert(id);
         } else {
-            let mut set = HashSet::new();
+            let mut set = util::hashset();
             set.insert(id);
             self.tags.insert(tag, set);
         }

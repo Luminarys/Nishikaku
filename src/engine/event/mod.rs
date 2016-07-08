@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::cmp::PartialEq;
 use std::mem;
@@ -14,6 +12,8 @@ use glium::glutin::MouseButton;
 use engine::Engine;
 use engine::entity::{Entity, EntityBuilder};
 use engine::entity::component::PhysicsData;
+use engine::util;
+use engine::util::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub enum InputState {
@@ -136,7 +136,7 @@ impl<E: Entity> Handler<E> {
 
     pub fn subscribe(&mut self, id: usize, event: Event) {
         if !self.subscriptions.contains_key(&event) {
-            let mut set: HashSet<usize> = Default::default();
+            let mut set: HashSet<usize> = util::hashset();
             set.insert(id);
             self.subscriptions.insert(event, set);
         } else {
@@ -194,7 +194,7 @@ impl<E: Entity> Handler<E> {
 
 #[test]
 fn test_eventmap() {
-    let mut evs = HashMap::new();
+    let mut evs = util::HashMap();
     evs.insert(Event::Update(0.0), 0);
     assert_eq!(evs.get(&Event::Update(1.0)).unwrap(), &0);
 }
