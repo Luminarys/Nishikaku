@@ -1,21 +1,23 @@
 use std::rc::Rc;
 
-use engine::Engine;
+use engine::{BULLET_COUNT, Engine};
 use engine::entity::component::*;
 use engine::event::Event;
 use engine::scene::PhysicsInteraction;
+use engine::util::{ToCartesian, ToPolar};
 use ncollide::query::Proximity;
 use ncollide::world::GeometricQueryType;
 use nalgebra::Vector2;
 
 use game::object::Object;
-use game::object::level::bullet::Bullet as BulletInfo;
+use game::object::level::bullet::{Bullet as BulletInfo, Behavior};
 
 pub struct Bullet {
     pub damage: usize,
     pg: PGComp,
     ev: EventComp<Object>,
     world: WorldComp<Object>,
+    behavior: Behavior,
 }
 
 impl Bullet {
@@ -29,12 +31,20 @@ impl Bullet {
                                  pos,
                                  engine.graphics.borrow().get_sprite_shape(&info.sprite).unwrap(),
                                  PhysicsInteraction::SemiInteractive,
-                                 GeometricQueryType::Contacts(0.0),
+                                 GeometricQueryType::Contacts(0.5),
                                  &engine.scene);
         g.translate(pos.x / scaler, pos.y / scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
         pg.velocity = vel;
+        match info.behavior {
+            Behavior::Deaccelerate(_, ref accel) => {
+                let angle = vel.to_polar().y;
+                pg.acceleration = -1.0 * Vector2::new(*accel, angle).to_cartesian();
+            }
+            _ => { }
+        }
         Object::Bullet(Bullet {
+            behavior: info.behavior,
             damage: info.damage,
             pg: pg,
             ev: e,
@@ -44,9 +54,32 @@ impl Bullet {
 
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
-            Event::Spawn => {}
+            Event::Spawn => {
+                unsafe { BULLET_COUNT += 1 };
+                self.ev.set_repeating_timer(1, 1.0);
+                self.ev.set_repeating_timer(2, 0.3);
+            }
+            Event::Timer(1) => {
+                if !self.pg.in_screen() {
+                    unsafe { BULLET_COUNT -= 1 };
+                    self.ev.destroy_self();
+                }
+            }
+            Event::Timer(2) => {
+                self.pg.sync_gfx_phys();
+            }
             Event::Update(t) => {
+                self.ev.update(t);
                 self.pg.update(t);
+                match self.behavior {
+                    Behavior::Deaccelerate(ref mut time, _) => {
+                        *time -= t;
+                        if *time <= 0.0 {
+                            self.pg.acceleration = Vector2::new(0.0, 0.0);
+                        }
+                    }
+                    _ => { }
+                }
             }
             Event::Proximity(id, ref data) => {
                 if let Some(s) = self.world.find_aliased_entity_alias(&id) {
@@ -64,7 +97,7 @@ impl Bullet {
             Event::Render => {
                 self.pg.render();
             }
-            _ => {}
+            ref e => {println!(" bullet ev {:?}", e)}
         };
     }
 

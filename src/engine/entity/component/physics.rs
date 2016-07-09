@@ -37,13 +37,34 @@ impl PhysicsComp {
         }
     }
 
+    pub fn scaler(&self) -> f32 {
+        self.world.scaler
+    }
+
     pub fn translate(&mut self, delta: Vector2<f32>) {
         let pos = self.pos.append_translation(&delta);
         self.set_pos(pos);
     }
 
+    pub fn unsynced_translate(&mut self, delta: Vector2<f32>) {
+        self.pos = self.pos.append_translation(&delta);
+    }
+
     pub fn get_pos(&self) -> Isometry2<f32> {
         self.pos
+    }
+
+    pub fn set_vpos(&mut self, pos: Vector2<f32>) {
+        self.pos = Isometry2::new(pos, Vector1::new(0.0));
+        self.world.set_pos(self.id, self.pos);
+    }
+
+    pub fn unsynced_set_vpos(&mut self, pos: Vector2<f32>) {
+        self.pos = Isometry2::new(pos, Vector1::new(0.0));
+    }
+
+    pub fn sync_pos(&self) {
+        self.world.set_pos(self.id, self.pos);
     }
 
     pub fn set_pos(&mut self, pos: Isometry2<f32>) {

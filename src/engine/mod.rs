@@ -20,6 +20,8 @@ pub struct Engine<E: entity::Entity> {
     pub audio: Rc<RefCell<audio::Audio>>,
 }
 
+pub static mut BULLET_COUNT: usize = 0;
+
 impl<E: entity::Entity> Engine<E> {
     pub fn new(size: f32, res: u32) -> Engine<E> {
         let scene = scene::Scene::new(size);
@@ -75,25 +77,25 @@ impl<E: entity::Entity> Engine<E> {
         let mut accumulator = 0;
 
         let mut fps_prev_clock = clock_ticks::precise_time_ms();
+        let fps_start_clock = clock_ticks::precise_time_ms();
         let mut frames_drawn = 0;
+        let mut total_frames_drawn = 0;
         let mut key_counter = [0 as u8; 255];
         let res_x = self.graphics.borrow().dimensions.0 as f32;
         let res_y = self.graphics.borrow().dimensions.1 as f32;
         let scaler = self.scene.physics.scaler;
         loop {
-            self.graphics.borrow_mut().start_frame();
             // TODO: Figure out a cleaner way to get prioritiztion of custom sprites/text over generic sprites
             // Maybe just don't care and force text to be used with custom sprites?
-            self.graphics.borrow_mut().render();
-            self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
-            self.handle_events();
-            self.graphics.borrow_mut().finish_frame();
-
             let now = clock_ticks::precise_time_ns();
             let fps_cur_clock = clock_ticks::precise_time_ms();
             frames_drawn += 1;
+            total_frames_drawn += 1;
             if fps_cur_clock - fps_prev_clock >= 1000 {
-                println!("{:?} ms/frame", 1000.0 / (frames_drawn as f32));
+                println!("{:?} ms/frame, {:?} total average ms/frame, {:?} bullet count",
+                         1000.0/(frames_drawn as f32),
+                         1.0/(total_frames_drawn as f32/(fps_cur_clock - fps_start_clock) as f32),
+                         unsafe { BULLET_COUNT });
                 frames_drawn = 0;
                 fps_prev_clock = fps_cur_clock;
             }
@@ -141,18 +143,24 @@ impl<E: entity::Entity> Engine<E> {
                 self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.016666667f32));
                 self.handle_events();
                 self.scene.update();
+                let sys_ev_queue = {
+                    self.events.deref().borrow_mut().flush_sys()
+                };
+                for event in sys_ev_queue {
+                    match event {
+                        event::SysEvent::Create(f) => self.spawn(f),
+                        event::SysEvent::Destroy(id) => self.destroy(id),
+                    }
+                }
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
 
-            let sys_ev_queue = {
-                self.events.deref().borrow_mut().flush_sys()
-            };
-            for event in sys_ev_queue {
-                match event {
-                    event::SysEvent::Create(f) => self.spawn(f),
-                    event::SysEvent::Destroy(id) => self.destroy(id),
-                }
-            }
+            self.graphics.borrow_mut().start_frame();
+            self.graphics.borrow_mut().render();
+            self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
+            self.handle_events();
+            self.graphics.borrow_mut().finish_frame();
+
             thread::sleep(Duration::from_millis(((FRAME_DELAY_NANOSECS - accumulator) / 1000000) as u64));
         }
     }

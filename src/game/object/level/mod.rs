@@ -22,7 +22,6 @@ use game::object::Object;
 use game::object::player::Player;
 use game::object::enemy::Enemy;
 use game::event::Event as CEvent;
-use self::screen::ScreenArea;
 use self::spawn::{Spawn, SpawnType};
 
 /// Top level game controller
@@ -81,16 +80,15 @@ impl Level {
                 self.ev.set_repeating_timer_with_class(wid, spawn.repeat_delay, 2);
                 self.waiting_spawns.insert(wid, spawn.clone());
             }
-            println!("Beginning spawn for: {:?}", spawn);
             self.active_spawns.push(spawn.clone());
         }
+        self.event_finished(evt.name);
     }
 
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Spawn => {
                 println!("Spawned Level!");
-                self.ev.create_entity(Box::new(|engine| ScreenArea::new(engine)));
                 self.event_finished(String::from("start"));
             }
             Event::Update(t) => {
@@ -103,7 +101,8 @@ impl Level {
                         match spawn.spawn_type {
                             SpawnType::Enemy(ref e_info) => {
                                 let info = e_info.clone();
-                                let pos = pos + pat.center;
+                                let pos = pos + spawn.location;
+                                println!("Spawning enemy {:?} at position {:?}", info, pos);
                                 let paths = spawn.paths.clone();
                                 self.ev.create_entity(Box::new(move |engine| Enemy::new(engine, info, pos, paths.clone())));
                             }

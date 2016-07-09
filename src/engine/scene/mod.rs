@@ -152,8 +152,8 @@ impl PhysicsWorld {
     }
 
     pub fn update(&self) {
-        self.world.borrow_mut().update();
         self.registry.borrow_mut().reclaim();
+        self.world.borrow_mut().update();
     }
 
     pub fn add(&self,
@@ -362,12 +362,12 @@ impl<E: Entity> Scene<E> {
         let acc = self.world.deref().get_entity_mut(&id);
         match acc.access() {
             Some(mut e) => e.deref_mut().handle_event(ev),
-            None => println!("Trying to access unkown entity with id: {:?}", id),
+            None => println!("Trying to access unkown entity with id: {:?} for event {:?}", id, ev),
         };
     }
 
     pub fn update(&self) {
-        self.world.deref().update();
-        self.physics.deref().update();
+        self.world.update();
+        self.physics.update();
     }
 }

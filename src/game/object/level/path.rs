@@ -1,6 +1,7 @@
 use nalgebra::{Norm, Vector2, Point2};
 use game::object::level::Point;
 use game::object::level::action::Action;
+use engine::util::ToCartesian;
 
 // TODO: Write tests - this code is complicated and almost certaintly error prone
 
@@ -92,8 +93,7 @@ impl Arc {
                 RotationDirection::Clockwise => c_ang -= ang,
                 RotationDirection::CounterClockwise => c_ang += ang,
             };
-            let dp = Vector2::new(self.radius * c_ang.to_radians().cos(),
-                                  self.radius * c_ang.to_radians().sin());
+            let dp = Vector2::new(self.radius, c_ang.to_radians()).to_cartesian();
             self.current_pos = dp + self.center;
             Some(self.current_pos)
         } else {

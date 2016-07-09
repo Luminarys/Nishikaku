@@ -1,11 +1,11 @@
 use nalgebra::{angle_between, Vector2};
 use game::object::enemy::PosFetcher;
+use engine::util::ToCartesian;
 // TODO: Write tests - this code is complicated and almost certaintly error prone
 
 #[derive(Clone, Debug)]
 pub struct Pattern {
     pub time_int: f32,
-    pub center: Vector2<f32>,
     pos_fetcher: Option<PosFetcher>,
     repeat: usize,
     repeat_delay: f32,
@@ -19,29 +19,6 @@ pub struct Pattern {
     rep_time: f32,
     active_patterns: Vec<PatternState>,
 }
-
-// use std::clone::Clone;
-// 
-// impl Clone for Pattern {
-//     fn clone(&self) -> Pattern {
-//         Pattern {
-//             time_int: self.time_int,
-//             center: self.center,
-//             pos_fetcher: None,
-//             repeat: self.repeat,
-//             repeat_delay: self.repeat_delay,
-//             amount: self.amount,
-//             actual_start: self.actual_start,
-//             actual_stop: self.actual_stop,
-//             start_angle: self.start_angle,
-//             stop_angle: self.stop_angle,
-//             speed: self.speed,
-//             radius: self.radius,
-//             rep_time: self.rep_time,
-//             active_patterns: Vec::new(),
-//         }
-//     }
-// }
 
 #[derive(Clone, Debug)]
 struct PatternState {
@@ -81,8 +58,8 @@ impl Pattern {
                 pattern.int_time -= self.time_int;
                 pattern.amount_left -= 1;
                 let angle = pattern.cur_angle;
-                pattern.cur_angle += (self.stop_angle - pattern.cur_angle) / self.amount as f32;
-                let base = Vector2::new(angle.to_radians().cos(), angle.to_radians().sin());
+                pattern.cur_angle += (self.stop_angle - self.start_angle) / self.amount as f32;
+                let base = Vector2::new(1.0, angle.to_radians()).to_cartesian();
                 res.push((base * self.radius, base * self.speed))
             }
         }
@@ -124,7 +101,6 @@ pub struct PatternBuilder {
     amount: usize,
     cur_angle: Option<Angle>,
     stop_angle: Option<Angle>,
-    center: Option<Vector2<f32>>,
     speed: f32,
     radius: f32,
     repeat: usize,
@@ -136,7 +112,6 @@ impl PatternBuilder {
         PatternBuilder {
             cur_angle: None,
             stop_angle: None,
-            center: None,
             amount: 1,
             time_int: 0.0,
             speed: 0.0,
@@ -158,11 +133,6 @@ impl PatternBuilder {
 
     pub fn fixed_angle(mut self, angle: Angle) -> PatternBuilder {
         self.start_angle(angle).stop_angle(angle)
-    }
-
-    pub fn center(mut self, center: Vector2<f32>) -> PatternBuilder {
-        self.center = Some(center);
-        self
     }
 
     pub fn radius(mut self, radius: f32) -> PatternBuilder {
@@ -198,7 +168,6 @@ impl PatternBuilder {
     pub fn build(self, cur_pos: &Vector2<f32>, player: &Vector2<f32>) -> Pattern {
         let sa = self.cur_angle.unwrap().eval(cur_pos, player);
         Pattern {
-            center: if self.center.is_none() { *cur_pos } else { self.center.unwrap() },
             start_angle: sa,
             actual_start: self.cur_angle.unwrap(),
             stop_angle: self.stop_angle.unwrap().eval(cur_pos, player),

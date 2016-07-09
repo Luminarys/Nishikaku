@@ -34,11 +34,19 @@ radius = 5
 damage = 10
 behavior = "straight"
 
+[bullets.basic_deaccel]
+sprite = "red_bullet"
+radius = 5
+damage = 10
+behavior = "deaccel"
+deaccel_time = 5.0
+deaccel_amount = 10.0
+
 [level]
 
 [level.pstart]
 time = { after = "start", delay = 0.0 }
-spawn = { type = "player", position = [0, -180] }
+spawn = { type = "player", location = [0, -180] }
 
 [level.wave0]
 time = {after = "start", delay = 1.0}
@@ -46,29 +54,39 @@ time = {after = "start", delay = 1.0}
 [level.wave0.spawn]
 type = "enemy"
 enemy_id = "basic_curve"
-pattern = { type = "point", position = [-200, 150], amount = 5, time_int = 0.2 }
-repeat = 2
-repeat_delay = 4.0
+location = [-200, 0]
+pattern = { type = "point", amount = 2, time_int = 0.2 }
 mirror_x = true
 
 [[level.wave0.spawn.paths]]
 type = "curve"
-points = [["current"], [200, 150]]
-speed = 100
+points = [["current"], [150, 150]]
+speed = 200
 
 [level.wave0.spawn.paths.action]
 type = "bullets"
 time_start = 1.0
 bullet_id = "basic_straight"
-pattern = { type = "arc", amount = 20, astart = 0.0, aend = -360.0, speed = 100, time_int = 0.0, radius = 10.0, repeat = 10, repeat_delay = 0.05 }
+delay = 1.0
+pattern = { type = "arc", amount = 20, astart = 0.0, aend = -360.0, speed = 10, time_int = 0.05, radius = 10.0, repeat = 10, repeat_delay = 0.05 }
+
+[[level.wave0.spawn.paths]]
+type = "fixed"
+time = 2.0
+
+[[level.wave0.spawn.paths]]
+type = "curve"
+points = [["current"], [200, 0]]
+speed = 200
 
 [level.wave1]
-time = {after = "start", delay = 5.0}
+time = {after = "wave0", delay = 4.0}
 
 [level.wave1.spawn]
 type = "enemy"
 enemy_id = "basic_curve"
-pattern = { type = "point", position = [-200, 180], amount = 5, time_int = 0.5 }
+location = [-200, 180]
+pattern = { type = "point", amount = 5, time_int = 0.5 }
 repeat = 2
 repeat_delay = 4.0
 mirror_x = true
@@ -91,7 +109,8 @@ time = { after = "start", delay = 8.0 }
 [level.wave2.spawn]
 type = "enemy"
 enemy_id = "circle"
-pattern = { type = "arc", center = [-50, 50], radius = 25, astart = 0, aend = 360, amount = 10, time_int = 0.5 }
+pattern = { type = "arc", radius = 25, astart = 0, aend = 360, amount = 10, time_int = 0.5 }
+location = [-50, 50]
 repeat = 1
 repeat_delay = 2.0
 mirror_x = true

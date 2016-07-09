@@ -13,6 +13,7 @@ pub struct Spawn {
     pub repeat_delay: f32,
     pub mirror_x: bool,
     pub mirror_y: bool,
+    pub location: Vector2<f32>,
 }
 
 impl Spawn {
@@ -39,6 +40,7 @@ pub struct SpawnBuilder {
     pattern: Option<PatternBuilder>,
     mirror_x: bool,
     mirror_y: bool,
+    location: Vector2<f32>,
 }
 
 impl SpawnBuilder {
@@ -51,6 +53,7 @@ impl SpawnBuilder {
             pattern: None,
             mirror_x: false,
             mirror_y: false,
+            location: Vector2::new(0.0, 0.0)
         }
     }
 
@@ -90,6 +93,11 @@ impl SpawnBuilder {
         self
     }
 
+    pub fn location(mut self, location: Vector2<f32>) -> SpawnBuilder {
+        self.location = location;
+        self
+    }
+
     pub fn build(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Spawn {
         Spawn {
             spawn_type: self.spawn_type.unwrap(),
@@ -98,6 +106,7 @@ impl SpawnBuilder {
             repeat: self.repeat,
             repeat_delay: self.repeat_delay.unwrap_or(0.0),
             mirror_x: self.mirror_x,
+            location: self.location,
             mirror_y: self.mirror_y,
         }
     }

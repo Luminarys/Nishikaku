@@ -35,6 +35,26 @@ pub enum Event {
     Custom(Box<Any>),
 }
 
+use std::fmt;
+
+impl fmt::Debug for Event {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Event::Update(_) => write!(f, "Update"),
+            Event::Collision(_, _) => write!(f, "Collision"),
+            Event::Proximity(_, _) => write!(f, "Proximity"),
+            Event::KeyInput(_, _) => write!(f, "Key Input"),
+            Event::MouseMove(_) => write!(f, "Mouse Movement"),
+            Event::MouseInput(_, _) => write!(f, "Mouse Input"),
+            Event::Spawn => write!(f, "Spawn"),
+            Event::Timer(_) => write!(f, "Timer"),
+            Event::CTimer(_, _) => write!(f, "CTimer"),
+            Event::Render => write!(f, "Render"),
+            Event::Custom(_) => write!(f, "Custom"),
+        }
+    }
+}
+
 pub enum EventType {
     Update,
     Collision,

@@ -12,5 +12,6 @@ pub struct Bullet {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Behavior {
-    Straight
+    Straight,
+    Deaccelerate(f32, f32),
 }

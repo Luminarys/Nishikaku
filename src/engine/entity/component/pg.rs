@@ -13,7 +13,7 @@ pub struct PGComp {
     physics: Vec<PhysicsComp>,
     graphics: GraphicsComp,
     world: Rc<PhysicsWorld>,
-    scaler: f32,
+    pub scaler: f32,
     screen_locked: bool,
     half_widths: (f32, f32),
 }
@@ -22,18 +22,18 @@ impl PGComp {
     pub fn new(graphics: GraphicsComp,
                physics: Vec<PhysicsComp>,
                world: Rc<PhysicsWorld>)
-               -> PGComp {
-        PGComp {
-            velocity: Vector2::new(0.0, 0.0),
-            acceleration: Vector2::new(0.0, 0.0),
-            graphics: graphics,
-            physics: physics,
-            scaler: world.scaler.clone(),
-            world: world,
-            screen_locked: false,
-            half_widths: (0.0, 0.0),
+        -> PGComp {
+            PGComp {
+                velocity: Vector2::new(0.0, 0.0),
+                acceleration: Vector2::new(0.0, 0.0),
+                graphics: graphics,
+                physics: physics,
+                scaler: world.scaler.clone(),
+                world: world,
+                screen_locked: false,
+                half_widths: (0.0, 0.0),
+            }
         }
-    }
 
     pub fn screen_lock(&mut self, half_widths: (f32, f32)) {
         self.screen_locked = true;
@@ -48,10 +48,21 @@ impl PGComp {
         self.graphics.render();
     }
 
+    pub fn translate_gfx(&mut self, delta: Vector2<f32>) {
+        self.graphics.translate(delta.x / self.scaler, delta.y / self.scaler);
+    }
+
     pub fn translate(&mut self, delta: Vector2<f32>) {
         self.graphics.translate(delta.x / self.scaler, delta.y / self.scaler);
         for comp in self.physics.iter_mut() {
             comp.translate(delta);
+        }
+    }
+
+    pub fn unsynced_translate(&mut self, delta: Vector2<f32>) {
+        self.graphics.translate(delta.x / self.scaler, delta.y / self.scaler);
+        for comp in self.physics.iter_mut() {
+            comp.unsynced_translate(delta);
         }
     }
 
@@ -77,9 +88,40 @@ impl PGComp {
         self.translate(delta);
     }
 
+    pub fn unsynced_set_pos(&mut self, pos: (f32, f32)) {
+        let (new_x, new_y) = (pos.0 / self.scaler, pos.1 / self.scaler);
+        let (old_x, old_y) = self.get_gfx_pos();
+        let (delta_x, delta_y) = ((new_x - old_x) * self.scaler, (new_y - old_y) * self.scaler);
+        let delta = Vector2::new(delta_x, delta_y);
+        self.unsynced_translate(delta);
+    }
+
     pub fn set_pos_gfx(&mut self, pos: (f32, f32)) {
         let converted_pos = (pos.0 * self.scaler, pos.1 * self.scaler);
         self.set_pos(converted_pos);
+    }
+
+    pub fn sync_gfx_phys(&mut self) {
+        for comp in self.physics.iter() {
+            comp.sync_pos();
+        }
+    }
+
+    pub fn update_gfx(&mut self, dt: f32) {
+        self.velocity += self.acceleration * dt;
+        let delta = self.velocity * dt;
+        self.translate_gfx(delta);
+    }
+
+    pub fn unsynced_update(&mut self, dt: f32) {
+        self.velocity += self.acceleration * dt;
+        let delta = self.velocity * dt;
+        self.unsynced_translate(delta);
+    }
+
+    pub fn in_screen(&self) -> bool {
+        let pos = self.get_gfx_pos();
+        return !(pos.0 > 1.0 || pos.0 < -1.0 || pos.1 > 1.0 || pos.1 < -1.0)
     }
 
     pub fn update(&mut self, dt: f32) {
