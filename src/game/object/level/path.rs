@@ -1,6 +1,6 @@
 use nalgebra::{Norm, Vector2, Point2};
 use game::object::level::Point;
-use game::object::level::action::Action;
+use game::object::level::action::{Action, ActionType};
 use engine::util::ToCartesian;
 
 // TODO: Write tests - this code is complicated and almost certaintly error prone
@@ -15,6 +15,15 @@ pub enum Path {
 pub enum RotationDirection {
     Clockwise,
     CounterClockwise,
+}
+
+impl RotationDirection {
+    fn opposite(&self) -> RotationDirection {
+        match *self {
+            RotationDirection::Clockwise => RotationDirection::CounterClockwise,
+            RotationDirection::CounterClockwise => RotationDirection::Clockwise,
+        }
+    }
 }
 
 pub struct Fixed {
@@ -212,6 +221,72 @@ impl PathBuilder {
     pub fn points(mut self, points: Vec<Point>) -> PathBuilder {
         self.points = Some(points);
         self
+    }
+
+    pub fn mirror_x(&self) -> PathBuilder {
+        let mut path = self.clone();
+
+        let mut actions = Vec::new();
+        for action in self.actions.iter() {
+            match action.action_type {
+                ActionType::Bullets(ref bullet, ref pat) => {
+                    actions.push(Action {
+                        delay: action.delay,
+                        action_type: ActionType::Bullets(bullet.clone(), pat.mirror_x())
+                    });
+                }
+                ActionType::None => actions.push(action.clone())
+            }
+        }
+        path.actions = actions;
+        match self.path_type {
+            PathType::Arc => {
+                path.center = Some(path.center.unwrap().mirror_x());
+                path.direction = Some(path.direction.unwrap().opposite());
+            }
+            PathType::Curve => {
+                let mut points = Vec::new();
+                for point in path.points.unwrap().iter() {
+                    points.push(point.mirror_x());
+                }
+                path.points = Some(points);
+            }
+            PathType::Fixed => { }
+        }
+        path
+    }
+
+    pub fn mirror_y(&self) -> PathBuilder {
+        let mut path = self.clone();
+
+        let mut actions = Vec::new();
+        for action in self.actions.iter() {
+            match action.action_type {
+                ActionType::Bullets(ref bullet, ref pat) => {
+                    actions.push(Action {
+                        delay: action.delay,
+                        action_type: ActionType::Bullets(bullet.clone(), pat.mirror_y())
+                    });
+                }
+                ActionType::None => actions.push(action.clone())
+            }
+        }
+        path.actions = actions;
+        match self.path_type {
+            PathType::Arc => {
+                path.center = Some(path.center.unwrap().mirror_y());
+                path.direction = Some(path.direction.unwrap().opposite());
+            }
+            PathType::Curve => {
+                let mut points = Vec::new();
+                for point in path.points.unwrap().iter() {
+                    points.push(point.mirror_y());
+                }
+                path.points = Some(points);
+            }
+            PathType::Fixed => { }
+        }
+        path
     }
 
     pub fn build(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {

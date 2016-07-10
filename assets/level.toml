@@ -9,9 +9,9 @@ max_amount = 100
 
 [sprites.red_bullet]
 texture = "bullet.png"
-size = [5, 5]
+size = [20, 20]
 hitbox = "sphere"
-radius = 5
+radius = 20
 max_amount = 10000
 
 [enemies]
@@ -55,7 +55,7 @@ time = {after = "start", delay = 1.0}
 type = "enemy"
 enemy_id = "basic_curve"
 location = [-200, 0]
-pattern = { type = "point", amount = 2, time_int = 0.2 }
+pattern = { type = "point", amount = 1 }
 mirror_x = true
 
 [[level.wave0.spawn.paths]]
@@ -63,21 +63,32 @@ type = "curve"
 points = [["current"], [150, 150]]
 speed = 200
 
+[[level.wave0.spawn.paths]]
+type = "fixed"
+time = 15.0
+
 [[level.wave0.spawn.paths.action]]
 type = "bullets"
 bullet_id = "basic_straight"
 delay = 1.0
-pattern = { type = "arc", amount = 20, astart = 0.0, aend = -360.0, speed = 10, time_int = 0.05, radius = 10.0, repeat = 10, repeat_delay = 0.05 }
+
+[level.wave0.spawn.paths.action.pattern]
+type = "arc"
+amount = 20
+astart = 0.0
+aend = -360.0
+speed = 50
+time_int = 0
+radius = 10.0
+repeat = 20
+repeat_delay = 0.2
+wobble = { half_angle = 40, quarter_time = 2.0, initial_dir = "counterclockwise" }
 
 [[level.wave0.spawn.paths.action]]
 type = "bullets"
 bullet_id = "basic_straight"
 delay = 2.0
-pattern = { type = "point", angle = "player", speed = 200, amount = 5, time_int = 0.5 }
-
-[[level.wave0.spawn.paths]]
-type = "fixed"
-time = 2.0
+pattern = { type = "point", angle = "player", speed = 200, amount = 5, time_int = 0.5, repeat = 9, repeat_delay = 1.0}
 
 [[level.wave0.spawn.paths]]
 type = "curve"
@@ -85,7 +96,7 @@ points = [["current"], [200, 0]]
 speed = 200
 
 [level.wave1]
-time = {after = "wave0", delay = 4.0}
+time = {after = "wave0", delay = 15.0}
 
 [level.wave1.spawn]
 type = "enemy"
@@ -109,7 +120,6 @@ pattern = { type = "point", angle = "player", speed = 80, amount = 5, time_int =
 [level.wave2]
 time = { after = "start", delay = 8.0 }
 
-# Somewhat more complex wave, spawns 10 enemies in a circle, has them move clockwise in a half circle, then curve out, and shoot 25 bullet 60 degree arcs
 [level.wave2.spawn]
 type = "enemy"
 enemy_id = "circle"

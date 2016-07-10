@@ -147,7 +147,7 @@ fn load_bullets(bullet_tab: toml::Table, sprites: &HashMap<String, usize>) -> Re
     Ok(bullets)
 }
 
-fn load_spawn(spawn: toml::Table, enemies: &Enemies, bullets: &Bullets, event_name: String) -> Result<Spawn, String> {
+fn load_spawn(spawn: toml::Table, enemies: &Enemies, bullets: &Bullets, event_name: String) -> Result<Vec<Spawn>, String> {
     let parse_pos = format!("{:?} spawn", event_name);
     let default_loc = vec![toml::Value::Integer(0), toml::Value::Integer(0)];
     let point = tget!(spawn, "location", Value::Array, parse_pos, &default_loc);
@@ -155,7 +155,7 @@ fn load_spawn(spawn: toml::Table, enemies: &Enemies, bullets: &Bullets, event_na
     tint!(point[1], "spawn location Y"));
     match &tget!(spawn, "type", Value::String, parse_pos)[..] {
         "player" => {
-            Ok(Spawn::player(location))
+            Ok(vec![Spawn::player(location)])
         }
         "enemy" => {
             let enemy_name = tget!(spawn, "enemy_id", Value::String, parse_pos);
@@ -210,17 +210,22 @@ fn load_spawn(spawn: toml::Table, enemies: &Enemies, bullets: &Bullets, event_na
                 pn += 1;
             }
 
+            let mut spawns = Vec::new();
             let spawn = SpawnBuilder::new()
                 .spawn_type(SpawnType::Enemy(enemy))
                 .paths(paths)
                 .repeat(repeat)
                 .repeat_delay(repeat_delay)
                 .pattern(pattern)
-                .mirror_x(mirror_x)
-                .mirror_y(mirror_y)
-                .location(location)
-                .build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0));
-            Ok(spawn)
+                .location(location);
+            if *mirror_x {
+                spawns.push(spawn.clone().mirror_x().build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0)));
+            }
+            if *mirror_y {
+                spawns.push(spawn.clone().mirror_y().build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0)));
+            }
+            spawns.push(spawn.build(&Vector2::new(0.0, 0.0), &Vector2::new(0.0, 0.0)));
+            Ok(spawns)
         }
         s => Err(format!("Spawn must be 'player' or 'enemy', {:?} is invalid", s)),
     }
@@ -260,22 +265,45 @@ fn load_action(action: toml::Table, bullets: &Bullets, parse_pos: String) -> Res
 
 fn load_pattern(pattern: toml::Table, parse_pos: String) -> Result<PatternBuilder, String> {
     let speed = tget!(pattern, "speed", num, parse_pos, 0.0);
+    let repeat = *tget!(pattern, "repeat", Value::Integer, parse_pos, &zero) as usize;
+    let repeat_delay = tget!(pattern, "repeat_delay", num, parse_pos, 0.0);
+
+    let (wobble_angle, wobble_time, wobble_dir) = match pattern.get("wobble") {
+        Some(&Value::Table(ref wt)) => {
+            let wobble_angle = tget!(wt, "half_angle", num, parse_pos);
+            let wobble_time = tget!(wt, "quarter_time", num, parse_pos) * 4.0;
+            let wobble_dir = match wt.get("initial_dir") {
+                Some(&Value::String(ref s)) => {
+                    match &s[..] {
+                        "clockwise" => RotationDirection::Clockwise,
+                        "counterclockwise" => RotationDirection::CounterClockwise,
+                        _ => return Err(format!("Invalid wobble direction defined at {:?}, must be clockwise or counterclockwise", parse_pos)),
+                    }
+                }
+                _ => RotationDirection::CounterClockwise,
+            };
+            (wobble_angle, wobble_time, wobble_dir)
+        }
+        _ => (0.0, 1.0, RotationDirection::CounterClockwise),
+    };
+
     match &tget!(pattern, "type", Value::String, parse_pos)[..] {
         "point" => {
             let angle = tget!(pattern, "angle", angle, parse_pos, Angle::Fixed(0.0));
             let amount = *tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
-            let time_int = tget!(pattern, "time_int", num, parse_pos);
+            let time_int = tget!(pattern, "time_int", num, parse_pos, 0.0);
 
             Ok(PatternBuilder::new()
                 .amount(amount)
                 .speed(speed)
                 .fixed_angle(angle)
+                .repeat(repeat)
+                .repeat_delay(repeat_delay)
+                .wobble(wobble_angle, wobble_time, wobble_dir)
                 .time_int(time_int))
         }
         "arc" => {
             let amount = *tget!(pattern, "amount", Value::Integer, parse_pos) as usize;
-            let repeat = *tget!(pattern, "repeat", Value::Integer, parse_pos, &zero) as usize;
-            let repeat_delay = tget!(pattern, "repeat_delay", num, parse_pos, 0.0);
             let radius = tget!(pattern, "radius", num, parse_pos);
             let astart = tget!(pattern, "astart", angle, parse_pos);
             let aend = tget!(pattern, "aend", angle, parse_pos);
@@ -289,6 +317,7 @@ fn load_pattern(pattern: toml::Table, parse_pos: String) -> Result<PatternBuilde
                 .radius(radius)
                 .repeat(repeat)
                 .repeat_delay(repeat_delay)
+                .wobble(wobble_angle, wobble_time, wobble_dir)
                 .time_int(time_int))
         }
         _ => {
@@ -372,13 +401,13 @@ fn load_events(event_tab: toml::Table, enemies: &Enemies, bullets: &Bullets) -> 
         let delay = tget!(ev_timing, "delay", num, event_name);
 
         let spawn_tab = tget!(event, "spawn", Value::Table, parse_pos);
-        let spawn = try!(load_spawn(spawn_tab.clone(), enemies, bullets, event_name.clone()));
+        let spawns = try!(load_spawn(spawn_tab.clone(), enemies, bullets, event_name.clone()));
         insert_or_app(&mut events, ev_after.clone(),
             LevelEvent {
                 name: event_name.clone(),
                 id: ev_counter,
                 delay: delay,
-                spawns: vec![spawn],
+                spawns: spawns,
             }
         );
         ev_counter += 1;

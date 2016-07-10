@@ -97,7 +97,7 @@ impl Bullet {
             Event::Render => {
                 self.pg.render();
             }
-            ref e => {println!(" bullet ev {:?}", e)}
+            ref e => {println!("unhandled bullet ev {:?}", e)}
         };
     }
 

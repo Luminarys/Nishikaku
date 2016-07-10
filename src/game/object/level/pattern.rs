@@ -1,5 +1,6 @@
 use nalgebra::{angle_between, Vector2};
 use game::object::enemy::PosFetcher;
+use game::object::level::path::RotationDirection;
 use engine::util::ToCartesian;
 // TODO: Write tests - this code is complicated and almost certaintly error prone
 
@@ -18,6 +19,12 @@ pub struct Pattern {
     radius: f32,
     rep_time: f32,
     active_patterns: Vec<PatternState>,
+    // The amplitude of the wobble
+    wobble_angle: f32,
+    // The period of the wobble
+    wobble_time: f32,
+    cur_wobble_time: f32,
+    wobble_dir: RotationDirection,
 }
 
 #[derive(Clone, Debug)]
@@ -25,10 +32,12 @@ struct PatternState {
     cur_angle: f32,
     amount_left: usize,
     int_time: f32,
+    wobble_angle: f32,
 }
 
 impl Pattern {
     fn update(&mut self, dt: f32) {
+        self.cur_wobble_time += dt;
         self.rep_time += dt;
         if self.rep_time >= self.repeat_delay && self.repeat > 0 {
             self.repeat -= 1;
@@ -38,7 +47,15 @@ impl Pattern {
                 self.start_angle = self.actual_start.eval(&pos_info.0, &pos_info.1);
                 self.stop_angle = self.actual_stop.eval(&pos_info.0, &pos_info.1);
             }
-            self.active_patterns.push(PatternState { cur_angle: self.start_angle, amount_left: self.amount, int_time: 0.0 })
+
+            use std::f32::consts;
+
+            self.active_patterns.push(PatternState {
+                cur_angle: self.start_angle,
+                amount_left: self.amount,
+                int_time: 0.0,
+                wobble_angle: self.wobble_angle * (consts::PI * 2.0 * self.cur_wobble_time/self.wobble_time).sin()
+            })
         }
         for pattern in self.active_patterns.iter_mut() {
             pattern.int_time += dt;
@@ -57,7 +74,11 @@ impl Pattern {
             while pattern.int_time >= self.time_int && pattern.amount_left > 0 {
                 pattern.int_time -= self.time_int;
                 pattern.amount_left -= 1;
-                let angle = pattern.cur_angle;
+                let wobble_angle = match self.wobble_dir {
+                    RotationDirection::CounterClockwise => pattern.wobble_angle,
+                    RotationDirection::Clockwise => pattern.wobble_angle * -1.0,
+                };
+                let angle = pattern.cur_angle + wobble_angle;
                 pattern.cur_angle += (self.stop_angle - self.start_angle) / self.amount as f32;
                 let base = Vector2::new(1.0, angle.to_radians()).to_cartesian();
                 res.push((base * self.radius, base * self.speed))
@@ -80,6 +101,20 @@ pub enum Angle {
 }
 
 impl Angle {
+    fn mirror_x(&self) -> Angle {
+        match *self {
+            Angle::Fixed(ref angle) => Angle::Fixed(180.0 + angle),
+            Angle::Player(ref angle_mod) => Angle::Player(-1.0 * angle_mod),
+        }
+    }
+
+    fn mirror_y(&self) -> Angle {
+        match *self {
+            Angle::Fixed(ref angle) => Angle::Fixed(180.0 - angle),
+            Angle::Player(ref angle_mod) => Angle::Fixed(-1.0 * angle_mod),
+        }
+    }
+
     fn eval(&self, cur_pos: &Vector2<f32>, player: &Vector2<f32>) -> f32 {
         match self {
             &Angle::Fixed(ref angle) => *angle,
@@ -99,18 +134,21 @@ impl Angle {
 pub struct PatternBuilder {
     time_int: f32,
     amount: usize,
-    cur_angle: Option<Angle>,
+    start_angle: Option<Angle>,
     stop_angle: Option<Angle>,
     speed: f32,
     radius: f32,
     repeat: usize,
     repeat_delay: f32,
+    wobble_angle: f32,
+    wobble_time: f32,
+    wobble_dir: RotationDirection,
 }
 
 impl PatternBuilder {
     pub fn new() -> PatternBuilder {
         PatternBuilder {
-            cur_angle: None,
+            start_angle: None,
             stop_angle: None,
             amount: 1,
             time_int: 0.0,
@@ -118,11 +156,14 @@ impl PatternBuilder {
             radius: 0.0,
             repeat: 0,
             repeat_delay: 0.0,
+            wobble_angle: 0.0,
+            wobble_time: 1.0,
+            wobble_dir: RotationDirection::CounterClockwise,
         }
     }
 
     pub fn start_angle(mut self, angle: Angle) -> PatternBuilder {
-        self.cur_angle = Some(angle);
+        self.start_angle = Some(angle);
         self
     }
 
@@ -165,11 +206,36 @@ impl PatternBuilder {
         self
     }
 
+    pub fn wobble(mut self, angle: f32, delay: f32, direction: RotationDirection) -> PatternBuilder {
+        self.wobble_angle = angle;
+        self.wobble_time = delay;
+        self.wobble_dir = direction;
+        self
+    }
+
+    pub fn mirror_x(&self) -> PatternBuilder {
+        let mut pattern = self.clone();
+        let stop_angle = Some(pattern.start_angle.unwrap().mirror_x());
+        let start_angle = Some(pattern.stop_angle.unwrap().mirror_x());
+        pattern.stop_angle = stop_angle;
+        pattern.start_angle = start_angle;
+        pattern
+    }
+
+    pub fn mirror_y(&self) -> PatternBuilder {
+        let mut pattern = self.clone();
+        let stop_angle = Some(pattern.start_angle.unwrap().mirror_y());
+        let start_angle = Some(pattern.stop_angle.unwrap().mirror_y());
+        pattern.stop_angle = stop_angle;
+        pattern.start_angle = start_angle;
+        pattern
+    }
+
     pub fn build(self, cur_pos: &Vector2<f32>, player: &Vector2<f32>) -> Pattern {
-        let sa = self.cur_angle.unwrap().eval(cur_pos, player);
+        let sa = self.start_angle.unwrap().eval(cur_pos, player);
         Pattern {
             start_angle: sa,
-            actual_start: self.cur_angle.unwrap(),
+            actual_start: self.start_angle.unwrap(),
             stop_angle: self.stop_angle.unwrap().eval(cur_pos, player),
             actual_stop: self.stop_angle.unwrap(),
             amount: self.amount,
@@ -178,9 +244,13 @@ impl PatternBuilder {
             radius: self.radius,
             repeat: self.repeat,
             repeat_delay: self.repeat_delay,
-            active_patterns: vec![PatternState { amount_left: self.amount, cur_angle: sa, int_time: 0.0 }],
+            active_patterns: vec![PatternState { amount_left: self.amount, cur_angle: sa, int_time: 0.0, wobble_angle: 0.0 }],
             rep_time: 0.0,
             pos_fetcher: None,
+            cur_wobble_time: 0.0,
+            wobble_angle: self.wobble_angle,
+            wobble_time: self.wobble_time,
+            wobble_dir: self.wobble_dir,
         }
     }
 }

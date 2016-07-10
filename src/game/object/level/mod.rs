@@ -74,7 +74,6 @@ impl Level {
     fn handle_level_event(&mut self, evt: LevelEvent) {
         println!("Level event {} triggered", evt.name);
         for spawn in evt.spawns {
-            let id = self.ev_reg.get_id();
             if spawn.repeat > 0 {
                 let wid = self.ev_reg.get_id();
                 self.ev.set_repeating_timer_with_class(wid, spawn.repeat_delay, 2);
@@ -102,7 +101,6 @@ impl Level {
                             SpawnType::Enemy(ref e_info) => {
                                 let info = e_info.clone();
                                 let pos = pos + spawn.location;
-                                println!("Spawning enemy {:?} at position {:?}", info, pos);
                                 let paths = spawn.paths.clone();
                                 self.ev.create_entity(Box::new(move |engine| Enemy::new(engine, info, pos, paths.clone())));
                             }
@@ -116,9 +114,13 @@ impl Level {
                         done_pats.push(i);
                     }
                 }
-                for i in done_pats {
-                    self.active_spawns.remove(i);
-                }
+
+                let mut i = 0;
+                self.active_spawns = self.active_spawns.clone().into_iter().filter(|_| {
+                    let ret = !done_pats.contains(&i);
+                    i += 1;
+                    ret
+                }).collect();
             }
             Event::CTimer(1, id) => {
                 // Event timer delay
