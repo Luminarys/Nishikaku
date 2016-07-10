@@ -1,6 +1,8 @@
 #[macro_use]
 mod macros;
 
+use std::fs::File;
+use std::io::Read;
 use toml;
 
 use nalgebra::{Vector2, Point2};
@@ -23,24 +25,60 @@ use game::object::level::point::Point;
 
 use toml::Value;
 
-type Enemies = HashMap<String, Enemy>;
-type Bullets = HashMap<String, Bullet>;
+pub type Events = HashMap<String, Vec<LevelEvent>>;
+pub type Sprites = HashMap<String, usize>;
+pub type Enemies = HashMap<String, Enemy>;
+pub type Bullets = HashMap<String, Bullet>;
 
 static zero: i64 = 0;
 
-pub fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<HashMap<String, Vec<LevelEvent>>, String> {
+pub fn load_level_file(engine: &mut Engine<Object>, path: &str) -> (Result<(Sprites, Enemies, Bullets, Events), String>) {
+    let mut f = File::open(path).unwrap();
+    let mut s = String::new();
+    f.read_to_string(&mut s).unwrap();
+    let mut parser = toml::Parser::new(&s[..]);
+    match parser.parse() {
+        Some(level) => {
+            println!("Loading level file {:?}!", path);
+            parse_level(engine, level)
+        }
+        None => {
+            panic!("Unable to parse toml format in {:?}: {:?}", path, parser.errors);
+        }
+    }
+}
+
+pub fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(Sprites, Enemies, Bullets, Events), String> {
+    let mut sprites = util::hashmap();
+    let mut enemies = util::hashmap();
+    let mut bullets = util::hashmap();
+    let mut events = util::hashmap();
+
+    let v = Vec::new();
+    for import in tget!(level, "import", Value::Array, "level config", &v) {
+        match load_level_file(engine, &(String::from("assets/") + import.as_str().unwrap())[..]) {
+            Ok((s, e, b, ev)) => {
+                sprites.extend(s);
+                enemies.extend(e);
+                bullets.extend(b);
+                events.extend(ev);
+            }
+            Err(e) => println!("Failed to load file {}, error: {}", import.as_str().unwrap(), e)
+        }
+    }
+
     let sprite_tab = tget!(level, "sprites", Value::Table, "level config");
-    let sprites = try!(load_sprites(engine, sprite_tab.clone()));
+    sprites.extend(try!(load_sprites(engine, sprite_tab.clone())));
 
     let enemy_tab = tget!(level, "enemies", Value::Table, "level config");
-    let enemies = try!(load_enemies(enemy_tab.clone(), &sprites));
+    enemies.extend(try!(load_enemies(enemy_tab.clone(), &sprites)));
 
     let bullet_tab = tget!(level, "bullets", Value::Table, "level config");
-    let bullets = try!(load_bullets(bullet_tab.clone(), &sprites));
+    bullets.extend(try!(load_bullets(bullet_tab.clone(), &sprites)));
 
     let event_tab = tget!(level, "level", Value::Table, "level config");
-    let events = try!(load_events(event_tab.clone(), &enemies, &bullets));
-    Ok(events)
+    events.extend(try!(load_events(event_tab.clone(), &enemies, &bullets)));
+    Ok((sprites, enemies, bullets, events))
 }
 
 fn load_sprites(engine: &mut Engine<Object>, sprite_tab: toml::Table) -> Result<HashMap<String, usize>, String>{
@@ -167,7 +205,7 @@ fn load_spawn(spawn: toml::Table, enemies: &Enemies, bullets: &Bullets, event_na
                                        parse_pos))
                 }
             };
-            static no: bool = false;
+            let no = false;
             let mirror_x = tget!(spawn, "mirror_x", Value::Boolean, parse_pos, &no);
             let mirror_y = tget!(spawn, "mirror_y", Value::Boolean, parse_pos, &no);
             let repeat = *tget!(spawn, "repeat", Value::Integer, parse_pos, &zero) as usize;

@@ -28,8 +28,8 @@ impl Player {
                                  0,
                                  Vector2::new(0.0, 0.0),
                                  engine.graphics.borrow().get_sprite_shape(&1).unwrap(),
-                                 PhysicsInteraction::SemiInteractive,
-                                 GeometricQueryType::Contacts(0.1),
+                                 PhysicsInteraction::Interactive,
+                                 GeometricQueryType::Contacts(0.5),
                                  &engine.scene);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
         pg.screen_lock((25.0, 50.0));

@@ -1,8 +1,6 @@
 mod level;
 
 use std::path::Path;
-use std::fs::File;
-use toml;
 
 use nalgebra::{Vector2};
 use ncollide::shape::{ShapeHandle2, Ball, Cuboid};
@@ -10,7 +8,6 @@ use glium::VertexBuffer;
 
 use engine::Engine;
 use engine::util::{HashMap};
-use engine::util;
 use engine::graphics::SpriteVertex;
 use game::object::Object;
 use game::object::level::LevelEvent;
@@ -60,20 +57,8 @@ pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
 }
 
 fn load_level(engine: &mut Engine<Object>) -> HashMap<String, Vec<LevelEvent>> {
-    use std::io::Read;
-    let mut f = File::open("assets/level.toml").unwrap();
-    let mut s = String::new();
-    f.read_to_string(&mut s).unwrap();
-    let mut parser = toml::Parser::new(&s[..]);
-    match parser.parse() {
-        Some(level) => {
-            println!("Loading level!");
-            self::level::parse_level(engine, level).unwrap()
-        }
-        None => {
-            panic!("{:?}", parser.errors);
-        }
-    }
+    let (_, _, _, events) = self::level::load_level_file(engine, "assets/level.toml").unwrap();
+    events
 }
 
 fn load_fonts(engine: &mut Engine<Object>) {

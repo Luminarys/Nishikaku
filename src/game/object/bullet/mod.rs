@@ -81,23 +81,25 @@ impl Bullet {
                     _ => { }
                 }
             }
-            Event::Proximity(id, ref data) => {
+            Event::Collision(id, ref data) => {
                 if let Some(s) = self.world.find_aliased_entity_alias(&id) {
-                    match (&s[..], data.proximity) {
-                        ("screen_area", Proximity::Disjoint) => {
-                            self.ev.destroy_self();
-                        }
-                        ("player", Proximity::Intersecting) => {
+                    match &s[..] {
+                        "player" => {
                             self.ev.destroy_self();
                         }
                         _ => { }
                     }
                 }
+                //pub struct CollisionData {
+                //    pub contact: Contact<Point2<f32>>,
+                //    pub this_object: Rc<PhysicsData>,
+                //    pub other_object: Rc<PhysicsData>,
+                //}
             }
             Event::Render => {
                 self.pg.render();
             }
-            ref e => {println!("unhandled bullet ev {:?}", e)}
+            _ => {}
         };
     }
 
