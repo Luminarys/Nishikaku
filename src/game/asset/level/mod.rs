@@ -185,6 +185,15 @@ fn load_spawn(spawn: toml::Table, enemies: &Enemies, bullets: &Bullets, event_na
 
                 let actions = {
                     match path_tab.get("action") {
+                        Some(&Value::Array(ref a)) => {
+                            let mut actions= Vec::new();
+                            let mut actions_arr = a.clone();
+                            while let Some(Value::Table(action_tab)) = actions_arr.pop() {
+                                let parse_pos = format!("{:?} spawn action", event_name);
+                                actions.push(try!(load_action(action_tab.clone(), bullets, parse_pos.clone())));
+                            }
+                            actions
+                        }
                         Some(&Value::Table(ref action_tab)) => {
                             let parse_pos = format!("{:?} spawn action", event_name);
                             let action = try!(load_action(action_tab.clone(), bullets, parse_pos.clone()));

@@ -71,13 +71,11 @@ impl Mouse {
             Event::Proximity(id, ref data) => {
                 match data.proximity {
                     Proximity::Intersecting => {
-                        println!("{:?} entered", id);
                         self.moused_over.push(id);
                         let e = Event::Custom(Box::new(CEvent::MouseOver));
                         self.ev.dispatch_to(id, e);
                     }
                     Proximity::Disjoint => {
-                        println!("{:?}", self.moused_over.pop());
                         // assert_eq!(Some(id), self.moused_over.pop());
                         let e = Event::Custom(Box::new(CEvent::MouseLeft));
                         self.ev.dispatch_to(id, e);

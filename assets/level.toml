@@ -63,12 +63,17 @@ type = "curve"
 points = [["current"], [150, 150]]
 speed = 200
 
-[level.wave0.spawn.paths.action]
+[[level.wave0.spawn.paths.action]]
 type = "bullets"
-time_start = 1.0
 bullet_id = "basic_straight"
 delay = 1.0
 pattern = { type = "arc", amount = 20, astart = 0.0, aend = -360.0, speed = 10, time_int = 0.05, radius = 10.0, repeat = 10, repeat_delay = 0.05 }
+
+[[level.wave0.spawn.paths.action]]
+type = "bullets"
+bullet_id = "basic_straight"
+delay = 2.0
+pattern = { type = "point", angle = "player", speed = 200, amount = 5, time_int = 0.5 }
 
 [[level.wave0.spawn.paths]]
 type = "fixed"
@@ -98,7 +103,6 @@ speed = 40
 
 [level.wave1.spawn.paths.action]
 type = "bullets"
-time_start = 1.0
 bullet_id = "basic_straight" 
 pattern = { type = "point", angle = "player", speed = 80, amount = 5, time_int = 0.5 }
 
@@ -132,6 +136,5 @@ speed = 60
 
 [level.wave2.spawn.paths.action]
 type = "bullets"
-time_start = 1.0
 bullet_id = "basic_straight"
 pattern = { type = "arc", amount = 5, astart = 240.0, aend = 300.0, speed = 80, time_int = 0.3, radius = 10.0 }
