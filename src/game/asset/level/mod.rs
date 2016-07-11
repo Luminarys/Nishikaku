@@ -30,7 +30,7 @@ pub type Sprites = HashMap<String, usize>;
 pub type Enemies = HashMap<String, Enemy>;
 pub type Bullets = HashMap<String, Bullet>;
 
-static zero: i64 = 0;
+static ZERO: i64 = 0;
 
 pub fn load_level_file(engine: &mut Engine<Object>, path: &str) -> (Result<(Sprites, Enemies, Bullets, Events), String>) {
     let mut f = File::open(path).unwrap();
@@ -208,7 +208,7 @@ fn load_spawn(spawn: toml::Table, enemies: &Enemies, bullets: &Bullets, event_na
             let no = false;
             let mirror_x = tget!(spawn, "mirror_x", Value::Boolean, parse_pos, &no);
             let mirror_y = tget!(spawn, "mirror_y", Value::Boolean, parse_pos, &no);
-            let repeat = *tget!(spawn, "repeat", Value::Integer, parse_pos, &zero) as usize;
+            let repeat = *tget!(spawn, "repeat", Value::Integer, parse_pos, &ZERO) as usize;
             let repeat_delay = tget!(spawn, "repeat_delay", num, parse_pos, 0.0);
 
             let pattern_tab = tget!(spawn, "pattern", Value::Table, parse_pos);
@@ -303,7 +303,7 @@ fn load_action(action: toml::Table, bullets: &Bullets, parse_pos: String) -> Res
 
 fn load_pattern(pattern: toml::Table, parse_pos: String) -> Result<PatternBuilder, String> {
     let speed = tget!(pattern, "speed", num, parse_pos, 0.0);
-    let repeat = *tget!(pattern, "repeat", Value::Integer, parse_pos, &zero) as usize;
+    let repeat = *tget!(pattern, "repeat", Value::Integer, parse_pos, &ZERO) as usize;
     let repeat_delay = tget!(pattern, "repeat_delay", num, parse_pos, 0.0);
 
     let (wobble_angle, wobble_time, wobble_dir) = match pattern.get("wobble") {

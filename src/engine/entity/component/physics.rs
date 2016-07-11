@@ -1,4 +1,5 @@
-use nalgebra::{Vector1, Vector2, Isometry2, Translation};
+use nalgebra::{Vector1, Vector2, Point2, Isometry2, Translation};
+use ncollide_geometry::bounding_volume::AABB;
 use ncollide::shape::ShapeHandle2;
 use ncollide::world::GeometricQueryType;
 use std::rc::Rc;
@@ -70,6 +71,10 @@ impl PhysicsComp {
     pub fn set_pos(&mut self, pos: Isometry2<f32>) {
         self.pos = pos;
         self.world.set_pos(self.id, pos);
+    }
+
+    pub fn set_pos_bv(&self, pos: Isometry2<f32>, bv: AABB<Point2<f32>>) {
+        self.world.set_pos_bv(self.id, pos, bv);
     }
 
     pub fn update(&mut self, dt: f32) {

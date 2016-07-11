@@ -4,7 +4,6 @@ use ncollide::shape::{Cuboid, ShapeHandle2};
 use ncollide::world::GeometricQueryType;
 
 use game::object::Object;
-use game::object::level::Level;
 use game::event::Event as CEvent;
 use engine::Engine;
 use engine::scene::PhysicsInteraction;

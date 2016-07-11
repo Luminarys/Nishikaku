@@ -11,6 +11,8 @@ use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
 
+pub static mut PLAYER_POSITION: Vector2<f32> = Vector2{ x: 0.0, y: 0.0 };
+
 pub struct Player {
     pg: PGComp,
     ev: EventComp<Object>,
@@ -55,6 +57,9 @@ impl Player {
             Event::Update(t) => {
                 self.pg.update(t);
                 self.ev.update(t);
+                unsafe {
+                    PLAYER_POSITION = self.pg.get_vpos();
+                }
             }
             Event::Render => {
                 self.pg.render();

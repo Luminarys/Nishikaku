@@ -1,10 +1,13 @@
+mod collision_world;
+
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 use std::ops::Deref;
 use std::ops::DerefMut;
-use ncollide::world::{CollisionWorld2, CollisionGroups, GeometricQueryType, CollisionObject2};
+use ncollide::world::{CollisionGroups, GeometricQueryType, CollisionObject2};
 use ncollide::shape::ShapeHandle2;
 use ncollide::narrow_phase::{ProximityHandler, ContactHandler, ContactAlgorithm2};
+use ncollide_geometry::bounding_volume::AABB;
 use ncollide::query::{Contact, Proximity};
 use nalgebra::{Vector2, Isometry2, Point2};
 use nalgebra;
@@ -14,6 +17,7 @@ use engine::entity::Entity;
 use engine::entity::component::PhysicsData;
 use engine::util;
 use engine::util::{HashMap, HashSet};
+use self::collision_world::CollisionWorld2;
 
 pub struct World<E: Entity> {
     pub entities: RefCell<HashMap<usize, RefCell<E>>>,
@@ -193,6 +197,10 @@ impl PhysicsWorld {
 
     pub fn set_pos(&self, id: usize, pos: Isometry2<f32>) {
         self.world.borrow_mut().deferred_set_position(id, pos);
+    }
+
+    pub fn set_pos_bv(&self, id: usize, pos: Isometry2<f32>, bv: AABB<Point2<f32>>) {
+        self.world.borrow_mut().deferred_set_position_bv(id, pos, bv);
     }
 }
 

@@ -16,6 +16,7 @@ use game::object::level::enemy::Enemy as EnemyInfo;
 use game::object::level::action::ActionType;
 use game::object::level::bullet::Bullet as BulletInfo;
 use game::object::bullet::Bullet;
+use game::object::player::PLAYER_POSITION;
 
 #[derive(Clone)]
 pub struct PosFetcher {
@@ -37,15 +38,8 @@ impl PosFetcher {
     }
 
     pub fn fetch(&self) -> (Vector2<f32>, Vector2<f32>) {
-        let ppos = {
-            let pid = self.world.find_aliased_entity_id(&String::from("player")).unwrap();
-            let ea = self.world.get_entity(&pid);
-            let p = match *ea.access().unwrap() {
-                Object::Player(ref p) => p.get_pos(),
-                _ => panic!("Non player object aliased to player!"),
-            };
-            p
-        };
+        // muh performance :')
+        let ppos = unsafe { PLAYER_POSITION.clone() };
         (self.pos.get(), ppos)
     }
 }

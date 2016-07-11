@@ -1,11 +1,13 @@
+mod pg;
+
 use std::rc::Rc;
 
 use engine::{BULLET_COUNT, Engine};
-use engine::entity::component::*;
+use engine::entity::component::{EventComp, GraphicsComp, WorldComp, WorldCompBuilder};
+use self::pg::{PGComp, PhysicsComp};
 use engine::event::Event;
 use engine::scene::PhysicsInteraction;
 use engine::util::{ToCartesian, ToPolar};
-use ncollide::query::Proximity;
 use ncollide::world::GeometricQueryType;
 use nalgebra::Vector2;
 
@@ -64,9 +66,6 @@ impl Bullet {
                     unsafe { BULLET_COUNT -= 1 };
                     self.ev.destroy_self();
                 }
-            }
-            Event::Timer(2) => {
-                self.pg.sync_gfx_phys();
             }
             Event::Update(t) => {
                 self.ev.update(t);

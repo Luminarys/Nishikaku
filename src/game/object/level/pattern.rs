@@ -172,7 +172,7 @@ impl PatternBuilder {
         self
     }
 
-    pub fn fixed_angle(mut self, angle: Angle) -> PatternBuilder {
+    pub fn fixed_angle(self, angle: Angle) -> PatternBuilder {
         self.start_angle(angle).stop_angle(angle)
     }
 
