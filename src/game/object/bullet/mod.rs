@@ -59,7 +59,6 @@ impl Bullet {
             Event::Spawn => {
                 unsafe { BULLET_COUNT += 1 };
                 self.ev.set_repeating_timer(1, 1.0);
-                self.ev.set_repeating_timer(2, 0.3);
             }
             Event::Timer(1) => {
                 if !self.pg.in_screen() {
@@ -84,7 +83,7 @@ impl Bullet {
                 if let Some(s) = self.world.find_aliased_entity_alias(&id) {
                     match &s[..] {
                         "player" => {
-                            self.ev.destroy_self();
+                            // self.ev.destroy_self();
                         }
                         _ => { }
                     }

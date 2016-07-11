@@ -179,20 +179,20 @@ impl PhysicsComp {
         if cquad != pquad {
             match cquad {
                 1 => AABB::new(
-                    Point2::new(scaler, scaler) + pos_mod,
-                    Point2::new(0.0f32, 0.0) + pos_mod
+                    Point2::new(0.0f32, 0.0) + pos_mod,
+                    Point2::new(scaler, scaler) + pos_mod
                 ),
                 2 => AABB::new(
-                    Point2::new(0.0, scaler) + pos_mod,
-                    Point2::new(-1.0 * scaler, 0.0) + pos_mod
+                    Point2::new(-1.0 * scaler, 0.0) + pos_mod,
+                    Point2::new(0.0, scaler) + pos_mod
                 ),
                 3 => AABB::new(
-                    Point2::new(0.0f32, 0.0) + pos_mod,
-                    Point2::new( -1.0 * scaler, -1.0 * scaler) + pos_mod
+                    Point2::new( -1.0 * scaler, -1.0 * scaler) + pos_mod,
+                    Point2::new(0.0f32, 0.0) + pos_mod
                 ),
                 4 => AABB::new(
-                    Point2::new(self.world.scaler, 0.0) + pos_mod,
-                    Point2::new(0.0, -1.0 * scaler) + pos_mod
+                    Point2::new(0.0, -1.0 * scaler) + pos_mod,
+                    Point2::new(self.world.scaler, 0.0) + pos_mod
                 ),
                 _ => unreachable!(),
             }
