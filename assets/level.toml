@@ -11,9 +11,9 @@ max_amount = 100
 
 [sprites.red_bullet]
 texture = "bullet.png"
-size = [20, 20]
+size = [10, 10]
 hitbox = "sphere"
-radius = 20
+radius = 10
 max_amount = 10000
 
 [enemies]
@@ -67,7 +67,7 @@ speed = 200
 
 [[level.wave0.spawn.paths]]
 type = "fixed"
-time = 15.0
+time = 60.0
 
 [[level.wave0.spawn.paths.action]]
 type = "bullets"
@@ -76,77 +76,77 @@ delay = 1.0
 
 [level.wave0.spawn.paths.action.pattern]
 type = "arc"
-amount = 20
+amount = 120
 astart = 0.0
 aend = -360.0
 speed = 50
 time_int = 0
 radius = 10.0
-repeat = 20
+repeat = 200
 repeat_delay = 0.2
 wobble = { half_angle = 40, quarter_time = 2.0, initial_dir = "counterclockwise" }
 
-[[level.wave0.spawn.paths.action]]
-type = "bullets"
-bullet_id = "basic_straight"
-delay = 2.0
-pattern = { type = "point", angle = "player", speed = 200, amount = 5, time_int = 0.5, repeat = 9, repeat_delay = 1.0}
-
-[[level.wave0.spawn.paths]]
-type = "curve"
-points = [["current"], [200, 0]]
-speed = 200
-
-[level.wave1]
-time = {after = "wave0", delay = 15.0}
-
-[level.wave1.spawn]
-type = "enemy"
-enemy_id = "basic_curve"
-location = [-200, 180]
-pattern = { type = "point", amount = 5, time_int = 0.5 }
-repeat = 2
-repeat_delay = 4.0
-mirror_x = true
-
-[[level.wave1.spawn.paths]]
-type = "curve"
-points = [[-200, 180], [-50, 140], [-200, 50]]
-speed = 40
-
-[level.wave1.spawn.paths.action]
-type = "bullets"
-bullet_id = "basic_straight" 
-pattern = { type = "point", angle = "player", speed = 80, amount = 5, time_int = 0.5 }
-
-[level.wave2]
-time = { after = "start", delay = 8.0 }
-
-[level.wave2.spawn]
-type = "enemy"
-enemy_id = "circle"
-pattern = { type = "arc", radius = 25, astart = 0, aend = 360, amount = 10, time_int = 0.5 }
-location = [-50, 50]
-repeat = 1
-repeat_delay = 2.0
-mirror_x = true
-
-[[level.wave2.spawn.paths]]
-type = "arc"
-center = [-50, 50]
-radius = 25
-start = "current"
-degrees = 180
-direction = "clockwise"
-speed = 40
-action = { type = "none" }
-
-[[level.wave2.spawn.paths]]
-type = "curve"
-points = [["current"], [75, 0], [200, 0]]
-speed = 60
-
-[level.wave2.spawn.paths.action]
-type = "bullets"
-bullet_id = "basic_straight"
-pattern = { type = "arc", amount = 5, astart = 240.0, aend = 300.0, speed = 80, time_int = 0.3, radius = 10.0 }
+# [[level.wave0.spawn.paths.action]]
+# type = "bullets"
+# bullet_id = "basic_straight"
+# delay = 2.0
+# pattern = { type = "point", angle = "player", speed = 200, amount = 5, time_int = 0.5, repeat = 9, repeat_delay = 1.0}
+# 
+# [[level.wave0.spawn.paths]]
+# type = "curve"
+# points = [["current"], [200, 0]]
+# speed = 200
+# 
+# [level.wave1]
+# time = {after = "wave0", delay = 15.0}
+# 
+# [level.wave1.spawn]
+# type = "enemy"
+# enemy_id = "basic_curve"
+# location = [-200, 180]
+# pattern = { type = "point", amount = 5, time_int = 0.5 }
+# repeat = 2
+# repeat_delay = 4.0
+# mirror_x = true
+# 
+# [[level.wave1.spawn.paths]]
+# type = "curve"
+# points = [[-200, 180], [-50, 140], [-200, 50]]
+# speed = 40
+# 
+# [level.wave1.spawn.paths.action]
+# type = "bullets"
+# bullet_id = "basic_straight" 
+# pattern = { type = "point", angle = "player", speed = 80, amount = 5, time_int = 0.5 }
+# 
+# [level.wave2]
+# time = { after = "start", delay = 8.0 }
+# 
+# [level.wave2.spawn]
+# type = "enemy"
+# enemy_id = "circle"
+# pattern = { type = "arc", radius = 25, astart = 0, aend = 360, amount = 10, time_int = 0.5 }
+# location = [-50, 50]
+# repeat = 1
+# repeat_delay = 2.0
+# mirror_x = true
+# 
+# [[level.wave2.spawn.paths]]
+# type = "arc"
+# center = [-50, 50]
+# radius = 25
+# start = "current"
+# degrees = 180
+# direction = "clockwise"
+# speed = 40
+# action = { type = "none" }
+# 
+# [[level.wave2.spawn.paths]]
+# type = "curve"
+# points = [["current"], [75, 0], [200, 0]]
+# speed = 60
+# 
+# [level.wave2.spawn.paths.action]
+# type = "bullets"
+# bullet_id = "basic_straight"
+# pattern = { type = "arc", amount = 5, astart = 240.0, aend = 300.0, speed = 80, time_int = 0.3, radius = 10.0 }

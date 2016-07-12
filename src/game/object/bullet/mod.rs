@@ -1,14 +1,9 @@
-mod pg;
-
 use std::rc::Rc;
 
 use engine::{BULLET_COUNT, Engine};
-use engine::entity::component::{EventComp, GraphicsComp, WorldComp, WorldCompBuilder};
-use self::pg::{PGComp, PhysicsComp};
+use engine::entity::component::*;
 use engine::event::Event;
-use engine::scene::PhysicsInteraction;
 use engine::util::{ToCartesian, ToPolar};
-use ncollide::world::GeometricQueryType;
 use nalgebra::Vector2;
 
 use game::object::Object;
@@ -32,8 +27,7 @@ impl Bullet {
                                  0,
                                  pos,
                                  engine.graphics.borrow().get_sprite_shape(&info.sprite).unwrap(),
-                                 PhysicsInteraction::SemiInteractive,
-                                 GeometricQueryType::Contacts(0.5),
+                                 2,
                                  &engine.scene);
         g.translate(pos.x / scaler, pos.y / scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());

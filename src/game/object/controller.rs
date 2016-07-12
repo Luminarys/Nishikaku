@@ -34,8 +34,10 @@ impl Controller {
         match *e {
             Event::Spawn => {
                 println!("Spawned controller!");
-                self.ev.create_entity(Box::new(|engine| Mouse::new(engine)));
-                self.ev.create_entity(Box::new(|engine| MainMenu::new(engine)));
+                // self.ev.create_entity(Box::new(|engine| Mouse::new(engine)));
+                // self.ev.create_entity(Box::new(|engine| MainMenu::new(engine)));
+                let level = self.assets.levels.pop().unwrap();
+                self.ev.create_entity(Box::new(move |engine| Level::new(engine, level.clone())));
             }
             Event::Custom(ref cev) => {
                 self.handle_cevent(cev.downcast_ref::<CEvent>().unwrap());

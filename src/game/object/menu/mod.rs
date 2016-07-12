@@ -1,12 +1,10 @@
 use std::rc::Rc;
 use nalgebra::Vector2;
 use ncollide::shape::{Cuboid, ShapeHandle2};
-use ncollide::world::GeometricQueryType;
 
 use game::object::Object;
 use game::event::Event as CEvent;
 use engine::Engine;
-use engine::scene::PhysicsInteraction;
 use engine::entity::component::*;
 use engine::event::Event;
 
@@ -58,8 +56,7 @@ impl MainMenuBar {
                                  0,
                                  Vector2::new(0.0, 0.0),
                                  ShapeHandle2::new(Cuboid::new(Vector2::new(120.0, 20.0))),
-                                 PhysicsInteraction::SemiInteractive,
-                                 GeometricQueryType::Proximity(0.1),
+                                 100,
                                  &engine.scene);
         let pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
         let text = TextCompBuilder::new_scaled(engine).with_font(1).with_pos((-20.0, -10.0)).with_text("Play").build();

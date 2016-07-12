@@ -1,5 +1,4 @@
 use nalgebra::Vector2;
-use ncollide::world::GeometricQueryType;
 use std::rc::Rc;
 use std::cell::Cell;
 use std::mem;
@@ -7,7 +6,6 @@ use std::mem;
 use engine::Engine;
 use engine::entity::component::*;
 use engine::event::Event;
-use engine::scene::PhysicsInteraction;
 use game::event::Event as CEvent;
 use game::object::Object;
 use game::object::level::path::{Path, PathBuilder};
@@ -71,8 +69,7 @@ impl Enemy {
                                  0,
                                  Vector2::new(pos.x, pos.y),
                                  engine.graphics.borrow().get_sprite_shape(&info.sprite).unwrap(),
-                                 PhysicsInteraction::SemiInteractive,
-                                 GeometricQueryType::Contacts(0.0),
+                                 4,
                                  &engine.scene);
         g.translate(pos.x / scaler, pos.y / scaler);
         let pg = PGComp::new(g, vec![p], engine.scene.physics.clone());

@@ -59,13 +59,6 @@ impl PGComp {
         }
     }
 
-    pub fn unsynced_translate(&mut self, delta: Vector2<f32>) {
-        self.graphics.translate(delta.x / self.scaler, delta.y / self.scaler);
-        for comp in self.physics.iter_mut() {
-            comp.unsynced_translate(delta);
-        }
-    }
-
     pub fn get_pos(&self) -> (f32, f32) {
         let (x, y) = self.graphics.get_pos();
         (x * self.scaler, y * self.scaler)
@@ -88,14 +81,6 @@ impl PGComp {
         self.translate(delta);
     }
 
-    pub fn unsynced_set_pos(&mut self, pos: (f32, f32)) {
-        let (new_x, new_y) = (pos.0 / self.scaler, pos.1 / self.scaler);
-        let (old_x, old_y) = self.get_gfx_pos();
-        let (delta_x, delta_y) = ((new_x - old_x) * self.scaler, (new_y - old_y) * self.scaler);
-        let delta = Vector2::new(delta_x, delta_y);
-        self.unsynced_translate(delta);
-    }
-
     pub fn set_pos_gfx(&mut self, pos: (f32, f32)) {
         let converted_pos = (pos.0 * self.scaler, pos.1 * self.scaler);
         self.set_pos(converted_pos);
@@ -111,12 +96,6 @@ impl PGComp {
         self.velocity += self.acceleration * dt;
         let delta = self.velocity * dt;
         self.translate_gfx(delta);
-    }
-
-    pub fn unsynced_update(&mut self, dt: f32) {
-        self.velocity += self.acceleration * dt;
-        let delta = self.velocity * dt;
-        self.unsynced_translate(delta);
     }
 
     pub fn in_screen(&self) -> bool {

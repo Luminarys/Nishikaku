@@ -1,17 +1,15 @@
 use nalgebra::Vector2;
-use ncollide::world::GeometricQueryType;
-use ncollide::query::Proximity;
 use glium::glutin::VirtualKeyCode;
 use std::rc::Rc;
 
 use engine::Engine;
 use engine::entity::component::*;
 use engine::event::{Event, InputState};
-use engine::scene::PhysicsInteraction;
 use engine::entity::RenderInfo;
 use game::object::Object;
 
 pub static mut PLAYER_POSITION: Vector2<f32> = Vector2{ x: 0.0, y: 0.0 };
+pub static mut PLAYER_ID: usize = 0;
 
 pub struct Player {
     pg: PGComp,
@@ -23,6 +21,7 @@ pub struct Player {
 impl Player {
     pub fn new(engine: &Engine<Object>) -> Object {
         let w = WorldCompBuilder::new(engine).with_alias(String::from("player")).build();
+        unsafe { PLAYER_ID = w.id };
         let g = GraphicsComp::new(engine.graphics.clone(), 1);
         let e = EventComp::new(w.id, engine.events.clone());
 
@@ -30,11 +29,11 @@ impl Player {
                                  0,
                                  Vector2::new(0.0, 0.0),
                                  engine.graphics.borrow().get_sprite_shape(&1).unwrap(),
-                                 PhysicsInteraction::Interactive,
-                                 GeometricQueryType::Contacts(0.5),
+                                 1,
                                  &engine.scene);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
         pg.screen_lock((25.0, 50.0));
+
         Object::Player(Player {
             pg: pg,
             ev: e,
@@ -132,8 +131,7 @@ impl Bullet {
                                  0,
                                  Vector2::new(pos.0, pos.1),
                                  engine.graphics.borrow().get_sprite_shape(&2).unwrap(),
-                                 PhysicsInteraction::SemiInteractive,
-                                 GeometricQueryType::Contacts(0.0),
+                                 8,
                                  &engine.scene);
         g.translate(pos.0 / scaler, pos.1 / scaler);
         let mut pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
@@ -150,16 +148,6 @@ impl Bullet {
             Event::Spawn => {}
             Event::Update(t) => {
                 self.pg.update(t);
-            }
-            Event::Proximity(id, ref data) => {
-                if let Some(s) = self.world.find_aliased_entity_alias(&id) {
-                    match (&s[..], data.proximity) {
-                        ("screen_area", Proximity::Disjoint) => {
-                            self.ev.destroy_self();
-                        }
-                        _ => { }
-                    }
-                }
             }
             Event::Render => {
                 self.pg.render();

@@ -2,7 +2,6 @@ pub mod path;
 pub mod pattern;
 pub mod action;
 pub mod spawn;
-pub mod screen;
 pub mod enemy;
 pub mod bullet;
 pub mod point;

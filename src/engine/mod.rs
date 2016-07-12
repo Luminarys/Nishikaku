@@ -2,6 +2,7 @@ pub mod event;
 pub mod scene;
 pub mod entity;
 pub mod graphics;
+pub mod physics;
 pub mod audio;
 pub mod util;
 
@@ -23,12 +24,10 @@ pub struct Engine<E: entity::Entity> {
 pub static mut BULLET_COUNT: usize = 0;
 
 impl<E: entity::Entity> Engine<E> {
-    pub fn new(size: f32, res: u32) -> Engine<E> {
-        let scene = scene::Scene::new(size);
+    pub fn new(size: f32, res: u32, p: scene::PhysicsHandler) -> Engine<E> {
+        let scene = scene::Scene::new(size, p);
         let eh = event::Handler::new();
-        let queue = eh.queue.clone();
         let events = Rc::new(RefCell::new(eh));
-        scene.physics.register_handlers(queue);
 
         Engine {
             events: events,
@@ -142,7 +141,7 @@ impl<E: entity::Entity> Engine<E> {
                 // Update state here
                 self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.016666667f32));
                 self.handle_events();
-                self.scene.update();
+                self.scene.update(0.016666667f32);
                 let sys_ev_queue = {
                     self.events.deref().borrow_mut().flush_sys()
                 };

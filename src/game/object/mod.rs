@@ -18,9 +18,8 @@ pub enum Object {
     Level(level::Level),
     Player(player::Player),
     PlayerBullet(player::Bullet),
-    ScreenArea(level::screen::ScreenArea),
     Enemy(enemy::Enemy),
     Bullet(bullet::Bullet),
 }
 
-impl_entity_enum!(Object, Player, PlayerBullet, MainMenu, Mouse, Controller, ScreenArea, Level, MainMenuBar, Enemy, Bullet);
+impl_entity_enum!(Object, Player, PlayerBullet, MainMenu, Mouse, Controller, Level, MainMenuBar, Enemy, Bullet);

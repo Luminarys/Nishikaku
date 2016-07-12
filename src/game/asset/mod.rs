@@ -3,7 +3,7 @@ mod level;
 use std::path::Path;
 
 use nalgebra::{Vector2};
-use ncollide::shape::{ShapeHandle2, Ball, Cuboid};
+use ncollide::shape::{ShapeHandle2, Ball};
 use glium::VertexBuffer;
 
 use engine::Engine;
@@ -117,7 +117,7 @@ fn make_vbo(engine: &mut Engine<Object>, half_extents: Vector2<f32>) -> VertexBu
 }
 
 fn load_char(engine: &mut Engine<Object>) {
-    let shape = ShapeHandle2::new(Cuboid::new(Vector2::new(25.0, 50.0)));
+    let shape = ShapeHandle2::new(Ball::new(5.0));
     make_sprite(engine,
                 "assets/sakuya.png",
                 Vector2::new(25.0, 50.0),

@@ -4,8 +4,6 @@ use std::mem;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::any::Any;
-use ncollide::query::{Contact, Proximity};
-use nalgebra::Point2;
 use glium::glutin::VirtualKeyCode;
 use glium::glutin::MouseButton;
 
@@ -24,7 +22,6 @@ pub enum InputState {
 pub enum Event {
     Update(f32),
     Collision(usize, CollisionData),
-    Proximity(usize, ProximityData),
     KeyInput(InputState, KeyCode),
     MouseMove((f32, f32)),
     MouseInput(InputState, MouseButton),
@@ -42,7 +39,6 @@ impl fmt::Debug for Event {
         match *self {
             Event::Update(_) => write!(f, "Update"),
             Event::Collision(_, _) => write!(f, "Collision"),
-            Event::Proximity(_, _) => write!(f, "Proximity"),
             Event::KeyInput(_, _) => write!(f, "Key Input"),
             Event::MouseMove(_) => write!(f, "Mouse Movement"),
             Event::MouseInput(_, _) => write!(f, "Mouse Input"),
@@ -58,7 +54,6 @@ impl fmt::Debug for Event {
 pub enum EventType {
     Update,
     Collision,
-    Proximity,
     KeyInput,
     MouseMove,
     MouseInput,
@@ -72,14 +67,6 @@ pub type KeyCode = VirtualKeyCode;
 
 #[derive(Clone)]
 pub struct CollisionData {
-    pub contact: Contact<Point2<f32>>,
-    pub this_object: Rc<PhysicsData>,
-    pub other_object: Rc<PhysicsData>,
-}
-
-#[derive(Clone)]
-pub struct ProximityData {
-    pub proximity: Proximity,
     pub this_object: Rc<PhysicsData>,
     pub other_object: Rc<PhysicsData>,
 }
@@ -98,7 +85,6 @@ impl Hash for Event {
             Event::MouseMove(_) => state.write_u8(3),
             Event::MouseInput(_, _) => state.write_u8(4),
             Event::Spawn => state.write_u8(5),
-            Event::Proximity(_, _) => state.write_u8(6),
             Event::Timer(_) => state.write_u8(7),
             Event::Render => state.write_u8(8),
             Event::Custom(_) => state.write_u8(9),
@@ -114,7 +100,6 @@ impl PartialEq for Event {
         match (self, other) {
             (&Event::Update(_), &Event::Update(_)) => true,
             (&Event::Collision(_, _), &Event::Collision(_, _)) => true,
-            (&Event::Proximity(_, _), &Event::Proximity(_, _)) => true,
             (&Event::KeyInput(_, _), &Event::KeyInput(_, _)) => true,
             (&Event::MouseMove(_), &Event::MouseMove(_)) => true,
             (&Event::MouseInput(_, _), &Event::MouseInput(_, _)) => true,

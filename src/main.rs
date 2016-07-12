@@ -20,10 +20,12 @@ mod engine;
 mod game;
 
 use game::object::Object;
+use game::physics::DanmakuPhysics;
 use engine::Engine;
 
 fn main() {
-    let mut engine: Engine<Object> = Engine::new(200.0, 700);
+    let scaler = 200.0;
+    let mut engine: Engine<Object> = Engine::new(scaler, 700, Box::new(DanmakuPhysics::new(scaler)));
     let assets = game::asset::load_assets(&mut engine);
     engine.spawn_entity(game::object::controller::Controller::new(&engine, assets));
     engine.run();
