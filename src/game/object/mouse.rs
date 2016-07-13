@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use nalgebra::{Vector2};
-use ncollide::shape::{Cuboid, ShapeHandle2};
+use ncollide_geometry::shape::{Cuboid, ShapeHandle2};
 use glium::glutin::MouseButton;
 
 use game::object::Object;

@@ -315,7 +315,8 @@ impl PathBuilder {
     }
 
     fn build_curve(self, current_pos: &Vector2<f32>, player_pos: &Vector2<f32>) -> Path {
-        use ncollide::procedural::bezier_curve;
+        // TODO: Use a B-Spline
+        use ncollide_procedural::bezier_curve;
 
         let points: Vec<_> = self.points
                                  .unwrap()

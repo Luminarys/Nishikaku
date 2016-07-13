@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use nalgebra::Vector2;
-use ncollide::shape::{Cuboid, ShapeHandle2};
+use ncollide_geometry::shape::{Cuboid, ShapeHandle2};
 
 use game::object::Object;
 use game::event::Event as CEvent;

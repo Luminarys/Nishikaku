@@ -1,4 +1,4 @@
-use ncollide::shape::ShapeHandle2;
+use ncollide_geometry::shape::ShapeHandle2;
 use ncollide_geometry::query::{self, Proximity};
 use nalgebra::{Isometry2, Vector2};
 use std::rc::Rc;
@@ -75,6 +75,7 @@ impl PhysicsEngine<Shape, PhysicsData> for DanmakuPhysics {
         }
         collisions
     }
+
     fn get_pos(&self, id: &usize) -> Option<Vector2<f32>> {
         match self.objects.get(id) {
             Some(obj) => {

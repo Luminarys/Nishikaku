@@ -1,5 +1,5 @@
 use nalgebra::{Vector2, Translation};
-use ncollide::shape::ShapeHandle2;
+use ncollide_geometry::shape::ShapeHandle2;
 use std::rc::Rc;
 
 use engine::entity::Entity;

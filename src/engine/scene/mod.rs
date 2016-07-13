@@ -2,7 +2,7 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 use std::ops::Deref;
 use std::ops::DerefMut;
-use ncollide::shape::ShapeHandle2;
+use ncollide_geometry::shape::ShapeHandle2;
 use nalgebra::{Vector2};
 
 use engine::event::{Event, CollisionData};

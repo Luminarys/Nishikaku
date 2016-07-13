@@ -3,7 +3,7 @@ mod level;
 use std::path::Path;
 
 use nalgebra::{Vector2};
-use ncollide::shape::{ShapeHandle2, Ball};
+use ncollide_geometry::shape::{ShapeHandle2, Ball};
 use glium::VertexBuffer;
 
 use engine::Engine;

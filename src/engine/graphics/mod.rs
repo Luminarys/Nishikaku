@@ -1,6 +1,6 @@
 use std::mem;
 use std::fs::File;
-use ncollide::shape::ShapeHandle2;
+use ncollide_geometry::shape::ShapeHandle2;
 use glium::program::Program;
 use glium::VertexBuffer;
 use glium::index::IndexBuffer;

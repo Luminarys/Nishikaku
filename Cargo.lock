@@ -9,9 +9,8 @@ dependencies = [
  "glium_text 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "nalgebra 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ncollide_geometry 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_math 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ncollide_procedural 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2_mixer 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tar 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -473,19 +472,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ncollide"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "ncollide_geometry 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_math 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_pipeline 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_procedural 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_transformation 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_utils 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "ncollide_geometry"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -509,38 +495,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "ncollide_pipeline"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "nalgebra 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_geometry 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_math 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_utils 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.19 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "ncollide_procedural"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "nalgebra 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ncollide_math 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_utils 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "num 0.1.32 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.19 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "ncollide_transformation"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "nalgebra 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_geometry 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_math 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ncollide_procedural 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ncollide_utils 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.1.32 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.19 (registry+https://github.com/rust-lang/crates.io-index)",

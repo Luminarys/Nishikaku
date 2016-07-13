@@ -6,7 +6,7 @@ use std::io::Read;
 use toml;
 
 use nalgebra::{Vector2, Point2};
-use ncollide::shape::{ShapeHandle2, Ball, ConvexHull};
+use ncollide_geometry::shape::{ShapeHandle2, Ball, ConvexHull};
 
 use engine::Engine;
 use engine::util::{HashMap};

@@ -3,9 +3,8 @@
 #[macro_use]
 extern crate glium;
 extern crate glium_text;
-extern crate ncollide;
 extern crate ncollide_geometry;
-extern crate ncollide_math;
+extern crate ncollide_procedural;
 extern crate nalgebra;
 extern crate clock_ticks;
 extern crate image;
