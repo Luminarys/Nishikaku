@@ -4,8 +4,7 @@ use std::mem;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::any::Any;
-use glium::glutin::VirtualKeyCode;
-use glium::glutin::MouseButton;
+use glium::glutin::{VirtualKeyCode, MouseButton, MouseScrollDelta, TouchPhase};
 
 use engine::Engine;
 use engine::entity::Entity;
@@ -25,6 +24,7 @@ pub enum Event {
     KeyInput(InputState, KeyCode),
     MouseMove((f32, f32)),
     MouseInput(InputState, MouseButton),
+    MouseScroll(MouseScrollDelta, TouchPhase),
     Spawn,
     Timer(usize),
     CTimer(u8, usize),
@@ -43,6 +43,7 @@ impl fmt::Debug for Event {
             Event::Collision(_, _) => write!(f, "Collision"),
             Event::KeyInput(_, _) => write!(f, "Key Input"),
             Event::MouseMove(_) => write!(f, "Mouse Movement"),
+            Event::MouseScroll(_, _) => write!(f, "Mouse Scroll"),
             Event::MouseInput(_, _) => write!(f, "Mouse Input"),
             Event::Spawn => write!(f, "Spawn"),
             Event::Timer(_) => write!(f, "Timer"),
@@ -61,6 +62,7 @@ pub enum EventType {
     KeyInput,
     MouseMove,
     MouseInput,
+    MouseScroll,
     Spawn,
     Timer,
     Render,
@@ -95,6 +97,7 @@ impl Hash for Event {
             Event::CTimer(_, _) => state.write_u8(10),
             Event::RenderCustom => state.write_u8(11),
             Event::RenderMenu => state.write_u8(12),
+            Event::MouseScroll(_, _) => state.write_u8(13),
         }
     }
 }
@@ -109,6 +112,7 @@ impl PartialEq for Event {
             (&Event::KeyInput(_, _), &Event::KeyInput(_, _)) => true,
             (&Event::MouseMove(_), &Event::MouseMove(_)) => true,
             (&Event::MouseInput(_, _), &Event::MouseInput(_, _)) => true,
+            (&Event::MouseScroll(_, _), &Event::MouseScroll(_, _)) => true,
             (&Event::Spawn, &Event::Spawn) => true,
             (&Event::Timer(_), &Event::Timer(_)) => true,
             (&Event::Render, &Event::Render) => true,

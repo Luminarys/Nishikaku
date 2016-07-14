@@ -130,6 +130,9 @@ impl<E: entity::Entity> Engine<E> {
                     glutin::Event::MouseInput(glutin::ElementState::Released, b) => {
                         Some(event::Event::MouseInput(event::InputState::Released, b))
                     }
+                    glutin::Event::MouseWheel(d, s) => {
+                        Some(event::Event::MouseScroll(d, s))
+                    }
                     _ => None,
                 };
                 if let Some(ev) = to_queue {
