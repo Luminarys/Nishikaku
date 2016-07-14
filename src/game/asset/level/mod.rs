@@ -8,6 +8,10 @@ use toml;
 use nalgebra::{Vector2, Point2};
 use ncollide_geometry::shape::{ShapeHandle2, Ball, ConvexHull};
 
+use std::rc::Rc;
+use std::cell::RefCell;
+use engine::graphics::{Graphics};
+
 use engine::Engine;
 use engine::util::{HashMap};
 use engine::util;
@@ -32,23 +36,23 @@ pub type Bullets = HashMap<String, Bullet>;
 
 static ZERO: i64 = 0;
 
-pub fn load_level_file(engine: &mut Engine<Object>, path: &str) -> (Result<(Sprites, Enemies, Bullets, Events), String>) {
+pub fn load_level_file(graphics: Rc<RefCell<Graphics>>, path: &str) -> (Result<(Sprites, Enemies, Bullets, Events), String>) {
     let mut f = File::open(path).unwrap();
     let mut s = String::new();
-    f.read_to_string(&mut s).unwrap();
+    match f.read_to_string(&mut s) {
+        Ok(_) => { },
+        Err(s) => { return Err(String::from("Failed to open file!")) },
+    };
     let mut parser = toml::Parser::new(&s[..]);
-    match parser.parse() {
-        Some(level) => {
-            println!("Loading level file {:?}!", path);
-            parse_level(engine, level)
-        }
-        None => {
-            panic!("Unable to parse toml format in {:?}: {:?}", path, parser.errors);
-        }
+    if let Some(level) = parser.parse() {
+        println!("Loading level file {:?}!", path);
+        parse_level(graphics, level)
+    } else {
+        return Err(String::from("File does not have valid TOML format"));
     }
 }
 
-pub fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(Sprites, Enemies, Bullets, Events), String> {
+pub fn parse_level(graphics: Rc<RefCell<Graphics>>, level: toml::Table) -> Result<(Sprites, Enemies, Bullets, Events), String> {
     let mut sprites = util::hashmap();
     let mut enemies = util::hashmap();
     let mut bullets = util::hashmap();
@@ -56,7 +60,7 @@ pub fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(S
 
     let v = Vec::new();
     for import in tget!(level, "import", Value::Array, "level config", &v) {
-        match load_level_file(engine, &(String::from("assets/") + import.as_str().unwrap())[..]) {
+        match load_level_file(graphics.clone(), &(String::from("assets/") + import.as_str().unwrap())[..]) {
             Ok((s, e, b, ev)) => {
                 sprites.extend(s);
                 enemies.extend(e);
@@ -68,7 +72,7 @@ pub fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(S
     }
 
     let sprite_tab = tget!(level, "sprites", Value::Table, "level config");
-    sprites.extend(try!(load_sprites(engine, sprite_tab.clone())));
+    sprites.extend(try!(load_sprites(graphics, sprite_tab.clone())));
 
     let enemy_tab = tget!(level, "enemies", Value::Table, "level config");
     enemies.extend(try!(load_enemies(enemy_tab.clone(), &sprites)));
@@ -81,7 +85,7 @@ pub fn parse_level(engine: &mut Engine<Object>, level: toml::Table) -> Result<(S
     Ok((sprites, enemies, bullets, events))
 }
 
-fn load_sprites(engine: &mut Engine<Object>, sprite_tab: toml::Table) -> Result<HashMap<String, usize>, String>{
+fn load_sprites(graphics: Rc<RefCell<Graphics>>, sprite_tab: toml::Table) -> Result<HashMap<String, usize>, String>{
     let mut sprites = util::hashmap();
     for (sprite_name, sprite) in sprite_tab {
         let sprite = sprite.as_table().unwrap();
@@ -112,7 +116,7 @@ fn load_sprites(engine: &mut Engine<Object>, sprite_tab: toml::Table) -> Result<
                                     sprite_name))
             }
         };
-        let id = asset::make_sprite(engine,
+        let id = asset::make_sprite(graphics.clone(),
                                     &(String::from("assets/") + texture)[..],
                                     half_extents,
                                     max_amount,

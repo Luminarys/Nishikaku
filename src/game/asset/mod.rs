@@ -1,6 +1,9 @@
-mod level;
+pub mod level;
 
 use std::path::Path;
+use std::rc::Rc;
+use std::cell::RefCell;
+use engine::graphics::{Graphics};
 
 use nalgebra::{Vector2};
 use ncollide_geometry::shape::{ShapeHandle2, Ball};
@@ -49,15 +52,17 @@ pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
     load_bullet(engine);
     load_sound(engine);
     load_fonts(engine);
-    let level = load_level(engine);
+    let level = load_level(engine).unwrap();
     Assets {
         levels: vec![level],
     }
 }
 
-fn load_level(engine: &mut Engine<Object>) -> HashMap<String, Vec<LevelEvent>> {
-    let (_, _, _, events) = self::level::load_level_file(engine, "assets/level.toml").unwrap();
-    events
+fn load_level(engine: &mut Engine<Object>) -> Result<HashMap<String, Vec<LevelEvent>>, String> {
+    match self::level::load_level_file(engine.graphics.clone(), "assets/level.toml") {
+        Ok((_, _, _, events)) => Ok(events),
+        Err(e) => Err(e)
+    }
 }
 
 fn load_fonts(engine: &mut Engine<Object>) {
@@ -71,7 +76,7 @@ fn load_sound(engine: &mut Engine<Object>) {
     engine.audio.borrow_mut().load(1, path);
 }
 
-pub fn make_sprite(engine: &mut Engine<Object>,
+pub fn make_sprite(graphics: Rc<RefCell<Graphics>>,
                texture: &str,
                half_extents: Vector2<f32>,
                amount: usize,
@@ -79,8 +84,8 @@ pub fn make_sprite(engine: &mut Engine<Object>,
                -> usize {
     let vert_shader = SPRITE_VERT_SHADER;
     let frag_shader = SPRITE_FRAG_SHADER;
-    let vbo = make_vbo(engine, half_extents);
-    let mut gfx = engine.graphics.borrow_mut();
+    let vbo = make_vbo(graphics.clone(), half_extents);
+    let mut gfx = graphics.borrow_mut();
     let texture = gfx.load_texture(&texture[..]);
     let id = gfx.sprite_amount() + 1;
     gfx.new_sprite(id,
@@ -93,8 +98,8 @@ pub fn make_sprite(engine: &mut Engine<Object>,
     id
 }
 
-fn make_vbo(engine: &mut Engine<Object>, half_extents: Vector2<f32>) -> VertexBuffer<SpriteVertex> {
-    let half_extents = half_extents / engine.scene.physics.scaler;
+fn make_vbo(graphics: Rc<RefCell<Graphics>>, half_extents: Vector2<f32>) -> VertexBuffer<SpriteVertex> {
+    let half_extents = half_extents / graphics.borrow().scaler;
     let vertices = &[SpriteVertex {
                          position: [-1.0 * half_extents.x, -1.0 * half_extents.y],
                          tex_coords: [0.0, 0.0],
@@ -111,13 +116,13 @@ fn make_vbo(engine: &mut Engine<Object>, half_extents: Vector2<f32>) -> VertexBu
                          position: [half_extents.x, -1.0 * half_extents.y],
                          tex_coords: [1.0, 0.0],
                      }];
-    let gfx = engine.graphics.borrow();
+    let gfx = graphics.borrow();
     gfx.make_sprite_vbo(vertices)
 }
 
 fn load_char(engine: &mut Engine<Object>) {
     let shape = ShapeHandle2::new(Ball::new(5.0));
-    make_sprite(engine,
+    make_sprite(engine.graphics.clone(),
                 "assets/sakuya.png",
                 Vector2::new(25.0, 50.0),
                 1,
@@ -126,7 +131,7 @@ fn load_char(engine: &mut Engine<Object>) {
 
 fn load_bullet(engine: &mut Engine<Object>) {
     let shape = ShapeHandle2::new(Ball::new(5.0));
-    make_sprite(engine,
+    make_sprite(engine.graphics.clone(),
                 "assets/bullet.png",
                 Vector2::new(2.5, 2.5),
                 300,

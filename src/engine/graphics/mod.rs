@@ -28,6 +28,7 @@ pub struct Graphics {
     tex_sys: TextSystem,
     current_frame: Option<Frame>,
     pub dimensions: (u32, u32),
+    pub scaler: f32,
 }
 
 struct SpriteData {
@@ -57,7 +58,7 @@ impl fmt::Debug for SpriteData {
 }
 
 impl Graphics {
-    pub fn new(x_res: u32, y_res: u32) -> Graphics {
+    pub fn new((x_res, y_res): (u32, u32), scaler: f32) -> Graphics {
         let display = glium::glutin::WindowBuilder::new()
                           .with_dimensions(x_res, y_res)
                           .with_title(String::from("Nishikaku"))
@@ -68,6 +69,7 @@ impl Graphics {
                           .unwrap();
         let tex_sys = TextSystem::new(&display);
         Graphics {
+            scaler: scaler,
             sprites: util::hashmap(),
             custom_sprites: util::hashmap(),
             display: display,

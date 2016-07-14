@@ -32,7 +32,7 @@ impl<E: entity::Entity> Engine<E> {
         Engine {
             events: events,
             scene: scene,
-            graphics: Rc::new(RefCell::new(graphics::Graphics::new(res, res))),
+            graphics: Rc::new(RefCell::new(graphics::Graphics::new((res, res), size))),
             audio: Rc::new(RefCell::new(audio::Audio::new())),
         }
     }

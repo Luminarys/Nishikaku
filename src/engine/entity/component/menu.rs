@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::mem;
 use imgui::{ImGui, Ui};
 use imgui::glium_renderer::Renderer;
 use glium::glutin::MouseButton;
@@ -20,15 +21,20 @@ pub struct MenuComp {
     mouse_wheel: f32,
 }
 
-pub struct MenuRenderer<'a> {
-    pub frame: Ui<'a>,
+pub struct MenuRenderer<'a, S: 'a> {
+    pub state: &'a mut S,
+    frame: Option<Ui<'a>>,
     renderer: &'a mut Renderer,
     graphics: Rc<RefCell<Graphics>>,
 }
 
-impl <'a> MenuRenderer<'a> {
-    pub fn render(mut self) {
-        self.graphics.borrow_mut().render_menu(&mut self.renderer, self.frame);
+impl <'a, S> MenuRenderer<'a, S> {
+    pub fn render(mut self, ui: Ui<'a>) {
+        self.graphics.borrow_mut().render_menu(&mut self.renderer, ui);
+    }
+
+    pub fn frame(&mut self) -> Ui<'a> {
+        mem::replace(&mut self.frame, None).unwrap()
     }
 }
 
@@ -75,16 +81,17 @@ impl<'comp> MenuComp {
         self.imgui.set_mouse_wheel(amount/scale.1);
     }
 
-    pub fn get_renderer(&'comp mut self) -> MenuRenderer<'comp> {
+    pub fn get_renderer<S>(&'comp mut self, state: &'comp mut S) -> MenuRenderer<'comp, S> {
         let cur_time = clock_ticks::precise_time_ns();
         let delta_t = ((cur_time - self.prev_time) as f32/10.0e-9) as f32;
         self.prev_time = cur_time;
         let ui = self.graphics.borrow().get_menu_frame(&mut self.imgui, delta_t);
 
         MenuRenderer {
-            frame: ui,
+            frame: Some(ui),
             renderer: &mut self.renderer,
             graphics: self.graphics.clone(),
+            state: state,
         }
     }
 
