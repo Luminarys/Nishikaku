@@ -47,7 +47,6 @@ pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
     println!("Loading assets!");
     load_char(engine);
     load_bullet(engine);
-    load_menu(engine);
     load_sound(engine);
     load_fonts(engine);
     let level = load_level(engine);
@@ -132,28 +131,4 @@ fn load_bullet(engine: &mut Engine<Object>) {
                 Vector2::new(2.5, 2.5),
                 300,
                 shape);
-}
-
-fn load_menu(engine: &mut Engine<Object>) {
-    let vertex_shader_src = SPRITE_VERT_SHADER;
-
-    let fragment_shader_src = r#"
-        #version 140
-
-        out vec4 color;
-
-        void main() {
-            color = vec4(0.319,0.345,0.312,1.000);
-        }
-    "#;
-
-    let vertex_buffer = make_vbo(engine, Vector2::new(120.0, 20.0));
-    let mut gfx = engine.graphics.borrow_mut();
-    gfx.new_sprite(3,
-                   vertex_shader_src,
-                   fragment_shader_src,
-                   vertex_buffer,
-                   None,
-                   10,
-                   None);
 }

@@ -21,3 +21,6 @@ pub use self::audio::*;
 
 mod pg;
 pub use self::pg::*;
+
+mod menu;
+pub use self::menu::*;

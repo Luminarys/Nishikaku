@@ -9,10 +9,10 @@ use glium::uniforms::Uniforms;
 use glium::{DisplayBuild, Surface};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
 use glium::texture::compressed_srgb_texture2d::CompressedSrgbTexture2d;
-use glium::Frame;
-use glium;
-use glium_text::{FontTexture, TextSystem, TextDisplay};
-use glium_text;
+use glium::{self, Frame};
+use glium_text::{self, FontTexture, TextSystem, TextDisplay};
+use imgui::{ImGui, Ui};
+use imgui::glium_renderer::Renderer;
 
 use engine::util;
 use engine::util::HashMap;
@@ -193,10 +193,32 @@ impl Graphics {
         self.fonts.insert(id, font);
     }
 
+    pub fn make_menu_renderer(&self, imgui: &mut ImGui) -> Renderer {
+        Renderer::init(imgui, &self.display).unwrap()
+    }
+
     pub fn start_frame(&mut self) {
         let mut target = self.display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
         self.current_frame = Some(target);
+    }
+
+    pub fn get_menu_frame<'imgui>(&self, imgui: &'imgui mut ImGui, dt: f32) -> Ui<'imgui> {
+        let window = self.display.get_window().unwrap();
+        let size_points = window.get_inner_size_points().unwrap();
+        let size_pixels = window.get_inner_size_pixels().unwrap();
+        imgui.frame(size_points, size_pixels, dt)
+    }
+
+    pub fn render_menu(&mut self, renderer: &mut Renderer, ui_frame: Ui) {
+        match self.current_frame {
+            Some(ref mut target) => {
+                renderer.render(target, ui_frame).unwrap();
+            }
+            None => {
+                println!("Cannot render menu without initialized frame!");
+            }
+        }
     }
 
     pub fn render_custom<U: Uniforms>(&mut self,

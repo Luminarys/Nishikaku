@@ -2,6 +2,8 @@
 
 #[macro_use]
 extern crate glium;
+#[macro_use]
+extern crate imgui;
 extern crate glium_text;
 extern crate ncollide_geometry;
 extern crate ncollide_procedural;

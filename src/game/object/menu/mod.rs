@@ -1,115 +1,82 @@
 use std::rc::Rc;
 use nalgebra::Vector2;
 use ncollide_geometry::shape::{Cuboid, ShapeHandle2};
+use imgui::*;
+use glium::glutin::MouseButton;
 
 use game::object::Object;
 use game::event::Event as CEvent;
 use engine::Engine;
 use engine::entity::component::*;
-use engine::event::Event;
+use engine::event::{Event, InputState};
 
 pub struct MainMenu {
     ev: EventComp<Object>,
     world: WorldComp<Object>,
+    menu: MenuComp,
+    mouse_pos: (f32, f32),
 }
 
 impl MainMenu {
     pub fn new(engine: &Engine<Object>) -> Object {
         let w = WorldCompBuilder::new(engine).with_tag(String::from("main_menu")).build();
         let e = EventComp::new(w.id, engine.events.clone());
+        let m = MenuComp::new(engine.graphics.clone());
         Object::MainMenu(MainMenu {
             ev: e,
             world: w,
+            menu: m,
+            mouse_pos: (0.0, 0.0),
         })
     }
 
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Spawn => {
-                // TODO: More, fancier menu options.
-                self.ev.create_entity(Box::new(move |engine| MainMenuBar::new(engine)));
+                self.ev.subscribe(Event::RenderMenu);
+                self.ev.subscribe(Event::MouseMove((0.0, 0.0)));
+                self.ev.subscribe(Event::MouseInput(InputState::Released, MouseButton::Left));
+            }
+            Event::MouseMove(pos) => {
+                self.mouse_pos = pos;
+            }
+            Event::RenderMenu => {
+                self.render_menu();
             }
             _ => {}
         };
     }
 
-    pub fn id(&self) -> usize {
-        self.world.id
-    }
-}
-
-pub struct MainMenuBar {
-    pg: PGComp,
-    text: TextComp,
-    audio: AudioComp,
-    ev: EventComp<Object>,
-    world: WorldComp<Object>,
-    selected: bool,
-}
-
-impl MainMenuBar {
-    pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldCompBuilder::new(engine).with_tag(String::from("main_menu")).build();
-        let e = EventComp::new(w.id, engine.events.clone());
-        let g = GraphicsComp::new(engine.graphics.clone(), 3);
-        let p = PhysicsComp::new(w.id,
-                                 0,
-                                 Vector2::new(0.0, 0.0),
-                                 ShapeHandle2::new(Cuboid::new(Vector2::new(120.0, 20.0))),
-                                 100,
-                                 &engine.scene);
-        let pg = PGComp::new(g, vec![p], engine.scene.physics.clone());
-        let text = TextCompBuilder::new_scaled(engine).with_font(1).with_pos((-20.0, -10.0)).with_text("Play").build();
-        Object::MainMenuBar(MainMenuBar {
-            ev: e,
-            world: w,
-            pg: pg,
-            text: text,
-            audio: AudioComp::new(engine),
-            selected: false,
-        })
-    }
-
-    pub fn handle_event(&mut self, e: Rc<Event>) {
-        match *e {
-            Event::Spawn => {
-                println!("Spawned menu bar!");
-                self.audio.play(&1);
+    fn render_menu(&mut self) {
+        let scale = self.menu.imgui.display_framebuffer_scale();
+        self.menu.imgui.set_mouse_pos(self.mouse_pos.0 / scale.0, self.mouse_pos.1 / scale.1);
+        assert!(self.menu.imgui.mouse_pos().0 > self.mouse_pos.0 - 10.0);
+        assert!(self.menu.imgui.mouse_pos().1 > self.mouse_pos.1 - 10.0);
+        {
+            let renderer = self.menu.get_renderer();
+            // assert!(renderer.frame.imgui().mouse_pos().0 > self.mouse_pos.0 - 10.0);
+            // assert!(renderer.frame.imgui().mouse_pos().1 > self.mouse_pos.1 - 10.0);
+            let mouse_pos = self.mouse_pos;
+            // ty ck
+            {
+                let ui = &renderer.frame;
+                // assert!(ui.imgui().mouse_pos().0 > self.mouse_pos.0 - 10.0);
+                // assert!(ui.imgui().mouse_pos().1 > self.mouse_pos.1 - 10.0);
+                ui.window(im_str!("Hello world"))
+                    .size((300.0, 100.0), ImGuiSetCond_FirstUseEver)
+                    .build(|| {
+                        ui.text(im_str!("Hello world!"));
+                        ui.text(im_str!("This...is...imgui-rs!"));
+                        ui.separator();
+                        // let mouse_pos = ui.imgui().mouse_pos();
+                        ui.text(im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
+                    });
             }
-            Event::Render => {
-                self.pg.render();
-                self.text.render();
-            }
-            Event::Custom(ref ev) => {
-                self.handle_custom_event(ev.downcast_ref::<CEvent>().unwrap());
-            }
-            _ => {}
-        };
-    }
-
-    fn handle_custom_event(&mut self, e: &CEvent) {
-        match *e {
-            CEvent::MouseOver => {
-                // TODO: Fancy animation/coloring
-            }
-            CEvent::MouseLeft => {
-                // TODO: Fancy animation/coloring
-            }
-            CEvent::MouseClickedOver => {
-                let cid = self.world.find_aliased_entity_id(&String::from("controller")).unwrap();
-                self.ev.dispatch_to(cid, Event::Custom(Box::new(CEvent::LevelStart)));
-                // pub fn dispatch_to(&self, id: usize, event: Event) {
-                //     self.handler.borrow_mut().enqueue_specific(id, event);
-                // }
-                if let Some(tags) = self.world.get_tagged(&String::from("main_menu")) {
-                    for id in tags {
-                        self.ev.destroy_other(id);
-                    }
-                }
-                self.audio.stop();
-            }
-            _ => { }
+            // renderer.render();
         }
+        assert!(self.menu.imgui.mouse_pos().0 > self.mouse_pos.0 - 10.0);
+        assert!(self.menu.imgui.mouse_pos().1 > self.mouse_pos.1 - 10.0);
+
     }
 
     pub fn id(&self) -> usize {

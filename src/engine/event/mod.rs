@@ -29,6 +29,8 @@ pub enum Event {
     Timer(usize),
     CTimer(u8, usize),
     Render,
+    RenderCustom,
+    RenderMenu,
     Custom(Box<Any>),
 }
 
@@ -46,6 +48,8 @@ impl fmt::Debug for Event {
             Event::Timer(_) => write!(f, "Timer"),
             Event::CTimer(_, _) => write!(f, "CTimer"),
             Event::Render => write!(f, "Render"),
+            Event::RenderCustom => write!(f, "Render Custom"),
+            Event::RenderMenu => write!(f, "Render Menu"),
             Event::Custom(_) => write!(f, "Custom"),
         }
     }
@@ -89,6 +93,8 @@ impl Hash for Event {
             Event::Render => state.write_u8(8),
             Event::Custom(_) => state.write_u8(9),
             Event::CTimer(_, _) => state.write_u8(10),
+            Event::RenderCustom => state.write_u8(11),
+            Event::RenderMenu => state.write_u8(12),
         }
     }
 }
@@ -106,6 +112,8 @@ impl PartialEq for Event {
             (&Event::Spawn, &Event::Spawn) => true,
             (&Event::Timer(_), &Event::Timer(_)) => true,
             (&Event::Render, &Event::Render) => true,
+            (&Event::RenderCustom, &Event::RenderCustom) => true,
+            (&Event::RenderMenu, &Event::RenderMenu) => true,
             (&Event::Custom(_), &Event::Custom(_)) => true,
             (&Event::CTimer(_, _), &Event::CTimer(_, _)) => true,
             _ => false,

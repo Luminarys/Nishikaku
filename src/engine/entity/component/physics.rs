@@ -4,7 +4,6 @@ use std::rc::Rc;
 
 use engine::entity::Entity;
 use engine::scene::{Scene, PhysicsWorld};
-use engine::physics::PhysicsEngine;
 
 pub struct PhysicsComp {
     pub id: usize,

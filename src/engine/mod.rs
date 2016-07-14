@@ -157,6 +157,8 @@ impl<E: entity::Entity> Engine<E> {
             self.graphics.borrow_mut().start_frame();
             self.graphics.borrow_mut().render();
             self.events.deref().borrow_mut().enqueue_all(event::Event::Render);
+            self.events.deref().borrow_mut().enqueue_all(event::Event::RenderCustom);
+            self.events.deref().borrow_mut().enqueue_all(event::Event::RenderMenu);
             self.handle_events();
             self.graphics.borrow_mut().finish_frame();
 
