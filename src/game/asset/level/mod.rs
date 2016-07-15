@@ -12,11 +12,9 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use engine::graphics::{Graphics};
 
-use engine::Engine;
 use engine::util::{HashMap};
 use engine::util;
 use game::asset;
-use game::object::Object;
 use game::object::level::LevelEvent;
 use game::object::level::bullet::{Bullet, Behavior};
 use game::object::level::enemy::Enemy;
@@ -41,7 +39,7 @@ pub fn load_level_file(graphics: Rc<RefCell<Graphics>>, path: &str) -> (Result<(
     let mut s = String::new();
     match f.read_to_string(&mut s) {
         Ok(_) => { },
-        Err(s) => { return Err(String::from("Failed to open file!")) },
+        Err(s) => { return Err(format!("{:?}", s)); },
     };
     let mut parser = toml::Parser::new(&s[..]);
     if let Some(level) = parser.parse() {
@@ -117,7 +115,7 @@ fn load_sprites(graphics: Rc<RefCell<Graphics>>, sprite_tab: toml::Table) -> Res
             }
         };
         let id = asset::make_sprite(graphics.clone(),
-                                    &(String::from("assets/") + texture)[..],
+                                    &(String::from("assets/sprites/") + texture)[..],
                                     half_extents,
                                     max_amount,
                                     shape);

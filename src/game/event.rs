@@ -1,3 +1,5 @@
+use game::asset::level::Events;
+
 pub enum Event {
     MouseClickedOver,
     MouseUnclickedOver,
@@ -7,5 +9,5 @@ pub enum Event {
     Despawn(usize),
     Action(usize),
     Pattern(usize),
-    LevelStart,
+    LevelStart(Events),
 }

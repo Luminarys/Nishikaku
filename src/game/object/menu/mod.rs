@@ -1,6 +1,5 @@
 use std::fs::{self, DirEntry};
 use nalgebra::Vector2;
-use ncollide_geometry::shape::{Cuboid, ShapeHandle2};
 use imgui::*;
 use glium::glutin::{MouseButton, MouseScrollDelta, TouchPhase};
 use std::rc::Rc;
@@ -12,24 +11,26 @@ use game::event::Event as CEvent;
 use engine::Engine;
 use engine::entity::component::*;
 use engine::event::{Event, InputState};
+use engine::util;
+use game::asset::level::Events;
 
 struct State {
     selected_level: i32,
     asset_files: Vec<DirEntry>,
     level_start_time: i32,
     level_time_max: i32,
-    valid_level: bool,
+    level: Result<Events, String>,
 }
 
 impl State {
     fn new() -> State {
-        let files = fs::read_dir("assets/").unwrap().map(|f| f.unwrap()).collect::<Vec<_>>();
+        let files = fs::read_dir("assets/levels").unwrap().map(|f| f.unwrap()).collect::<Vec<_>>();
         State {
             selected_level: -1,
             level_start_time: 0,
             level_time_max: 100,
             asset_files: files,
-            valid_level: true,
+            level: Ok(util::hashmap()),
         }
     }
 }
@@ -44,7 +45,10 @@ pub struct MainMenu {
 
 impl MainMenu {
     pub fn new(engine: &Engine<Object>) -> Object {
-        let w = WorldCompBuilder::new(engine).with_tag(String::from("main_menu")).build();
+        let w = WorldCompBuilder::new(engine)
+            .with_alias(String::from("main_menu"))
+            .with_tag(String::from("menu"))
+            .build();
         let e = EventComp::new(w.id, engine.events.clone());
         let m = MenuComp::new(engine);
         Object::MainMenu(MainMenu {
@@ -63,7 +67,7 @@ impl MainMenu {
                 self.ev.subscribe(Event::MouseMove((0.0, 0.0)));
                 self.ev.subscribe(Event::MouseInput(InputState::Released, MouseButton::Left));
                 self.ev.subscribe(Event::MouseScroll(MouseScrollDelta::LineDelta(0.0, 0.0),
-                                                     TouchPhase::Moved));
+                TouchPhase::Moved));
             }
             Event::MouseMove(pos) => {
                 self.menu.set_mouse_pos(pos);
@@ -89,13 +93,14 @@ impl MainMenu {
             let mut renderer = self.menu.get_renderer(&mut self.state);
             let graphics = self.graphics.clone();
             // ty ck
-            let ui = {
+            let (ui, ev) = {
                 let mut ui = renderer.frame();
+                let mut ev = None;
                 ui.window(im_str!("Nishikaku"))
+                    .size((600.0, 600.0), ImGuiSetCond_FirstUseEver)
                     .title_bar(false)
                     .resizable(false)
                     .movable(false)
-                    .size((600.0, 600.0), ImGuiSetCond_FirstUseEver)
                     .build(|| {
                         let file_names: Vec<_> = renderer.state.asset_files.iter().map(|f| {
                             ImStr::from(f.file_name().into_string().unwrap())
@@ -107,26 +112,34 @@ impl MainMenu {
                         if ui.list_box(im_str!("Level file"), &mut renderer.state.selected_level, &file_names[..], 5) {
                             use game::asset::level;
                             let file = renderer.state.asset_files[renderer.state.selected_level as usize].file_name().into_string().unwrap();
-                            match level::load_level_file(graphics, &(String::from("assets/") + &file)) {
-                                Ok(_) => renderer.state.valid_level = true,
-                                Err(_) => renderer.state.valid_level = false,
-                            }
+                            renderer.state.level = match level::load_level_file(graphics, &(String::from("assets/levels/") + &file)) {
+                                Ok((_, _, _, events)) => Ok(events),
+                                Err(s) => Err(s),
+                            };
                         }
-                        if renderer.state.valid_level && renderer.state.selected_level != -1 {
+                        ev = if renderer.state.level.is_ok() && renderer.state.selected_level != -1 {
                             ui.slider_int(im_str!("Start time"), &mut renderer.state.level_start_time, 0, renderer.state.level_time_max).build();
                             if ui.small_button(im_str!("Start")) {
                                 // Actually load level
-                            }
-                        } else if !renderer.state.valid_level {
-                            ui.text_colored((1.0, 0.0, 0.0, 1.0), im_str!("Invalid level file!"));
+                                let e = Event::Custom(Box::new(CEvent::LevelStart(renderer.state.level.clone().unwrap())));
+                                Some(e)
+                            } else { None }
+                        } else if renderer.state.level.is_err() {
+                            ui.text_colored((1.0, 0.0, 0.0, 1.0), im_str!("Invalid level file: {:?}!", renderer.state.level));
+                            None
                         } else {
                             ui.text(im_str!("Select a level file!"));
-                        }
+                            None
+                        };
                         ui.separator();
                     });
-                ui
+                (ui, ev)
             };
             renderer.render(ui);
+            if let Some(e) = ev {
+                let cid = self.world.find_aliased_entity_id(&String::from("controller")).unwrap();
+                self.ev.dispatch_to(cid, e);
+            }
         }
     }
 

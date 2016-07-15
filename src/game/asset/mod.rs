@@ -42,20 +42,12 @@ const SPRITE_FRAG_SHADER: &'static str = r#"
     }
 "#;
 
-pub struct Assets {
-    pub levels: Vec<HashMap<String, Vec<LevelEvent>>>
-}
-
-pub fn load_assets(engine: &mut Engine<Object>) -> Assets {
+pub fn load_assets(engine: &mut Engine<Object>) {
     println!("Loading assets!");
     load_char(engine);
     load_bullet(engine);
     load_sound(engine);
     load_fonts(engine);
-    let level = load_level(engine).unwrap();
-    Assets {
-        levels: vec![level],
-    }
 }
 
 fn load_level(engine: &mut Engine<Object>) -> Result<HashMap<String, Vec<LevelEvent>>, String> {
@@ -67,12 +59,12 @@ fn load_level(engine: &mut Engine<Object>) -> Result<HashMap<String, Vec<LevelEv
 
 fn load_fonts(engine: &mut Engine<Object>) {
     println!("Loading fonts!");
-    engine.graphics.borrow_mut().load_font(1, "assets/OxygenMono-Regular.ttf");
+    engine.graphics.borrow_mut().load_font(1, "assets/fonts/OxygenMono-Regular.ttf");
 }
 
 fn load_sound(engine: &mut Engine<Object>) {
     println!("Loading songs!");
-    let path = Path::new("assets/main.mp3");
+    let path = Path::new("assets/audio/main.mp3");
     engine.audio.borrow_mut().load(1, path);
 }
 
@@ -123,7 +115,7 @@ fn make_vbo(graphics: Rc<RefCell<Graphics>>, half_extents: Vector2<f32>) -> Vert
 fn load_char(engine: &mut Engine<Object>) {
     let shape = ShapeHandle2::new(Ball::new(5.0));
     make_sprite(engine.graphics.clone(),
-                "assets/sakuya.png",
+                "assets/sprites/sakuya.png",
                 Vector2::new(25.0, 50.0),
                 1,
                 shape);
@@ -132,7 +124,7 @@ fn load_char(engine: &mut Engine<Object>) {
 fn load_bullet(engine: &mut Engine<Object>) {
     let shape = ShapeHandle2::new(Ball::new(5.0));
     make_sprite(engine.graphics.clone(),
-                "assets/bullet.png",
+                "assets/sprites/bullet.png",
                 Vector2::new(2.5, 2.5),
                 300,
                 shape);

@@ -8,8 +8,6 @@ pub mod menu;
 pub mod mouse;
 pub mod player;
 
-use engine::entity::Entity;
-
 pub enum Object {
     Controller(controller::Controller),
     Mouse(mouse::Mouse),

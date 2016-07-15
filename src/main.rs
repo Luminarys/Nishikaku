@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![recursion_limit="128"]
 
 #[macro_use]
 extern crate glium;
@@ -27,7 +28,7 @@ use engine::Engine;
 fn main() {
     let scaler = 200.0;
     let mut engine: Engine<Object> = Engine::new(scaler, 700, Box::new(DanmakuPhysics::new(scaler)));
-    let assets = game::asset::load_assets(&mut engine);
-    engine.spawn_entity(game::object::controller::Controller::new(&engine, assets));
+    game::asset::load_assets(&mut engine);
+    engine.spawn_entity(game::object::controller::Controller::new(&engine));
     engine.run();
 }
