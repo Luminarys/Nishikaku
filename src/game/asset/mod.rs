@@ -16,7 +16,7 @@ use game::object::Object;
 use game::object::level::LevelEvent;
 
 const SPRITE_VERT_SHADER: &'static str = r#"
-    #version 140
+    #version 130
 
     in vec2 position;
     in mat4 transform;
@@ -31,7 +31,7 @@ const SPRITE_VERT_SHADER: &'static str = r#"
 "#;
 
 const SPRITE_FRAG_SHADER: &'static str = r#"
-    #version 140
+    #version 130
 
     uniform sampler2D tex;
     in vec2 v_tex_coords;
