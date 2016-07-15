@@ -61,8 +61,7 @@ before_deploy:
   - cargo build --release
   # TODO update this part to copy the artifacts that make sense for your project
   - copy target\release\nishikaku.exe target\win_rel
-  - mkdir target\win_rel\assets
-  - copy assets target\win_rel\assets
+  - ps: cp -r assets target\win_rel\
   - cd target
     # release zipfile will look like 'nishikaku-v1.2.3-target-triple'
   - 7z a ../%PROJECT_NAME%-%APPVEYOR_REPO_TAG_NAME%-%TARGET%.zip win_rel
