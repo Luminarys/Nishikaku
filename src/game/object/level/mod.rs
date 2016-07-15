@@ -83,6 +83,40 @@ impl Level {
         self.event_finished(evt.name);
     }
 
+    fn handle_update(&mut self, t: f32) {
+        self.ev.update(t);
+        let mut done_pats = Vec::new();
+        for (i, ref mut spawn) in self.active_spawns.iter_mut().enumerate() {
+            let ref mut pat = spawn.pattern;
+            let spawns = pat.next(t);
+            for &(pos, _vel) in spawns.iter() {
+                match spawn.spawn_type {
+                    SpawnType::Enemy(ref e_info) => {
+                        let info = e_info.clone();
+                        let pos = pos + spawn.location;
+                        let paths = spawn.paths.clone();
+                        self.ev.create_entity(Box::new(move |engine| Enemy::new(engine, info, pos, paths.clone())));
+                    }
+                    SpawnType::Player => {
+                        // Spawn the palyer
+                        self.ev.create_entity(Box::new(|engine| Player::new(engine)));
+                    }
+                }
+            }
+            if spawns.len() == 0 && pat.finished() {
+                done_pats.push(i);
+            }
+        }
+
+        let mut i = 0;
+        self.active_spawns = self.active_spawns.clone().into_iter().filter(|_| {
+            let ret = !done_pats.contains(&i);
+            i += 1;
+            ret
+        }).collect();
+
+    }
+
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Spawn => {
@@ -90,36 +124,7 @@ impl Level {
                 self.event_finished(String::from("start"));
             }
             Event::Update(t) => {
-                self.ev.update(t);
-                let mut done_pats = Vec::new();
-                for (i, ref mut spawn) in self.active_spawns.iter_mut().enumerate() {
-                    let ref mut pat = spawn.pattern;
-                    let spawns = pat.next(t);
-                    for &(pos, _vel) in spawns.iter() {
-                        match spawn.spawn_type {
-                            SpawnType::Enemy(ref e_info) => {
-                                let info = e_info.clone();
-                                let pos = pos + spawn.location;
-                                let paths = spawn.paths.clone();
-                                self.ev.create_entity(Box::new(move |engine| Enemy::new(engine, info, pos, paths.clone())));
-                            }
-                            SpawnType::Player => {
-                                // Spawn the palyer
-                                self.ev.create_entity(Box::new(|engine| Player::new(engine)));
-                            }
-                        }
-                    }
-                    if spawns.len() == 0 && pat.finished() {
-                        done_pats.push(i);
-                    }
-                }
-
-                let mut i = 0;
-                self.active_spawns = self.active_spawns.clone().into_iter().filter(|_| {
-                    let ret = !done_pats.contains(&i);
-                    i += 1;
-                    ret
-                }).collect();
+                self.handle_update(t);
             }
             Event::CTimer(1, id) => {
                 // Event timer delay

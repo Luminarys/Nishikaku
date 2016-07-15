@@ -42,11 +42,15 @@ impl Controller {
 
     fn handle_cevent(&mut self, e: &CEvent) {
         match *e {
-            CEvent::LevelStart(ref level) => {
+            CEvent::LevelStart(ref level, ref time) => {
                 let l = level.clone();
-                self.ev.create_entity(Box::new(move |engine| Level::new(engine, l.clone())));
                 let menu = self.world.find_aliased_entity_id(&String::from("main_menu")).unwrap();
                 self.ev.destroy_other(menu);
+                let ftime = *time as f32;
+                self.ev.create_entity(Box::new(move |engine| {
+                    Level::new(engine, l.clone())
+                }));
+                self.ev.fast_forward(ftime);
             }
             _ => {}
         }

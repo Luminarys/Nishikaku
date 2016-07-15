@@ -128,6 +128,10 @@ impl<E: Entity> EventComp<E> {
         self.handler.borrow_mut().enqueue_sys(SysEvent::Destroy(self.id));
     }
 
+    pub fn fast_forward(&self, t: f32) {
+        self.handler.borrow_mut().enqueue_sys(SysEvent::FastForward(t));
+    }
+
     pub fn destroy_other(&self, id: usize) {
         self.handler.borrow_mut().enqueue_sys(SysEvent::Destroy(id));
     }

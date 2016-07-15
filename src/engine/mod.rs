@@ -45,13 +45,14 @@ impl<E: entity::Entity> Engine<E> {
         self.scene.world.deref().insert(id, e);
     }
 
-    pub fn spawn(&self, spawner: Box<Fn(&Engine<E>) -> E>) {
+    pub fn spawn(&self, spawner: Box<Fn(&Engine<E>) -> E>) -> usize {
         let mut e = spawner(&self);
         let id = e.id();
         self.events.deref().borrow_mut().subscribe(id.clone(), event::Event::Update(0.0));
         self.events.deref().borrow_mut().subscribe(id.clone(), event::Event::Render);
         e.handle_event(Rc::new(event::Event::Spawn));
         self.scene.world.deref().insert(id, e);
+        id
     }
 
     pub fn destroy(&self, id: usize) {
@@ -105,7 +106,12 @@ impl<E: entity::Entity> Engine<E> {
 
             for event in self.graphics.borrow_mut().get_window_events() {
                 let to_queue = match event {
-                    glutin::Event::Closed => return,
+                    glutin::Event::Closed => {
+                        use std::fs;
+                        println!("Game shutting down!");
+                        fs::remove_file("imgui.ini");
+                        return;
+                    },
                     glutin::Event::KeyboardInput(glutin::ElementState::Pressed, n, c) => {
                         if key_counter[n as usize] == 0 && !c.is_none() {
                             key_counter[n as usize] = 1;
@@ -141,19 +147,7 @@ impl<E: entity::Entity> Engine<E> {
             }
 
             while accumulator >= FRAME_DELAY_NANOSECS {
-                // Update state here
-                self.events.deref().borrow_mut().enqueue_all(event::Event::Update(0.016666667f32));
-                self.handle_events();
-                self.scene.update(0.016666667f32);
-                let sys_ev_queue = {
-                    self.events.deref().borrow_mut().flush_sys()
-                };
-                for event in sys_ev_queue {
-                    match event {
-                        event::SysEvent::Create(f) => self.spawn(f),
-                        event::SysEvent::Destroy(id) => self.destroy(id),
-                    }
-                }
+                self.advance_simulation(0.016666667f32);
                 accumulator -= FRAME_DELAY_NANOSECS;
             }
 
@@ -166,6 +160,30 @@ impl<E: entity::Entity> Engine<E> {
             self.graphics.borrow_mut().finish_frame();
 
             thread::sleep(Duration::from_millis(((FRAME_DELAY_NANOSECS - accumulator) / 1000000) as u64));
+        }
+    }
+
+    fn advance_simulation(&mut self, step: f32) {
+        self.events.deref().borrow_mut().enqueue_all(event::Event::Update(step));
+        self.handle_events();
+        self.scene.update(step);
+        let sys_ev_queue = {
+            self.events.deref().borrow_mut().flush_sys()
+        };
+        for event in sys_ev_queue {
+            match event {
+                event::SysEvent::Create(f) => { self.spawn(f); },
+                event::SysEvent::Destroy(id) => self.destroy(id),
+                event::SysEvent::FastForward(amount) => {
+                    println!("Fastforward!");
+                    let mut a = amount.clone();
+                    let step = 0.0166667f32; 
+                    while a >= 0.0 {
+                        a -= step;
+                        self.advance_simulation(step);
+                    }
+                },
+            }
         }
     }
 

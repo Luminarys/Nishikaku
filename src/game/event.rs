@@ -9,5 +9,5 @@ pub enum Event {
     Despawn(usize),
     Action(usize),
     Pattern(usize),
-    LevelStart(Events),
+    LevelStart(Events, i32),
 }

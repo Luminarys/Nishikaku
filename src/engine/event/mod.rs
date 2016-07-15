@@ -80,6 +80,7 @@ pub struct CollisionData {
 pub enum SysEvent<E: Entity> {
     Destroy(usize),
     Create(Box<Fn(&Engine<E>) -> E>),
+    FastForward(f32),
 }
 
 impl Hash for Event {

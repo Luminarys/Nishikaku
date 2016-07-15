@@ -58,7 +58,7 @@ pub fn parse_level(graphics: Rc<RefCell<Graphics>>, level: toml::Table) -> Resul
 
     let v = Vec::new();
     for import in tget!(level, "import", Value::Array, "level config", &v) {
-        match load_level_file(graphics.clone(), &(String::from("assets/") + import.as_str().unwrap())[..]) {
+        match load_level_file(graphics.clone(), &(String::from("assets/levels/") + import.as_str().unwrap())[..]) {
             Ok((s, e, b, ev)) => {
                 sprites.extend(s);
                 enemies.extend(e);
