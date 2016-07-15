@@ -74,10 +74,6 @@ impl<E: entity::Entity> Engine<E> {
         let mut previous_clock = clock_ticks::precise_time_ns();
         let mut accumulator = 0;
 
-        let mut fps_prev_clock = clock_ticks::precise_time_ms();
-        let fps_start_clock = clock_ticks::precise_time_ms();
-        let mut frames_drawn = 0;
-        let mut total_frames_drawn = 0;
         let mut key_counter = [0 as u8; 255];
         let res_x = self.graphics.borrow().dimensions.0 as f32;
         let res_y = self.graphics.borrow().dimensions.1 as f32;
@@ -86,16 +82,6 @@ impl<E: entity::Entity> Engine<E> {
             // TODO: Figure out a cleaner way to get prioritiztion of custom sprites/text over generic sprites
             // Maybe just don't care and force text to be used with custom sprites?
             let now = clock_ticks::precise_time_ns();
-            let fps_cur_clock = clock_ticks::precise_time_ms();
-            frames_drawn += 1;
-            total_frames_drawn += 1;
-            if fps_cur_clock - fps_prev_clock >= 1000 {
-                // println!("{:?} ms/frame, {:?} total average ms/frame",
-                //          1000.0/(frames_drawn as f32),
-                //          1.0/(total_frames_drawn as f32/(fps_cur_clock - fps_start_clock) as f32));
-                frames_drawn = 0;
-                fps_prev_clock = fps_cur_clock;
-            }
 
             accumulator += now - previous_clock;
             previous_clock = now;

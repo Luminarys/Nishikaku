@@ -1,8 +1,6 @@
 use imgui::*;
 use glium::glutin::{MouseButton, MouseScrollDelta, TouchPhase};
 use std::rc::Rc;
-use std::cell::RefCell;
-use engine::graphics::Graphics;
 use clock_ticks;
 
 use game::object::Object;
@@ -40,7 +38,6 @@ impl State {
 pub struct LevelStatus {
     ev: EventComp<Object>,
     world: WorldComp<Object>,
-    graphics: Rc<RefCell<Graphics>>,
     menu: MenuComp,
     state: State,
 }
@@ -54,7 +51,6 @@ impl LevelStatus {
             ev: e,
             world: w,
             menu: m,
-            graphics: engine.graphics.clone(),
             state: State::new(),
         })
     }
@@ -90,7 +86,6 @@ impl LevelStatus {
     fn render_ui(&mut self) {
         let now = clock_ticks::precise_time_ms();
         let mut renderer = self.menu.get_renderer(&mut self.state);
-        let graphics = self.graphics.clone();
 
         renderer.state.frames_drawn += 1;
         renderer.state.total_frames_drawn += 1;

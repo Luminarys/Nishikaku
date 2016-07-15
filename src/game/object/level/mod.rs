@@ -62,7 +62,7 @@ impl Level {
         })
     }
 
-    pub fn new_at_nearest_time(engine: &Engine<Object>, mut level: HashMap<String, Vec<LevelEvent>>, time: f32) -> Object {
+    pub fn new_at_nearest_time(engine: &Engine<Object>, level: HashMap<String, Vec<LevelEvent>>, time: f32) -> Object {
         let w = WorldCompBuilder::new(engine).with_tag(String::from("level")).build();
         let e = EventComp::new(w.id, engine.events.clone());
         Object::Level(Level {
