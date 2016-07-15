@@ -1,48 +1,4 @@
-import = []
-
-[sprites]
-
-[sprites.cirno]
-texture = "cirno.png"
-size = [20, 40]
-hitbox = "points"
-hitbox_bounds = [[10, 20], [10, 20], [10, -20], [-10, -20]]
-max_amount = 100
-
-[sprites.red_bullet]
-texture = "bullet.png"
-size = [10, 10]
-hitbox = "sphere"
-radius = 10
-max_amount = 10000
-
-[enemies]
-
-[enemies.basic_curve]
-sprite = "cirno"
-health = 10
-damage = 5
-
-[enemies.circle]
-sprite = "cirno"
-health = 5
-damage = 5
-
-[bullets]
-
-[bullets.basic_straight]
-sprite = "red_bullet"
-radius = 5
-damage = 10
-behavior = "straight"
-
-[bullets.basic_deaccel]
-sprite = "red_bullet"
-radius = 5
-damage = 10
-behavior = "deaccel"
-deaccel_time = 5.0
-deaccel_amount = 10.0
+import = ["init.toml"]
 
 [level]
 

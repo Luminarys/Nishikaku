@@ -69,16 +69,17 @@ pub fn parse_level(graphics: Rc<RefCell<Graphics>>, level: toml::Table) -> Resul
         }
     }
 
-    let sprite_tab = tget!(level, "sprites", Value::Table, "level config");
+    let empty_tab = toml::Table::new();
+    let sprite_tab = tget!(level, "sprites", Value::Table, "level config", &empty_tab);
     sprites.extend(try!(load_sprites(graphics, sprite_tab.clone())));
 
-    let enemy_tab = tget!(level, "enemies", Value::Table, "level config");
+    let enemy_tab = tget!(level, "enemies", Value::Table, "level config", &empty_tab);
     enemies.extend(try!(load_enemies(enemy_tab.clone(), &sprites)));
 
-    let bullet_tab = tget!(level, "bullets", Value::Table, "level config");
+    let bullet_tab = tget!(level, "bullets", Value::Table, "level config", &empty_tab);
     bullets.extend(try!(load_bullets(bullet_tab.clone(), &sprites)));
 
-    let event_tab = tget!(level, "level", Value::Table, "level config");
+    let event_tab = tget!(level, "level", Value::Table, "level config", &empty_tab);
     events.extend(try!(load_events(event_tab.clone(), &enemies, &bullets)));
     Ok((sprites, enemies, bullets, events))
 }
