@@ -32,6 +32,8 @@ pub struct Level {
     waiting_spawns: HashMap<usize, Spawn>,
     active_spawns: Vec<Spawn>,
     ev_reg: Registry,
+    fast_forward: f32,
+    ctime: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -54,6 +56,24 @@ impl Level {
             waiting_spawns: util::hashmap(),
             active_spawns: Vec::new(),
             world: w,
+            fast_forward: 0.0,
+            ctime: 0.001,
+        })
+    }
+
+    pub fn new_at_nearest_time(engine: &Engine<Object>, mut level: HashMap<String, Vec<LevelEvent>>, time: f32) -> Object {
+        let w = WorldCompBuilder::new(engine).with_tag(String::from("level")).build();
+        let e = EventComp::new(w.id, engine.events.clone());
+        Object::Level(Level {
+            ev: e,
+            ev_reg: Registry::new(),
+            events: level,
+            waiting_events: util::hashmap(),
+            waiting_spawns: util::hashmap(),
+            active_spawns: Vec::new(),
+            world: w,
+            fast_forward: time,
+            ctime: 0.001,
         })
     }
 
@@ -72,18 +92,21 @@ impl Level {
 
     fn handle_level_event(&mut self, evt: LevelEvent) {
         println!("Level event {} triggered", evt.name);
-        for spawn in evt.spawns {
-            if spawn.repeat > 0 {
-                let wid = self.ev_reg.get_id();
-                self.ev.set_repeating_timer_with_class(wid, spawn.repeat_delay, 2);
-                self.waiting_spawns.insert(wid, spawn.clone());
+        if self.ctime > self.fast_forward {
+            for spawn in evt.spawns {
+                if spawn.repeat > 0 {
+                    let wid = self.ev_reg.get_id();
+                    self.ev.set_repeating_timer_with_class(wid, spawn.repeat_delay, 2);
+                    self.waiting_spawns.insert(wid, spawn.clone());
+                }
+                self.active_spawns.push(spawn.clone());
             }
-            self.active_spawns.push(spawn.clone());
         }
         self.event_finished(evt.name);
     }
 
     fn handle_update(&mut self, t: f32) {
+        self.ctime += t;
         self.ev.update(t);
         let mut done_pats = Vec::new();
         for (i, ref mut spawn) in self.active_spawns.iter_mut().enumerate() {
@@ -99,7 +122,8 @@ impl Level {
                     }
                     SpawnType::Player => {
                         // Spawn the palyer
-                        self.ev.create_entity(Box::new(|engine| Player::new(engine)));
+                        panic!("For the time being please do not spawn the player with the level files!")
+                            // self.ev.create_entity(Box::new(|engine| Player::new(engine)));
                     }
                 }
             }
@@ -122,6 +146,7 @@ impl Level {
             Event::Spawn => {
                 println!("Spawned Level!");
                 self.event_finished(String::from("start"));
+                self.ev.create_entity(Box::new(|engine| Player::new(engine)));
             }
             Event::Update(t) => {
                 self.handle_update(t);

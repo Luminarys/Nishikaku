@@ -48,7 +48,7 @@ impl Controller {
                 self.ev.destroy_other(menu);
                 let ftime = *time as f32;
                 self.ev.create_entity(Box::new(move |engine| {
-                    Level::new(engine, l.clone())
+                    Level::new_at_nearest_time(engine, l.clone(), ftime)
                 }));
                 self.ev.fast_forward(ftime);
             }

@@ -46,10 +46,6 @@ deaccel_amount = 10.0
 
 [level]
 
-[level.pstart]
-time = { after = "start", delay = 0.0 }
-spawn = { type = "player", location = [0, -180] }
-
 [level.wave0]
 time = {after = "start", delay = 1.0}
 
@@ -82,8 +78,8 @@ aend = -360.0
 speed = 50
 time_int = 0
 radius = 10.0
-repeat = 40
-repeat_delay = 0.4
+repeat = 30
+repeat_delay = 0.2
 wobble = { half_angle = 40, quarter_time = 2.0, initial_dir = "counterclockwise" }
 
 [[level.wave0.spawn.paths.action]]
@@ -98,7 +94,7 @@ points = [["current"], [200, 0]]
 speed = 200
 
 [level.wave1]
-time = {after = "wave0", delay = 15.0}
+time = {after = "wave0", delay = 5.0}
 
 [level.wave1.spawn]
 type = "enemy"

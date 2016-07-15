@@ -175,10 +175,10 @@ impl<E: entity::Entity> Engine<E> {
                 event::SysEvent::Create(f) => { self.spawn(f); },
                 event::SysEvent::Destroy(id) => self.destroy(id),
                 event::SysEvent::FastForward(amount) => {
-                    println!("Fastforward!");
+                    println!("Fast forwarding {:?}!", amount);
                     let mut a = amount.clone();
                     let step = 0.0166667f32; 
-                    while a >= 0.0 {
+                    while a > 0.0 {
                         a -= step;
                         self.advance_simulation(step);
                     }
