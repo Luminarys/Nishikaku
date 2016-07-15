@@ -20,6 +20,7 @@ use engine::util::HashMap;
 use game::object::Object;
 use game::object::player::Player;
 use game::object::enemy::Enemy;
+use game::object::widget::LevelStatus;
 use game::event::Event as CEvent;
 use self::spawn::{Spawn, SpawnType};
 
@@ -147,6 +148,7 @@ impl Level {
                 println!("Spawned Level!");
                 self.event_finished(String::from("start"));
                 self.ev.create_entity(Box::new(|engine| Player::new(engine)));
+                self.ev.create_entity(Box::new(|engine| LevelStatus::new(engine)));
             }
             Event::Update(t) => {
                 self.handle_update(t);

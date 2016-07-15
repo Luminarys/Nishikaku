@@ -16,6 +16,8 @@ use game::object::level::bullet::Bullet as BulletInfo;
 use game::object::bullet::Bullet;
 use game::object::player::PLAYER_POSITION;
 
+pub static mut ENEMY_COUNT: usize = 0;
+
 #[derive(Clone)]
 pub struct PosFetcher {
     pos: Cell<Vector2<f32>>,
@@ -113,6 +115,9 @@ impl Enemy {
 
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
+            Event::Spawn => {
+                unsafe { ENEMY_COUNT += 1};
+            }
             Event::Update(t) => {
                 self.ev.update(t);
                 self.pg.update(t);
@@ -132,6 +137,7 @@ impl Enemy {
                                 }
                             }
                         } else {
+                            unsafe { ENEMY_COUNT -= 1};
                             self.ev.destroy_self();
                         }
                     }
@@ -164,7 +170,7 @@ impl Enemy {
                     if &s[..] == "player" {
                         // What do we do when we hit the player?
                         println!("Player coliision!");
-                        self.ev.destroy_self();
+                        // self.ev.destroy_self();
                     }
                 }
             }

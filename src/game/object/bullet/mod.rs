@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use engine::{BULLET_COUNT, Engine};
+use engine::Engine;
 use engine::entity::component::*;
 use engine::event::Event;
 use engine::util::{ToCartesian, ToPolar};
@@ -8,6 +8,8 @@ use nalgebra::Vector2;
 
 use game::object::Object;
 use game::object::level::bullet::{Bullet as BulletInfo, Behavior};
+
+pub static mut BULLET_COUNT: usize = 0;
 
 pub struct Bullet {
     pub damage: usize,

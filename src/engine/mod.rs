@@ -21,8 +21,6 @@ pub struct Engine<E: entity::Entity> {
     pub audio: Rc<RefCell<audio::Audio>>,
 }
 
-pub static mut BULLET_COUNT: usize = 0;
-
 impl<E: entity::Entity> Engine<E> {
     pub fn new(size: f32, res: u32, p: scene::PhysicsHandler) -> Engine<E> {
         let scene = scene::Scene::new(size, p);
@@ -92,10 +90,9 @@ impl<E: entity::Entity> Engine<E> {
             frames_drawn += 1;
             total_frames_drawn += 1;
             if fps_cur_clock - fps_prev_clock >= 1000 {
-                println!("{:?} ms/frame, {:?} total average ms/frame, {:?} bullet count",
-                         1000.0/(frames_drawn as f32),
-                         1.0/(total_frames_drawn as f32/(fps_cur_clock - fps_start_clock) as f32),
-                         unsafe { BULLET_COUNT });
+                // println!("{:?} ms/frame, {:?} total average ms/frame",
+                //          1000.0/(frames_drawn as f32),
+                //          1.0/(total_frames_drawn as f32/(fps_cur_clock - fps_start_clock) as f32));
                 frames_drawn = 0;
                 fps_prev_clock = fps_cur_clock;
             }
