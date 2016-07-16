@@ -1,0 +1,35 @@
+import = ["init.toml"]
+
+[level]
+
+[level.wave2]
+time = { after = "start", delay = 1.0 }
+
+[level.wave2.spawn]
+type = "enemy"
+enemy_id = "circle"
+pattern = { type = "arc", radius = 25, astart = 0, aend = 360, amount = 1, time_int = 0.5 }
+location = [-50, 50]
+repeat = 0
+repeat_delay = 2.0
+# mirror_x = true
+
+[[level.wave2.spawn.paths]]
+type = "arc"
+center = [-50, 50]
+radius = 25
+start = "current"
+degrees = 180
+direction = "clockwise"
+speed = 40
+action = { type = "none" }
+
+[[level.wave2.spawn.paths]]
+type = "curve"
+points = [["current"], [75, 0], [220, 0]]
+speed = 60
+
+[level.wave2.spawn.paths.action]
+type = "bullets"
+bullet_id = "basic_straight"
+pattern = { type = "arc", amount = 5, astart = 240.0, aend = 300.0, speed = 80, time_int = 0.3, radius = 10.0 }

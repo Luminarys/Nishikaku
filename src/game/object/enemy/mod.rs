@@ -120,7 +120,6 @@ impl Enemy {
             }
             Event::Update(t) => {
                 self.ev.update(t);
-                self.pg.update(t);
                 match self.cpath.travel(t) {
                     Some(p) => self.pg.set_pos((p.x, p.y)),
                     None => {

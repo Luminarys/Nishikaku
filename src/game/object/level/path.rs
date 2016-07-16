@@ -5,6 +5,7 @@ use engine::util::ToCartesian;
 
 // TODO: Write tests - this code is complicated and almost certaintly error prone
 
+#[derive(Debug)]
 pub enum Path {
     Arc(Arc),
     Curve(Curve),
@@ -26,12 +27,14 @@ impl RotationDirection {
     }
 }
 
+#[derive(Debug)]
 pub struct Fixed {
     time: f32,
     pos: Vector2<f32>,
     actions: Vec<Action>,
 }
 
+#[derive(Debug)]
 pub struct Arc {
     center: Vector2<f32>,
     current_pos: Vector2<f32>,
@@ -42,6 +45,7 @@ pub struct Arc {
     actions: Vec<Action>,
 }
 
+#[derive(Debug)]
 pub struct Curve {
     points: Vec<Point2<f32>>,
     current_pos: Vector2<f32>,
@@ -323,7 +327,11 @@ impl PathBuilder {
                                  .iter()
                                  .map(|point| point.eval(current_pos, player_pos).to_point())
                                  .collect();
-        let (points, _) = bezier_curve(&points[..], 100).unwrap();
+        let (mut points, _) = bezier_curve(&points[..], 100).unwrap();
+        // THis "dummy" point is necessary for the curve travel logic to work,
+        // since it starts out with no travel distance left(resulting in the first point being
+        // popped)
+        points.insert(0, *player_pos.as_point());
 
         Path::Curve(Curve {
             points: points,
