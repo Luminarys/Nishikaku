@@ -1,8 +1,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use engine::entity::RenderInfo;
-use engine::graphics::{Graphics, SpriteAttrs};
+use graphics::{Graphics, SpriteAttrs};
 
 
 pub struct GraphicsComp {
@@ -45,13 +44,6 @@ impl GraphicsComp {
 
     pub fn render(&self) {
         self.graphics.borrow_mut().set_sprite_attr(&self.sprite, self.id, &self.data);
-    }
-
-    pub fn get_render_info(&self) -> RenderInfo {
-        RenderInfo {
-            sprite: self.sprite,
-            attrs: self.data,
-        }
     }
 }
 

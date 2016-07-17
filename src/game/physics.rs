@@ -22,8 +22,6 @@ struct Object {
     data: Rc<PhysicsData>,
 }
 
-const BUCKET_SIDE_NUM: usize = 16;
-
 impl DanmakuPhysics {
     pub fn new(scaler: f32) -> DanmakuPhysics {
         DanmakuPhysics {
@@ -50,7 +48,7 @@ impl PhysicsEngine<Shape, PhysicsData> for DanmakuPhysics {
         self.objects.remove(id);
     }
 
-    fn update(&mut self, dt: f32) -> Vec<Collision<PhysicsData>> {
+    fn update(&mut self, _dt: f32) -> Vec<Collision<PhysicsData>> {
         let mut collisions = Vec::new();
         if let Some(player) = self.objects.get(&self.pid) {
             let ps = player.shape.as_ref();

@@ -109,10 +109,6 @@ impl Enemy {
         })
     }
 
-    pub fn get_pos(&self) -> Vector2<f32> {
-        self.pg.get_vpos()
-    }
-
     pub fn handle_event(&mut self, e: Rc<Event>) {
         match *e {
             Event::Spawn => {

@@ -1,3 +1,15 @@
+#[macro_use]
+extern crate glium;
+extern crate glium_text;
+extern crate clock_ticks;
+extern crate sdl2;
+extern crate sdl2_mixer;
+extern crate imgui;
+extern crate ncollide_geometry;
+extern crate nalgebra;
+extern crate image;
+extern crate fnv;
+
 pub mod event;
 pub mod scene;
 pub mod entity;
@@ -12,7 +24,6 @@ use std::thread;
 use std::time::Duration;
 use std::ops::Deref;
 use glium::glutin;
-use clock_ticks;
 
 pub struct Engine<E: entity::Entity> {
     pub events: Rc<RefCell<event::Handler<E>>>,
@@ -92,7 +103,9 @@ impl<E: entity::Entity> Engine<E> {
                     glutin::Event::Closed => {
                         use std::fs;
                         println!("Game shutting down!");
-                        fs::remove_file("imgui.ini");
+                        match fs::remove_file("imgui.ini") {
+                            _ => { }
+                        }
                         return;
                     },
                     glutin::Event::KeyboardInput(glutin::ElementState::Pressed, n, c) => {

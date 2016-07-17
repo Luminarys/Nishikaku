@@ -1,9 +1,8 @@
 use std::rc::Rc;
 use nalgebra::{Vector2};
 
-use engine::scene::{PhysicsWorld};
-use engine::entity::RenderInfo;
-use engine::entity::component::{PhysicsComp, GraphicsComp};
+use scene::{PhysicsWorld};
+use entity::component::{PhysicsComp, GraphicsComp};
 
 /// Combined physics and graphics component,
 /// synchronizes their motion
@@ -38,10 +37,6 @@ impl PGComp {
     pub fn screen_lock(&mut self, half_widths: (f32, f32)) {
         self.screen_locked = true;
         self.half_widths = (half_widths.0 / self.scaler, half_widths.1 / self.scaler);
-    }
-
-    pub fn get_render_info(&self) -> RenderInfo {
-        self.graphics.get_render_info()
     }
 
     pub fn render(&self) {

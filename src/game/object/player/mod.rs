@@ -5,7 +5,6 @@ use std::rc::Rc;
 use engine::Engine;
 use engine::entity::component::*;
 use engine::event::{Event, InputState};
-use engine::entity::RenderInfo;
 use game::object::Object;
 
 pub static mut PLAYER_POSITION: Vector2<f32> = Vector2{ x: 0.0, y: 0.0 };
@@ -104,10 +103,6 @@ impl Player {
     fn shoot_bullet(&mut self) {
         let pos = self.pg.get_pos();
         self.ev.create_entity(Box::new(move |engine| Bullet::new_at_pos(engine, pos)));
-    }
-
-    pub fn render(&self) -> Option<RenderInfo> {
-        Some(self.pg.get_render_info())
     }
 
     pub fn id(&self) -> usize {

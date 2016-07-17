@@ -4,12 +4,12 @@ use std::mem;
 use imgui::{ImGui, Ui};
 use imgui::glium_renderer::Renderer;
 use glium::glutin::MouseButton;
-use engine::event::InputState;
+use event::InputState;
 use clock_ticks;
 
-use engine::Engine;
-use game::object::Object;
-use engine::graphics::{Graphics};
+use Engine;
+use entity::Entity;
+use graphics::{Graphics};
 
 pub struct MenuComp {
     pub imgui: ImGui,
@@ -39,7 +39,7 @@ impl <'a, S> MenuRenderer<'a, S> {
 }
 
 impl<'comp> MenuComp {
-    pub fn new(engine: &Engine<Object>) -> MenuComp {
+    pub fn new<E: Entity>(engine: &Engine<E>) -> MenuComp {
         let mut imgui = ImGui::init();
         let renderer = engine.graphics.borrow().make_menu_renderer(&mut imgui);
         MenuComp {

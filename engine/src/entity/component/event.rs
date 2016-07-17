@@ -1,9 +1,9 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use engine::Engine;
-use engine::entity::Entity;
-use engine::event::{Event, Handler, SysEvent};
+use Engine;
+use entity::Entity;
+use event::{Event, Handler, SysEvent};
 
 struct Timer {
     id: usize,
@@ -15,17 +15,6 @@ struct Timer {
 }
 
 impl Timer {
-    pub fn new(id: usize, amount: f32, repeat: bool, event: Event) -> Timer {
-        Timer {
-            id: id,
-            repeat: repeat,
-            left: amount,
-            amount: amount,
-            class: 0,
-            event: Rc::new(event),
-        }
-    }
-
     pub fn with_class(id: usize, amount: f32, repeat: bool, event: Event, class: u8) -> Timer {
         Timer {
             id: id,

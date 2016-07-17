@@ -2,8 +2,8 @@ use nalgebra::{Vector2, Translation};
 use ncollide_geometry::shape::ShapeHandle2;
 use std::rc::Rc;
 
-use engine::entity::Entity;
-use engine::scene::{Scene, PhysicsWorld};
+use entity::Entity;
+use scene::{Scene, PhysicsWorld};
 
 pub struct PhysicsComp {
     pub id: usize,

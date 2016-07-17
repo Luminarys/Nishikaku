@@ -1,24 +1,17 @@
-#![allow(dead_code)]
 #![recursion_limit="128"]
 
 #[macro_use]
-extern crate glium;
-#[macro_use]
 extern crate imgui;
-extern crate glium_text;
+extern crate glium;
 extern crate ncollide_geometry;
 extern crate ncollide_procedural;
 extern crate nalgebra;
-extern crate clock_ticks;
-extern crate image;
-extern crate sdl2;
-extern crate sdl2_mixer;
 extern crate toml;
-extern crate fnv;
+extern crate engine;
+extern crate clock_ticks;
 
 #[macro_use]
 mod macros;
-mod engine;
 mod game;
 
 use game::object::Object;

@@ -6,11 +6,10 @@ use std::cell::RefCell;
 use std::any::Any;
 use glium::glutin::{VirtualKeyCode, MouseButton, MouseScrollDelta, TouchPhase};
 
-use engine::Engine;
-use engine::entity::Entity;
-use engine::entity::component::PhysicsData;
-use engine::util;
-use engine::util::{HashMap, HashSet};
+use Engine;
+use entity::Entity;
+use entity::component::PhysicsData;
+use util::{self, HashMap, HashSet};
 
 #[derive(Clone)]
 pub enum InputState {

@@ -47,12 +47,18 @@ impl Controller {
                 let menu = self.world.find_aliased_entity_id(&String::from("main_menu")).unwrap();
                 self.ev.destroy_other(menu);
                 let ftime = *time as f32;
-                self.ev.create_entity(Box::new(move |engine| {
-                    Level::new_at_nearest_time(engine, l.clone(), ftime)
-                }));
+                if ftime <  0.0001 {
+                    self.ev.create_entity(Box::new(move |engine| {
+                        Level::new(engine, l.clone())
+                    }));
+                
+                } else {
+                    self.ev.create_entity(Box::new(move |engine| {
+                        Level::new_at_nearest_time(engine, l.clone(), ftime)
+                    }));
+                }
                 self.ev.fast_forward(ftime);
             }
-            _ => {}
         }
     }
 

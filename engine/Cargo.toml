@@ -1,29 +1,21 @@
 [package]
-name = "nishikaku"
+name = "engine"
 version = "0.1.0"
 authors = ["Luminarys <postmaster@gensok.io>"]
-build = "build.rs"
-
-[build-dependencies]
-flate2 = "0.2"
-tar = "0.4.6"
 
 [dependencies]
-engine = { path = "engine" }
 glium = "0.14.0"
+glium_text = "0.9.0"
 imgui = "0.0.9"
 ncollide_geometry = "0.1.1"
 ncollide_procedural = "0.4.0"
 nalgebra = "0.8.2"
-toml = "0.1.30"
 clock_ticks = "0.1.0"
+image = "0.9.0"
+sdl2 = "0.19"
+sdl2_mixer = "0.18.0"
+fnv = "1.0.2"
 
 [profile.dev]
 opt-level = 1
 debug = true
-
-[profile.test]
-opt-level = 1
-debug = true
-rpath = false
-lto = false

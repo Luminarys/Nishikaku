@@ -10,10 +10,8 @@ use ncollide_geometry::shape::{ShapeHandle2, Ball};
 use glium::VertexBuffer;
 
 use engine::Engine;
-use engine::util::{HashMap};
 use engine::graphics::SpriteVertex;
 use game::object::Object;
-use game::object::level::LevelEvent;
 
 const SPRITE_VERT_SHADER: &'static str = r#"
     #version 130
@@ -48,13 +46,6 @@ pub fn load_assets(engine: &mut Engine<Object>) {
     load_bullet(engine);
     load_sound(engine);
     load_fonts(engine);
-}
-
-fn load_level(engine: &mut Engine<Object>) -> Result<HashMap<String, Vec<LevelEvent>>, String> {
-    match self::level::load_level_file(engine.graphics.clone(), "assets/level.toml") {
-        Ok((_, _, _, events)) => Ok(events),
-        Err(e) => Err(e)
-    }
 }
 
 fn load_fonts(engine: &mut Engine<Object>) {

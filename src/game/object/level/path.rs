@@ -70,14 +70,6 @@ impl Path {
         }
     }
 
-    pub fn finished(&self) -> bool {
-        match *self {
-            Path::Arc(ref a) => a.degrees <= 0.0,
-            Path::Curve(ref c) => c.points.len() == 1,
-            Path::Fixed(ref f) => f.time <= 0.0,
-        }
-    }
-
     pub fn actions(&mut self) -> Vec<Action> {
         use std::mem;
         match *self {

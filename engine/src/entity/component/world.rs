@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
-use engine::Engine;
-use engine::entity::Entity;
-use engine::scene::{EntityAccessor, World};
-use engine::util::HashSet;
+use Engine;
+use entity::Entity;
+use scene::{EntityAccessor, World};
+use util::HashSet;
 
 pub struct WorldCompBuilder<E: Entity> {
     world : Rc<World<E>>,

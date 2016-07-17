@@ -5,12 +5,11 @@ use std::ops::DerefMut;
 use ncollide_geometry::shape::ShapeHandle2;
 use nalgebra::{Vector2};
 
-use engine::event::{Event, CollisionData};
-use engine::entity::Entity;
-use engine::entity::component::PhysicsData;
-use engine::util;
-use engine::util::{HashMap, HashSet};
-use engine::physics::{Collision, PhysicsEngine};
+use event::{Event, CollisionData};
+use entity::Entity;
+use entity::component::PhysicsData;
+use util::{self, HashMap, HashSet};
+use physics::{Collision, PhysicsEngine};
 
 pub struct World<E: Entity> {
     pub entities: RefCell<HashMap<usize, RefCell<E>>>,

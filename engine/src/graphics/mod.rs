@@ -14,9 +14,8 @@ use glium_text::{self, FontTexture, TextSystem, TextDisplay};
 use imgui::{ImGui, Ui};
 use imgui::glium_renderer::Renderer;
 
-use engine::util;
-use engine::util::HashMap;
-use engine::scene::Registry;
+use util::{self, HashMap};
+use scene::Registry;
 
 // TODO: Using reversed matrices is probably a bad practice, invert everything
 
@@ -38,7 +37,6 @@ struct SpriteData {
     vertex_attrs: VertexBuffer<SpriteAttrs>,
     indices: IndexBuffer<u16>,
     texture: Option<CompressedSrgbTexture2d>,
-    last_amount: usize,
     shape: Option<ShapeHandle2<f32>>,
     pub registry: Registry,
 }
@@ -103,7 +101,6 @@ impl Graphics {
             indices: indices,
             vertex_attrs: vertex_attrs,
             texture: texture,
-            last_amount: 0,
             registry: reg,
             shape: shape,
             pre_render: vec![SpriteAttrs::hidden(); max_amount],

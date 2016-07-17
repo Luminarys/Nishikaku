@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use engine::Engine;
-use engine::entity::Entity;
-use engine::audio::Audio;
+use Engine;
+use entity::Entity;
+use audio::Audio;
 
 pub struct AudioComp {
     audio: Rc<RefCell<Audio>>
