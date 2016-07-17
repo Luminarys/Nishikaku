@@ -103,14 +103,14 @@ pub enum Angle {
 impl Angle {
     fn mirror_x(&self) -> Angle {
         match *self {
-            Angle::Fixed(ref angle) => Angle::Fixed(180.0 + angle),
+            Angle::Fixed(ref angle) => Angle::Fixed(180.0 - angle),
             Angle::Player(ref angle_mod) => Angle::Player(-1.0 * angle_mod),
         }
     }
 
     fn mirror_y(&self) -> Angle {
         match *self {
-            Angle::Fixed(ref angle) => Angle::Fixed(180.0 - angle),
+            Angle::Fixed(ref angle) => Angle::Fixed(180.0 + angle),
             Angle::Player(ref angle_mod) => Angle::Fixed(-1.0 * angle_mod),
         }
     }
@@ -215,10 +215,8 @@ impl PatternBuilder {
 
     pub fn mirror_x(&self) -> PatternBuilder {
         let mut pattern = self.clone();
-        let stop_angle = Some(pattern.start_angle.unwrap().mirror_x());
-        let start_angle = Some(pattern.stop_angle.unwrap().mirror_x());
-        pattern.stop_angle = stop_angle;
-        pattern.start_angle = start_angle;
+        pattern.start_angle = Some(pattern.start_angle.unwrap().mirror_x());
+        pattern.stop_angle = Some(pattern.stop_angle.unwrap().mirror_x());
         pattern
     }
 
